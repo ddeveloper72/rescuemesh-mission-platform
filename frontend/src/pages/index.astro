@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="RescueMesh Mission Platform">
+  <div class="py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+      <!-- Hero Section -->
+      <div class="text-center mb-16">
+        <h1 class="text-5xl font-bold mb-4 bg-gradient-to-r from-rescue-400 to-rescue-600 bg-clip-text text-transparent">
+          RescueMesh Mission Platform
+        </h1>
+        <p class="text-xl text-slate-300 max-w-3xl mx-auto">
+          Simulation-first mission dashboard for dangerous, GPS-denied, partially inaccessible environments
+        </p>
+      </div>
+
+      <!-- Key Features -->
+      <div class="grid md:grid-cols-3 gap-8 mb-16">
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <h3 class="text-xl font-semibold mb-2 text-rescue-400">Agent-Based Architecture</h3>
+          <p class="text-slate-400">
+            Drones, ground robots, relay nodes, sensors, and AI services cooperating to map dangerous terrain
+          </p>
+        </div>
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <h3 class="text-xl font-semibold mb-2 text-rescue-400">GPS-Denied Operations</h3>
+          <p class="text-slate-400">
+            Simulate missions in collapsed buildings, caves, tunnels, and flooded structures
+          </p>
+        </div>
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <h3 class="text-xl font-semibold mb-2 text-rescue-400">Failure Modeling</h3>
+          <p class="text-slate-400">
+            Hardware degradation, intermittent failures, and tactical sacrifice decisions
+          </p>
+        </div>
+      </div>
+
+      <!-- Use Cases -->
+      <div class="mb-16">
+        <h2 class="text-3xl font-bold mb-8 text-center">Use Cases</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+          <a href="/use-cases/collapsed-building" class="bg-slate-800 rounded-lg p-6 border border-slate-700 hover:border-rescue-400 transition-colors group">
+            <h3 class="text-xl font-semibold mb-2 group-hover:text-rescue-400">Collapsed Building Search</h3>
+            <p class="text-slate-400 mb-3">Life safety priority with thermal, LiDAR, and audio sensors</p>
+            <span class="text-rescue-400 text-sm">View Use Case →</span>
+          </a>
+          <a href="/use-cases/cave-rescue" class="bg-slate-800 rounded-lg p-6 border border-slate-700 hover:border-rescue-400 transition-colors group">
+            <h3 class="text-xl font-semibold mb-2 group-hover:text-rescue-400">Cave Rescue</h3>
+            <p class="text-slate-400 mb-3">Mapping and path discovery in narrow passages</p>
+            <span class="text-rescue-400 text-sm">View Use Case →</span>
+          </a>
+          <a href="/use-cases/flooded-structure" class="bg-slate-800 rounded-lg p-6 border border-slate-700 hover:border-rescue-400 transition-colors group">
+            <h3 class="text-xl font-semibold mb-2 group-hover:text-rescue-400">Flooded Structure</h3>
+            <p class="text-slate-400 mb-3">Amphibious inspection and obstruction mapping</p>
+            <span class="text-rescue-400 text-sm">View Use Case →</span>
+          </a>
+          <a href="/use-cases/industrial-inspection" class="bg-slate-800 rounded-lg p-6 border border-slate-700 hover:border-rescue-400 transition-colors group">
+            <h3 class="text-xl font-semibold mb-2 group-hover:text-rescue-400">Industrial Inspection</h3>
+            <p class="text-slate-400 mb-3">Confined spaces with hazardous materials</p>
+            <span class="text-rescue-400 text-sm">View Use Case →</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- CTA Section -->
+      <div class="text-center bg-gradient-to-r from-rescue-800 to-rescue-900 rounded-lg p-12 border border-rescue-700">
+        <h2 class="text-3xl font-bold mb-4">Try the Demo</h2>
+        <p class="text-slate-300 mb-6 max-w-2xl mx-auto">
+          Experience a simulated collapsed building search mission with multiple agents, sensor feeds, and AI analysis
+        </p>
+        <a href="/missions/demo" class="inline-block bg-rescue-500 hover:bg-rescue-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors">
+          Launch Demo Mission
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
