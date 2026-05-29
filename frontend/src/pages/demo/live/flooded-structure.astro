@@ -1,0 +1,240 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SimulationControls from '../../../components/demo/SimulationControls.astro';
+import DataSourceBadge from '../../../components/demo/DataSourceBadge.astro';
+
+const MISSION_PK = '2c6ccd68-85f6-49ac-b28d-6f5358bc6a68';
+const USE_CASE = 'flooded-structure';
+const TITLE = 'Flooded Structure';
+
+const initialClock = {
+  started_at: null,
+  elapsed_seconds: 0,
+  speed_multiplier: 1.0,
+  is_running: false,
+};
+---
+
+<BaseLayout 
+  title={`Live Simulation - ${TITLE}`}
+  description="Real-time flooded structure inspection simulation with Django API"
+>
+  <div class="min-h-screen bg-slate-900 text-slate-100 py-8 px-4 sm:px-6 lg:px-8" data-mission-pk={MISSION_PK}>
+    <div class="max-w-7xl mx-auto">
+      <!-- Header -->
+      <div class="mb-8">
+        <a href="/demo" class="text-rescue-400 hover:text-rescue-300 text-sm mb-4 inline-block">
+          ← Back to Demo Overview
+        </a>
+        <div class="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <h1 class="text-4xl font-bold mb-2">Live Simulation: {TITLE}</h1>
+            <p class="text-slate-400">Amphibious inspection and hazard assessment</p>
+          </div>
+          <DataSourceBadge source="django" />
+        </div>
+      </div>
+
+      <!-- Use Case Navigation -->
+      <div class="mb-6 bg-slate-800 rounded-lg p-4 border border-slate-700">
+        <div class="text-sm font-semibold mb-2">Switch Use Case:</div>
+        <div class="flex flex-wrap gap-2">
+          <a href="/demo/live/collapsed-building-search" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors">
+            Collapsed Building
+          </a>
+          <a href="/demo/live/cave-rescue" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors">
+            Cave Rescue
+          </a>
+          <a href="/demo/live/flooded-structure" class="px-4 py-2 bg-rescue-600 rounded text-sm font-semibold">
+            Flooded Structure
+          </a>
+          <a href="/demo/live/industrial-inspection" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors">
+            Industrial Inspection
+          </a>
+        </div>
+      </div>
+
+      <!-- Simulation Controls -->
+      <div class="mb-8">
+        <SimulationControls clock={initialClock} missionPk={MISSION_PK} />
+      </div>
+
+      <!-- Dashboard Grid -->
+      <div class="grid lg:grid-cols-2 gap-6">
+        <!-- Agent Status Panel -->
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <h2 class="text-2xl font-bold mb-4">Agent Status</h2>
+          <div id="agents-container" class="space-y-4">
+            <p class="text-slate-400">Loading agents...</p>
+          </div>
+        </div>
+
+        <!-- Network Status Panel -->
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <h2 class="text-2xl font-bold mb-4">Network Status</h2>
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Mesh Health:</span>
+              <span id="mesh-health" class="font-semibold">--</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Packet Loss:</span>
+              <span id="packet-loss" class="font-semibold">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Water Status Panel -->
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <h2 class="text-2xl font-bold mb-4">Water Status</h2>
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Current Depth:</span>
+              <span id="water-depth" class="font-semibold">--</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Contamination Level:</span>
+              <span id="contamination" class="font-semibold">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sensor Data Panel -->
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <h2 class="text-2xl font-bold mb-4">Environmental Sensors</h2>
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Thermal Anomalies:</span>
+              <span id="thermal-count" class="font-semibold">0</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Hazards Detected:</span>
+              <span id="hazard-count" class="font-semibold">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Analysis Panel -->
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700 lg:col-span-2">
+          <h2 class="text-2xl font-bold mb-4">AI Analysis</h2>
+          <div class="space-y-3">
+            <div>
+              <span class="text-slate-400 block mb-2">Summary:</span>
+              <p id="ai-summary" class="text-slate-100">Loading...</p>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Confidence:</span>
+              <span id="ai-confidence" class="font-semibold">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Events Panel -->
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700 lg:col-span-2">
+          <h2 class="text-2xl font-bold mb-4">
+            Mission Events 
+            <span class="text-sm font-normal text-slate-400">(<span id="event-count">0</span> events)</span>
+          </h2>
+          <div id="events-container" class="space-y-2">
+            <p class="text-slate-400">No events yet...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Debug Panel -->
+      <div class="mt-6 bg-slate-800 rounded-lg p-4 border border-slate-700">
+        <details>
+          <summary class="cursor-pointer text-sm text-slate-400 hover:text-slate-300">
+            Debug Information
+          </summary>
+          <div class="mt-3">
+            <p class="text-xs text-slate-500 mb-2">Last API Response:</p>
+            <pre id="debug-json" class="text-xs bg-slate-900 p-3 rounded overflow-auto max-h-96"></pre>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { initializeSimulation } from '../../../lib/simulation-manager';
+  
+  const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
+  const manager = initializeSimulation(MISSION_PK);
+  
+  const originalPoll = (manager as any).poll;
+  (manager as any).poll = async function() {
+    await originalPoll.call(this);
+    
+    const state = this.getLastState();
+    if (state) {
+      // Update agents display
+      const agentsContainer = document.getElementById('agents-container');
+      if (agentsContainer && state.agents) {
+        agentsContainer.innerHTML = state.agents.map(agent => `
+          <div class="p-4 bg-slate-700 rounded-lg">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <h3 class="font-semibold">${agent.name}</h3>
+                <p class="text-xs text-slate-400">${agent.role}</p>
+              </div>
+              <span data-agent-state="${agent.agent_id}" class="px-2 py-1 rounded text-xs font-semibold bg-slate-800 text-slate-300">
+                ${agent.state}
+              </span>
+            </div>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-400">Battery:</span>
+                <span data-agent-battery="${agent.agent_id}">${agent.battery_percent}%</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Signal:</span>
+                <span data-agent-signal="${agent.agent_id}">${agent.signal_strength}%</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Location:</span>
+                <span class="text-xs">${agent.location_label}</span>
+              </div>
+              ${agent.nfc_recovery_available ? '<div class="text-xs text-yellow-400 mt-2">⚠ NFC recovery available</div>' : ''}
+            </div>
+            <div class="mt-2 h-2 bg-slate-900 rounded-full overflow-hidden">
+              <div 
+                data-agent-battery-bar="${agent.agent_id}"
+                class="h-full bg-green-500 transition-all duration-500"
+                style="width: ${agent.battery_percent}%"
+              ></div>
+            </div>
+          </div>
+        `).join('');
+      }
+      
+      // Update events display
+      const eventsContainer = document.getElementById('events-container');
+      if (eventsContainer && state.events) {
+        if (state.events.length === 0) {
+          eventsContainer.innerHTML = '<p class="text-slate-400">No events yet...</p>';
+        } else {
+          eventsContainer.innerHTML = state.events.slice().reverse().map(event => `
+            <div class="p-3 bg-slate-700 rounded-lg text-sm">
+              <div class="flex justify-between items-start mb-1">
+                <span class="font-semibold">${event.title}</span>
+                <span class="text-xs text-slate-400">${event.time}</span>
+              </div>
+              <p class="text-slate-300 text-xs">${event.description}</p>
+            </div>
+          `).join('');
+        }
+      }
+      
+      // Update debug panel
+      const debugEl = document.getElementById('debug-json');
+      if (debugEl) {
+        debugEl.textContent = JSON.stringify(state, null, 2);
+      }
+    }
+  };
+  
+  console.log('Flooded structure simulation manager initialized');
+</script>
+</BaseLayout>
