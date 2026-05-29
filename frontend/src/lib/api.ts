@@ -17,6 +17,14 @@ export const API_ENDPOINTS = {
     detail: (slug: string) => `${API_BASE_URL}/usecases/${slug}/`,
     demoProfile: (slug: string) => `${API_BASE_URL}/usecases/${slug}/demo_profile/`,
   },
+  agentRoles: {
+    list: () => `${API_BASE_URL}/agent-role-templates/`,
+    detail: (id: string) => `${API_BASE_URL}/agent-role-templates/${id}/`,
+  },
+  terrainProfiles: {
+    list: () => `${API_BASE_URL}/terrain-profiles/`,
+    detail: (id: string) => `${API_BASE_URL}/terrain-profiles/${id}/`,
+  },
   sensors: {
     list: () => `${API_BASE_URL}/sensors/`,
     detail: (id: string) => `${API_BASE_URL}/sensors/${id}/`,
@@ -168,6 +176,23 @@ export interface ExpectedOutput {
   updated_at: string;
 }
 
+export interface AgentRoleTemplate {
+  id: string;
+  use_case: string;
+  use_case_slug: string;
+  use_case_title: string;
+  name: string;
+  role: string;
+  agent_type: string;
+  description: string;
+  capabilities: Record<string, any>;
+  specifications: Record<string, any>;
+  is_required: boolean;
+  recommended_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 /**
  * Fetch functions for common data
  */
@@ -185,4 +210,8 @@ export async function getFailures(): Promise<APIResult<PaginatedResponse<Failure
 
 export async function getOutputs(): Promise<APIResult<PaginatedResponse<ExpectedOutput>>> {
   return fetchAPI<PaginatedResponse<ExpectedOutput>>(API_ENDPOINTS.outputs.list());
+}
+
+export async function getAgentRoles(): Promise<APIResult<PaginatedResponse<AgentRoleTemplate>>> {
+  return fetchAPI<PaginatedResponse<AgentRoleTemplate>>(API_ENDPOINTS.agentRoles.list());
 }

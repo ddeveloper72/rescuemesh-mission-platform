@@ -1,0 +1,181 @@
+[
+  {
+    "timestamp": "2026-05-29T12:00:00Z",
+    "event_type": "mission_start",
+    "mission_id": "mission-demo-001",
+    "title": "Mission Started",
+    "description": "Collapsed Building Search mission initiated",
+    "event_data": {
+      "use_case": "collapsed_building",
+      "objective": "Search for survivors in collapsed structure",
+      "agents_deployed": ["drone-a", "drone-b", "drone-c", "relay-01"]
+    }
+  },
+  {
+    "timestamp": "2026-05-29T12:00:30Z",
+    "event_type": "agent_deployed",
+    "mission_id": "mission-demo-001",
+    "source_agent_id": "drone-a",
+    "title": "Drone A Deployed",
+    "description": "Survey drone launched from base station",
+    "event_data": {
+      "location": {"x": 0, "y": 0, "z": 0},
+      "battery_percent": 100
+    }
+  },
+  {
+    "timestamp": "2026-05-29T12:00:45Z",
+    "event_type": "agent_deployed",
+    "mission_id": "mission-demo-001",
+    "source_agent_id": "drone-b",
+    "title": "Drone B Deployed",
+    "description": "Detection drone launched",
+    "event_data": {
+      "location": {"x": 0, "y": 0, "z": 0},
+      "battery_percent": 100
+    }
+  },
+  {
+    "timestamp": "2026-05-29T12:01:00Z",
+    "event_type": "agent_deployed",
+    "mission_id": "mission-demo-001",
+    "source_agent_id": "drone-c",
+    "title": "Drone C Deployed",
+    "description": "Deep penetration drone launched",
+    "event_data": {
+      "location": {"x": 0, "y": 0, "z": 0},
+      "battery_percent": 100
+    }
+  },
+  {
+    "timestamp": "2026-05-29T12:03:42Z",
+    "event_type": "telemetry",
+    "mission_id": "mission-demo-001",
+    "source_agent_id": "drone-a",
+    "title": "Map Coverage Update",
+    "description": "Initial mapping progress",
+    "event_data": {
+      "map_coverage_percent": 35,
+      "sectors_mapped": ["entrance", "corridor_1", "void_1"],
+      "location": {"x": 12.5, "y": 8.3, "z": 2.1},
+      "battery_percent": 92
+    }
+  },
+  {
+    "timestamp": "2026-05-29T12:08:15Z",
+    "event_type": "failure",
+    "mission_id": "mission-demo-001",
+    "source_agent_id": "drone-b",
+    "title": "Signal Degradation Detected",
+    "description": "Radio communications becoming intermittent",
+    "confidence": 0.95,
+    "event_data": {
+      "failure_type": "radio_packet_loss",
+      "packet_loss_percent": 45,
+      "location": {"x": 18.2, "y": 12.7, "z": 1.8},
+      "battery_percent": 76
+    }
+  },
+  {
+    "timestamp": "2026-05-29T12:11:30Z",
+    "event_type": "agent_state_change",
+    "mission_id": "mission-demo-001",
+    "source_agent_id": "drone-b",
+    "title": "Drone B Landed as Relay",
+    "description": "Tactical decision: land and serve as communications relay",
+    "confidence": 0.91,
+    "event_data": {
+      "previous_state": "active",
+      "new_state": "landed_relay",
+      "reason": "Battery below return threshold and relay value is high",
+      "location": {"x": 18.2, "y": 12.7, "z": 0},
+      "battery_percent": 24
+    }
+  },
+  {
+    "timestamp": "2026-05-29T12:14:19Z",
+    "event_type": "detection",
+    "mission_id": "mission-demo-001",
+    "source_agent_id": "drone-c",
+    "title": "Voice-like Audio Detected",
+    "description": "Audio analysis detected voice-like pattern",
+    "confidence": 0.58,
+    "event_data": {
+      "detection_type": "voice_like_audio",
+      "frequency_profile": "human_voice_range",
+      "location": {"x": 18.2, "y": 7.4, "z": -2.1},
+      "sector": "void_3",
+      "requires_human_review": true,
+      "priority": "high"
+    }
+  },
+  {
+    "timestamp": "2026-05-29T12:14:25Z",
+    "event_type": "detection",
+    "mission_id": "mission-demo-001",
+    "source_agent_id": "drone-c",
+    "title": "Thermal Anomaly Detected",
+    "description": "Heat signature consistent with human presence",
+    "confidence": 0.72,
+    "event_data": {
+      "detection_type": "thermal_anomaly",
+      "temperature_celsius": 36.8,
+      "location": {"x": 18.2, "y": 7.4, "z": -2.1},
+      "sector": "void_3",
+      "requires_human_review": true,
+      "priority": "high"
+    }
+  },
+  {
+    "timestamp": "2026-05-29T12:14:30Z",
+    "event_type": "failure",
+    "mission_id": "mission-demo-001",
+    "source_agent_id": "drone-c",
+    "title": "Battery Failure",
+    "description": "Unexpected battery collapse after thermal payload surge",
+    "confidence": 1.0,
+    "event_data": {
+      "failure_type": "thermal_surge_failure",
+      "battery_percent": 3,
+      "black_box_saved": true,
+      "nfc_readable": true,
+      "last_location": {"x": 18.2, "y": 7.4, "z": -2.1},
+      "priority_observation": "voice_like_audio_11_seconds_before_failure",
+      "recovery_hint": "NFC readout available; external power required for full data download"
+    }
+  },
+  {
+    "timestamp": "2026-05-29T12:16:45Z",
+    "event_type": "detection",
+    "mission_id": "mission-demo-001",
+    "source_agent_id": "drone-b",
+    "title": "WiFi Signal Detected",
+    "description": "Mobile device WiFi beacon detected",
+    "confidence": 0.91,
+    "event_data": {
+      "detection_type": "wifi_signal",
+      "signal_strength_dbm": -68,
+      "estimated_distance_meters": 10,
+      "location": {"x": 15.3, "y": 9.2, "z": 1.2},
+      "sector": "corridor_2"
+    }
+  },
+  {
+    "timestamp": "2026-05-29T12:20:00Z",
+    "event_type": "ai_analysis",
+    "mission_id": "mission-demo-001",
+    "source_agent_id": "ai-analyst-01",
+    "title": "Priority Detection Analysis",
+    "description": "Combined thermal and audio signatures suggest highest survivor probability",
+    "confidence": 0.68,
+    "event_data": {
+      "analysis_type": "survivor_probability",
+      "location": {"x": 18.2, "y": 7.4, "z": -2.1},
+      "sector": "void_3",
+      "supporting_evidence": ["thermal_anomaly", "voice_like_audio"],
+      "recommended_action": "deploy_ground_asset_with_camera_and_two_way_audio",
+      "priority": 1,
+      "requires_human_review": true
+    }
+  }
+]

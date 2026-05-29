@@ -1,0 +1,189 @@
+[
+  {
+    "agent_id": "drone-a",
+    "name": "Survey Drone Alpha",
+    "agent_type": "drone",
+    "specifications": {
+      "role": "survey",
+      "form_factor": "medium_quadcopter",
+      "max_speed_ms": 15,
+      "endurance_minutes": 45,
+      "payload_capacity_grams": 800,
+      "sensors": [
+        {
+          "type": "lidar",
+          "model": "Velodyne VLP-16",
+          "range_meters": 100,
+          "accuracy_cm": 3
+        },
+        {
+          "type": "thermal",
+          "model": "FLIR Boson 640",
+          "resolution": "640x512",
+          "fov_degrees": 50
+        },
+        {
+          "type": "rgb_camera",
+          "resolution": "4K",
+          "fov_degrees": 90
+        },
+        {
+          "type": "imu",
+          "update_rate_hz": 100
+        },
+        {
+          "type": "battery_monitor",
+          "capacity_mah": 6000,
+          "voltage": 22.2
+        }
+      ],
+      "communications": {
+        "radio_frequency_ghz": 2.4,
+        "max_range_meters": 500,
+        "mesh_capable": true
+      }
+    }
+  },
+  {
+    "agent_id": "drone-b",
+    "name": "Detection Drone Bravo",
+    "agent_type": "drone",
+    "specifications": {
+      "role": "detection",
+      "form_factor": "medium_quadcopter",
+      "max_speed_ms": 12,
+      "endurance_minutes": 40,
+      "payload_capacity_grams": 1000,
+      "sensors": [
+        {
+          "type": "microphone_array",
+          "channels": 4,
+          "frequency_range_hz": [20, 20000],
+          "noise_cancellation": true
+        },
+        {
+          "type": "co2_sensor",
+          "range_ppm": [0, 5000],
+          "accuracy_ppm": 50
+        },
+        {
+          "type": "wifi_scanner",
+          "frequency_bands": ["2.4ghz", "5ghz"]
+        },
+        {
+          "type": "bluetooth_scanner",
+          "version": "5.0",
+          "range_meters": 50
+        },
+        {
+          "type": "battery_monitor",
+          "capacity_mah": 5500,
+          "voltage": 22.2
+        }
+      ],
+      "communications": {
+        "radio_frequency_ghz": 2.4,
+        "max_range_meters": 400,
+        "mesh_capable": true,
+        "relay_capable": true
+      }
+    }
+  },
+  {
+    "agent_id": "drone-c",
+    "name": "Deep Penetration Drone Charlie",
+    "agent_type": "drone",
+    "specifications": {
+      "role": "deep_penetration",
+      "form_factor": "small_quadcopter",
+      "max_speed_ms": 8,
+      "endurance_minutes": 25,
+      "payload_capacity_grams": 400,
+      "sensors": [
+        {
+          "type": "thermal",
+          "model": "FLIR Lepton 3.5",
+          "resolution": "160x120",
+          "fov_degrees": 57
+        },
+        {
+          "type": "audio",
+          "channels": 1,
+          "frequency_range_hz": [20, 20000]
+        },
+        {
+          "type": "nfc_blackbox",
+          "storage_mb": 256,
+          "read_range_cm": 5
+        },
+        {
+          "type": "battery_monitor",
+          "capacity_mah": 2200,
+          "voltage": 11.1
+        }
+      ],
+      "communications": {
+        "radio_frequency_ghz": 2.4,
+        "max_range_meters": 200,
+        "mesh_capable": false
+      }
+    }
+  },
+  {
+    "agent_id": "relay-01",
+    "name": "Static Relay Node 1",
+    "agent_type": "relay_node",
+    "specifications": {
+      "role": "communications",
+      "form_factor": "fixed_installation",
+      "power_source": "battery",
+      "battery_capacity_mah": 20000,
+      "sensors": [
+        {
+          "type": "environmental",
+          "measurements": ["temperature", "humidity", "pressure"]
+        }
+      ],
+      "communications": {
+        "radio_frequency_ghz": 2.4,
+        "max_range_meters": 800,
+        "mesh_capable": true,
+        "relay_capable": true,
+        "transmit_power_dbm": 30
+      }
+    }
+  },
+  {
+    "agent_id": "ground-robot-01",
+    "name": "Ground Crawler Alpha",
+    "agent_type": "ground_robot",
+    "specifications": {
+      "role": "rugged_terrain",
+      "form_factor": "tracked_vehicle",
+      "max_speed_ms": 2,
+      "endurance_minutes": 120,
+      "payload_capacity_grams": 2000,
+      "sensors": [
+        {
+          "type": "lidar",
+          "model": "RPLidar A3",
+          "range_meters": 25,
+          "accuracy_cm": 2
+        },
+        {
+          "type": "rgb_camera",
+          "resolution": "1080p",
+          "fov_degrees": 120
+        },
+        {
+          "type": "imu",
+          "update_rate_hz": 100
+        }
+      ],
+      "communications": {
+        "radio_frequency_ghz": 2.4,
+        "max_range_meters": 300
+      }
+    }
+  }
+]

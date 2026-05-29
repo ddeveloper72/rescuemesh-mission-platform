@@ -5,10 +5,10 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
 
+# Only register UseCaseTemplateViewSet here with empty prefix
+# Terrain and AgentRole viewsets are registered in config/urls.py to avoid route conflicts
 router = DefaultRouter()
 router.register(r'', views.UseCaseTemplateViewSet, basename='usecase')
-router.register(r'terrain', views.TerrainProfileViewSet, basename='terrain')
-router.register(r'agent-roles', views.AgentRoleTemplateViewSet, basename='agent-role')
 
 urlpatterns = [
     path('', include(router.urls)),

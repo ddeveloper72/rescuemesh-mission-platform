@@ -1,0 +1,133 @@
+[
+  {
+    "id": "collapsed-building",
+    "name": "Collapsed Building Search",
+    "priority": "life_safety",
+    "description": "Rapidly map unstable voids and detect signs of human presence in partially collapsed structures.",
+    "terrain_type": "collapsed_building",
+    "hazards": ["unstable_structure", "sharp_debris", "dust", "secondary_collapse", "gps_denied"],
+    "recommended_agents": [
+      {
+        "type": "drone",
+        "role": "survey",
+        "sensors": ["lidar", "thermal", "rgb"],
+        "name": "Survey Drone Alpha"
+      },
+      {
+        "type": "drone",
+        "role": "detection",
+        "sensors": ["microphone_array", "co2", "wifi_scanner", "bluetooth_scanner"],
+        "name": "Detection Drone Bravo"
+      },
+      {
+        "type": "drone",
+        "role": "deep_penetration",
+        "sensors": ["thermal", "audio", "nfc_blackbox"],
+        "name": "Penetration Drone Charlie"
+      },
+      {
+        "type": "relay_node",
+        "role": "communications",
+        "sensors": ["environmental"],
+        "name": "Relay Node 1"
+      }
+    ],
+    "expected_failures": [
+      {
+        "type": "dust_occlusion",
+        "severity": "moderate",
+        "affected_sensors": ["lidar", "camera"]
+      },
+      {
+        "type": "radio_packet_loss",
+        "severity": "moderate",
+        "probability": 0.7
+      },
+      {
+        "type": "battery_drain",
+        "severity": "moderate",
+        "multiplier": 1.4
+      }
+    ],
+    "expected_outputs": [
+      "3d_void_map",
+      "thermal_anomalies",
+      "audio_events",
+      "device_signals",
+      "relay_topology",
+      "access_routes",
+      "ai_detection_ranking"
+    ]
+  },
+  {
+    "id": "cave-rescue",
+    "name": "Cave Rescue",
+    "priority": "mapping_path_discovery",
+    "description": "Map unknown cave systems to locate persons and identify safe access routes.",
+    "terrain_type": "cave_system",
+    "hazards": ["gps_denied", "radio_attenuation", "narrow_passages", "water", "darkness"],
+    "recommended_agents": [
+      {
+        "type": "drone",
+        "role": "survey",
+        "sensors": ["lidar", "imu", "temperature", "humidity"],
+        "name": "Cave Mapper"
+      },
+      {
+        "type": "ground_robot",
+        "role": "crawler",
+        "sensors": ["lidar", "camera", "audio"],
+        "name": "Ground Crawler"
+      }
+    ],
+    "expected_outputs": [
+      "tunnel_map",
+      "safe_routes",
+      "relay_placement",
+      "vertical_profile"
+    ]
+  },
+  {
+    "id": "flooded-structure",
+    "name": "Flooded Structure",
+    "priority": "amphibious_inspection",
+    "description": "Inspect partially flooded buildings to map obstructions and identify safe zones.",
+    "terrain_type": "flooded_building",
+    "hazards": ["water_ingress", "corrosion", "low_visibility", "buoyancy_issues"],
+    "recommended_agents": [
+      {
+        "type": "amphibious_robot",
+        "role": "inspection",
+        "sensors": ["sonar", "pressure", "temperature", "camera"],
+        "name": "Amphibious Inspector"
+      }
+    ],
+    "expected_outputs": [
+      "water_depth_model",
+      "obstruction_map",
+      "safe_passages"
+    ]
+  },
+  {
+    "id": "industrial-inspection",
+    "name": "Industrial Confined Space",
+    "priority": "hazardous_material_assessment",
+    "description": "Inspect industrial facilities with hazardous materials without exposing personnel.",
+    "terrain_type": "industrial_confined",
+    "hazards": ["toxic_atmosphere", "heat", "radiation", "em_interference"],
+    "recommended_agents": [
+      {
+        "type": "drone",
+        "role": "inspection",
+        "sensors": ["gas_sensors", "thermal", "radiation_detector", "camera"],
+        "name": "Hazmat Inspector"
+      }
+    ],
+    "expected_outputs": [
+      "hazard_map",
+      "gas_readings",
+      "ppe_recommendations",
+      "structural_report"
+    ]
+  }
+]

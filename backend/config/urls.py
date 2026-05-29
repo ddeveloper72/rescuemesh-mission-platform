@@ -8,6 +8,11 @@ from rest_framework import routers
 # Create a router for API endpoints
 router = routers.DefaultRouter()
 
+# Register viewsets that need to be at top level to avoid route conflicts
+from apps.usecases import views as usecase_views
+router.register(r'terrain-profiles', usecase_views.TerrainProfileViewSet, basename='terrain-profile')
+router.register(r'agent-role-templates', usecase_views.AgentRoleTemplateViewSet, basename='agent-role-template')
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include([

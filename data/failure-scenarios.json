@@ -1,0 +1,121 @@
+[
+  {
+    "id": "dust-degraded-lidar",
+    "name": "Dust Degraded LiDAR",
+    "trigger_type": "sector_based",
+    "sector": "collapsed_corridor_2",
+    "affected_component": "lidar",
+    "severity": "moderate",
+    "effects": {
+      "noise_multiplier": 2.4,
+      "map_confidence_drop": 0.35,
+      "range_reduction_factor": 0.5
+    },
+    "operator_message": "LiDAR return quality degraded due to dust or particulate interference.",
+    "recovery_possible": false
+  },
+  {
+    "id": "radio-packet-loss",
+    "name": "Radio Packet Loss",
+    "trigger_type": "sector_based",
+    "sector": "deep_void_3",
+    "affected_component": "radio",
+    "severity": "moderate",
+    "effects": {
+      "packet_loss_percent": 45,
+      "latency_increase_ms": 200
+    },
+    "operator_message": "Communications intermittent due to structural interference.",
+    "recovery_possible": true,
+    "recovery_action": "move_to_relay_position"
+  },
+  {
+    "id": "accelerated-battery-drain",
+    "name": "Accelerated Battery Drain",
+    "trigger_type": "time_based",
+    "trigger_time_seconds": 450,
+    "affected_component": "battery",
+    "severity": "moderate",
+    "effects": {
+      "drain_multiplier": 1.8,
+      "reason": "hover_in_confined_space"
+    },
+    "operator_message": "Battery drain rate elevated due to confined space maneuvering.",
+    "recovery_possible": false
+  },
+  {
+    "id": "thermal-surge-failure",
+    "name": "Thermal Sensor Surge Failure",
+    "trigger_type": "event_based",
+    "trigger_event": "high_priority_detection",
+    "affected_component": "thermal_sensor",
+    "severity": "critical",
+    "effects": {
+      "power_surge": true,
+      "battery_collapse": true,
+      "final_battery_percent": 3
+    },
+    "operator_message": "Unexpected battery collapse after thermal payload surge during priority observation.",
+    "recovery_possible": false,
+    "black_box_available": true,
+    "nfc_readable": true
+  },
+  {
+    "id": "camera-occlusion",
+    "name": "Camera Dust Occlusion",
+    "trigger_type": "time_based",
+    "trigger_time_seconds": 300,
+    "affected_component": "rgb_camera",
+    "severity": "minor",
+    "effects": {
+      "visibility_reduction_percent": 60,
+      "requires_cleaning": true
+    },
+    "operator_message": "Camera lens partially occluded by dust accumulation.",
+    "recovery_possible": true,
+    "recovery_action": "self_cleaning_attempt"
+  },
+  {
+    "id": "imu-drift",
+    "name": "IMU Drift",
+    "trigger_type": "time_based",
+    "trigger_time_seconds": 600,
+    "affected_component": "imu",
+    "severity": "moderate",
+    "effects": {
+      "drift_rate_deg_per_min": 2.5,
+      "position_uncertainty_meters": 1.5
+    },
+    "operator_message": "Inertial navigation drift detected. Recommend recalibration or LiDAR-based positioning.",
+    "recovery_possible": true,
+    "recovery_action": "recalibrate_against_known_feature"
+  },
+  {
+    "id": "motor-degradation",
+    "name": "Motor Degradation",
+    "trigger_type": "random_seeded",
+    "probability": 0.1,
+    "affected_component": "motor",
+    "severity": "moderate",
+    "effects": {
+      "thrust_reduction_percent": 15,
+      "vibration_increase": true
+    },
+    "operator_message": "Motor performance degraded. Recommend return to base for inspection.",
+    "recovery_possible": false
+  },
+  {
+    "id": "gps-denied",
+    "name": "GPS Signal Lost",
+    "trigger_type": "sector_based",
+    "sector": "all_interior",
+    "affected_component": "gps",
+    "severity": "expected",
+    "effects": {
+      "gps_available": false,
+      "fallback_to_slam": true
+    },
+    "operator_message": "GPS unavailable inside structure. Operating on SLAM and IMU.",
+    "recovery_possible": false
+  }
+]

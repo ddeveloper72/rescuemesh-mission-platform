@@ -1,14 +1,26 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { getSensors, getFailures } from '../lib/api';
-import type { SensorPackage, FailureProfile } from '../lib/api';
+import { getSensors, getFailures, getAgentRoles } from '../lib/api';
+import type { SensorPackage, FailureProfile, AgentRoleTemplate } from '../lib/api';
 
 // Fetch data from Django API with graceful fallback
 const sensorsResult = await getSensors();
 const failuresResult = await getFailures();
+const agentRolesResult = await getAgentRoles();
 
 const sensors = sensorsResult.success && sensorsResult.data ? sensorsResult.data.results : [];
 const failures = failuresResult.success && failuresResult.data ? failuresResult.data.results : [];
+
+// Use Django agent roles if available, otherwise fall back to static data
+const agentRolesFromAPI = agentRolesResult.success && agentRolesResult.data ? agentRolesResult.data.results : null;
+const agentRolesFallback = [
+  { name: 'Relay Drone', type: 'drone', role: 'communications_relay', capabilities: { relay: true, navigation: true, sacrifice_landing: true }, description: 'Communications relay drone' },
+  { name: 'Scout Drone', type: 'drone', role: 'primary_mapping', capabilities: { '3d_mapping': true, thermal_sensing: true, navigation: true }, description: 'Primary mapping drone with LiDAR' },
+  { name: 'Detection Drone', type: 'drone', role: 'detection', capabilities: { thermal_sensing: true, audio_detection: true, device_scanning: true }, description: 'Detection drone with thermal and audio sensors' },
+  { name: 'Static Relay Node', type: 'relay_node', role: 'base_relay', capabilities: { relay: true }, description: 'Static relay node for base communications' },
+  { name: 'Amphibious Agent', type: 'amphibious', role: 'underwater_inspection', capabilities: { sonar: true, navigation: true, water_quality: true }, description: 'Amphibious agent for underwater inspection' },
+];
+const agentRoles = agentRolesFromAPI || agentRolesFallback;
 
 // Group sensors by type
 const sensorsByType = sensors.reduce((acc, sensor) => {
@@ -50,15 +62,6 @@ const hardwareStates = [
   { state: 'powered_download_available', description: 'Can download with external power', color: 'bg-cyan-900' },
   { state: 'black_box_recovered', description: 'Black-box data recovered', color: 'bg-purple-900' },
 ];
-
-// Agent roles from demo data (fallback if Django unavailable)
-const agentRoles = [
-  { name: 'Relay Drone', type: 'drone', role: 'communications_relay', capabilities: ['relay', 'navigation', 'sacrifice_landing'] },
-  { name: 'Scout Drone', type: 'drone', role: 'primary_mapping', capabilities: ['3d_mapping', 'thermal_sensing', 'navigation'] },
-  { name: 'Detection Drone', type: 'drone', role: 'detection', capabilities: ['thermal_sensing', 'audio_detection', 'device_scanning'] },
-  { name: 'Static Relay Node', type: 'relay_node', role: 'base_relay', capabilities: ['relay'] },
-  { name: 'Amphibious Agent', type: 'amphibious', role: 'underwater_inspection', capabilities: ['sonar', 'navigation', 'water_quality'] },
-];
 ---
 
 <BaseLayout 
@@ -76,11 +79,14 @@ const agentRoles = [
           GPS-denied and hazardous environment missions.
         </p>
         
-        {!sensorsResult.success && (
+        {(!sensorsResult.success || !failuresResult.success || !agentRolesResult.success) && (
           <div class="bg-yellow-900 border border-yellow-700 rounded-lg p-4 mb-6">
             <p class="text-yellow-200">
-              <strong>Note:</strong> Django API unavailable. Showing fallback data. 
-              Start Django backend to see live hardware catalog from the database.
+              <strong>Note:</strong> Django API partially or fully unavailable. 
+              {!agentRolesResult.success && 'Agent roles, '}
+              {!sensorsResult.success && 'sensor packages, '}
+              {!failuresResult.success && 'failure profiles '}
+              showing fallback data. Start Django backend to see live hardware catalog from the database.
             </p>
           </div>
         )}
@@ -90,25 +96,39 @@ const agentRoles = [
       <section class="mb-16">
         <h2 class="text-3xl font-bold mb-6">Agent Roles</h2>
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {agentRoles.map(agent => (
-            <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-              <h3 class="text-xl font-semibold mb-2 text-rescue-400">{agent.name}</h3>
-              <div class="space-y-2 text-sm">
-                <p><strong class="text-slate-400">Type:</strong> {agent.type}</p>
-                <p><strong class="text-slate-400">Role:</strong> {agent.role}</p>
-                <div>
-                  <strong class="text-slate-400">Capabilities:</strong>
-                  <div class="flex flex-wrap gap-2 mt-1">
-                    {agent.capabilities.map(cap => (
-                      <span class="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs">
-                        {cap.replace(/_/g, ' ')}
-                      </span>
-                    ))}
-                  </div>
+          {agentRoles.map(agent => {
+            // Handle both Django API format (object with capabilities) and fallback format
+            const capabilitiesList = 'capabilities' in agent && agent.capabilities
+              ? (Array.isArray(agent.capabilities) 
+                  ? agent.capabilities 
+                  : Object.keys(agent.capabilities))
+              : [];
+            const agentType = 'agent_type' in agent ? agent.agent_type : agent.type;
+            const agentDescription = 'description' in agent ? agent.description : `${agent.name} for mission operations`;
+            
+            return (
+              <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+                <h3 class="text-xl font-semibold mb-2 text-rescue-400">{agent.name}</h3>
+                <p class="text-sm text-slate-300 mb-3">{agentDescription}</p>
+                <div class="space-y-2 text-sm">
+                  <p><strong class="text-slate-400">Type:</strong> {agentType}</p>
+                  <p><strong class="text-slate-400">Role:</strong> {agent.role}</p>
+                  {capabilitiesList.length > 0 && (
+                    <div>
+                      <strong class="text-slate-400">Capabilities:</strong>
+                      <div class="flex flex-wrap gap-2 mt-1">
+                        {capabilitiesList.map((cap: string) => (
+                          <span class="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs">
+                            {cap.replace(/_/g, ' ')}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
