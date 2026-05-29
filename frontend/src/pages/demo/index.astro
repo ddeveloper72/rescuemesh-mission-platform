@@ -1,25 +1,29 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { API_ENDPOINTS, fetchAPI } from '../../config/api';
+import { API_ENDPOINTS, fetchAPI } from '../../lib/api';
 import type { UseCaseDemoProfile } from '../../types/demo';
+import type { PaginatedResponse, UseCaseListItem } from '../../lib/api';
 
 // Fetch all demo profiles from the API
 let useCaseDemoProfiles: UseCaseDemoProfile[] = [];
 
-try {
-  // Fetch the list of use cases
-  const useCasesResponse = await fetchAPI<{ results: Array<{ slug: string }> }>(
-    API_ENDPOINTS.useCases.list()
-  );
-  
+// Fetch the list of use cases
+const useCasesResult = await fetchAPI<PaginatedResponse<UseCaseListItem>>(
+  API_ENDPOINTS.useCases.list()
+);
+
+if (useCasesResult.success && useCasesResult.data) {
   // Fetch demo profiles for each use case
-  const profilePromises = useCasesResponse.results.map(uc => 
+  const profilePromises = useCasesResult.data.results.map(uc => 
     fetchAPI<UseCaseDemoProfile>(API_ENDPOINTS.useCases.demoProfile(uc.slug))
   );
   
-  useCaseDemoProfiles = await Promise.all(profilePromises);
-} catch (error) {
-  console.error('Failed to fetch demo profiles:', error);
+  const profileResults = await Promise.all(profilePromises);
+  
+  // Extract successful profiles
+  useCaseDemoProfiles = profileResults
+    .filter(result => result.success && result.data)
+    .map(result => result.data!);
 }
 ---
 

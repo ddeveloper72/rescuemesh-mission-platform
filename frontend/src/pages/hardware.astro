@@ -1,0 +1,292 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getSensors, getFailures } from '../lib/api';
+import type { SensorPackage, FailureProfile } from '../lib/api';
+
+// Fetch data from Django API with graceful fallback
+const sensorsResult = await getSensors();
+const failuresResult = await getFailures();
+
+const sensors = sensorsResult.success && sensorsResult.data ? sensorsResult.data.results : [];
+const failures = failuresResult.success && failuresResult.data ? failuresResult.data.results : [];
+
+// Group sensors by type
+const sensorsByType = sensors.reduce((acc, sensor) => {
+  if (!acc[sensor.sensor_type]) {
+    acc[sensor.sensor_type] = [];
+  }
+  acc[sensor.sensor_type].push(sensor);
+  return acc;
+}, {} as Record<string, SensorPackage[]>);
+
+// Group failures by severity
+const failuresBySeverity = failures.reduce((acc, failure) => {
+  if (!acc[failure.severity]) {
+    acc[failure.severity] = [];
+  }
+  acc[failure.severity].push(failure);
+  return acc;
+}, {} as Record<string, FailureProfile[]>);
+
+// Define hardware states for agent/asset lifecycle
+const hardwareStates = [
+  { state: 'planned', description: 'Hardware planned for mission', color: 'bg-slate-700' },
+  { state: 'available', description: 'Ready for deployment', color: 'bg-blue-900' },
+  { state: 'deployed', description: 'Deployed in mission area', color: 'bg-cyan-900' },
+  { state: 'active', description: 'Actively operating', color: 'bg-green-900' },
+  { state: 'healthy', description: 'All systems nominal', color: 'bg-green-900' },
+  { state: 'degraded', description: 'Reduced performance', color: 'bg-yellow-900' },
+  { state: 'intermittent', description: 'Intermittent failures', color: 'bg-orange-900' },
+  { state: 'failed', description: 'Primary system failure', color: 'bg-red-900' },
+  { state: 'landed', description: 'Landed safely', color: 'bg-blue-900' },
+  { state: 'landed_relay', description: 'Landed and operating as relay', color: 'bg-purple-900' },
+  { state: 'abandoned', description: 'Left in terrain', color: 'bg-slate-700' },
+  { state: 'sacrificed', description: 'Intentionally sacrificed for mission', color: 'bg-red-900' },
+  { state: 'lost', description: 'Lost contact', color: 'bg-slate-900' },
+  { state: 'unknown', description: 'Status unknown', color: 'bg-slate-800' },
+  { state: 'recoverable', description: 'Recovery possible', color: 'bg-cyan-900' },
+  { state: 'recovered', description: 'Successfully recovered', color: 'bg-green-900' },
+  { state: 'nfc_readable', description: 'NFC/black-box readable', color: 'bg-blue-900' },
+  { state: 'powered_download_available', description: 'Can download with external power', color: 'bg-cyan-900' },
+  { state: 'black_box_recovered', description: 'Black-box data recovered', color: 'bg-purple-900' },
+];
+
+// Agent roles from demo data (fallback if Django unavailable)
+const agentRoles = [
+  { name: 'Relay Drone', type: 'drone', role: 'communications_relay', capabilities: ['relay', 'navigation', 'sacrifice_landing'] },
+  { name: 'Scout Drone', type: 'drone', role: 'primary_mapping', capabilities: ['3d_mapping', 'thermal_sensing', 'navigation'] },
+  { name: 'Detection Drone', type: 'drone', role: 'detection', capabilities: ['thermal_sensing', 'audio_detection', 'device_scanning'] },
+  { name: 'Static Relay Node', type: 'relay_node', role: 'base_relay', capabilities: ['relay'] },
+  { name: 'Amphibious Agent', type: 'amphibious', role: 'underwater_inspection', capabilities: ['sonar', 'navigation', 'water_quality'] },
+];
+---
+
+<BaseLayout 
+  title="Hardware Catalogue" 
+  description="RescueMesh hardware agents, sensors, failure modes, and recovery capabilities"
+>
+  <div class="py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+      
+      <!-- Header -->
+      <div class="mb-12">
+        <h1 class="text-4xl font-bold mb-4">Hardware Catalogue</h1>
+        <p class="text-xl text-slate-300 mb-6">
+          Agent platforms, sensor packages, failure profiles, and recovery capabilities for 
+          GPS-denied and hazardous environment missions.
+        </p>
+        
+        {!sensorsResult.success && (
+          <div class="bg-yellow-900 border border-yellow-700 rounded-lg p-4 mb-6">
+            <p class="text-yellow-200">
+              <strong>Note:</strong> Django API unavailable. Showing fallback data. 
+              Start Django backend to see live hardware catalog from the database.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <!-- Agent Roles Section -->
+      <section class="mb-16">
+        <h2 class="text-3xl font-bold mb-6">Agent Roles</h2>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {agentRoles.map(agent => (
+            <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+              <h3 class="text-xl font-semibold mb-2 text-rescue-400">{agent.name}</h3>
+              <div class="space-y-2 text-sm">
+                <p><strong class="text-slate-400">Type:</strong> {agent.type}</p>
+                <p><strong class="text-slate-400">Role:</strong> {agent.role}</p>
+                <div>
+                  <strong class="text-slate-400">Capabilities:</strong>
+                  <div class="flex flex-wrap gap-2 mt-1">
+                    {agent.capabilities.map(cap => (
+                      <span class="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs">
+                        {cap.replace(/_/g, ' ')}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- Sensor Packages Section -->
+      <section class="mb-16">
+        <h2 class="text-3xl font-bold mb-6">Sensor Packages</h2>
+        {sensors.length > 0 ? (
+          <div class="space-y-8">
+            {Object.entries(sensorsByType).map(([type, typeSensors]) => (
+              <div>
+                <h3 class="text-xl font-semibold mb-4 text-rescue-300 capitalize">
+                  {type.replace(/_/g, ' ')} Sensors
+                </h3>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {typeSensors.map(sensor => (
+                    <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+                      <h4 class="font-semibold mb-2">{sensor.display_name}</h4>
+                      <p class="text-sm text-slate-300 mb-2">{sensor.description}</p>
+                      <div class="text-xs space-y-1">
+                        <p><strong>Format:</strong> {sensor.data_format}</p>
+                        <p><strong>Use Case:</strong> {sensor.use_case_slug}</p>
+                        {sensor.failure_modes.length > 0 && (
+                          <div>
+                            <strong>Failure Modes:</strong>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                              {sensor.failure_modes.map(mode => (
+                                <span class="px-2 py-0.5 bg-red-900 text-red-300 rounded">
+                                  {mode.replace(/_/g, ' ')}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div class="bg-slate-800 rounded-lg p-8 border border-slate-700 text-center">
+            <p class="text-slate-400">No sensor data available. Start Django backend to load sensor catalogue.</p>
+          </div>
+        )}
+      </section>
+
+      <!-- Failure Profiles Section -->
+      <section class="mb-16">
+        <h2 class="text-3xl font-bold mb-6">Failure Profiles</h2>
+        {failures.length > 0 ? (
+          <div class="space-y-8">
+            {['critical', 'high', 'medium', 'low'].map(severity => {
+              const severityFailures = failuresBySeverity[severity] || [];
+              if (severityFailures.length === 0) return null;
+              
+              const severityColors = {
+                critical: 'border-red-700 bg-red-900/20',
+                high: 'border-orange-700 bg-orange-900/20',
+                medium: 'border-yellow-700 bg-yellow-900/20',
+                low: 'border-blue-700 bg-blue-900/20',
+              };
+              
+              return (
+                <div>
+                  <h3 class="text-xl font-semibold mb-4 capitalize">{severity} Severity</h3>
+                  <div class="grid md:grid-cols-2 gap-4">
+                    {severityFailures.map(failure => (
+                      <div class={`rounded-lg p-4 border ${severityColors[severity]}`}>
+                        <div class="flex items-start justify-between mb-2">
+                          <h4 class="font-semibold">{failure.name}</h4>
+                          <span class="px-2 py-1 bg-slate-800 rounded text-xs">
+                            {failure.affected_component}
+                          </span>
+                        </div>
+                        <p class="text-sm text-slate-300 mb-2">{failure.description}</p>
+                        <div class="text-xs space-y-1">
+                          <p><strong>Trigger:</strong> {failure.trigger_type.replace(/_/g, ' ')}</p>
+                          <p><strong>Use Case:</strong> {failure.use_case_title}</p>
+                          {failure.is_recoverable && (
+                            <p class="text-green-400"><strong>Recoverable</strong></p>
+                          )}
+                          {failure.operator_message && (
+                            <p class="text-slate-400 italic">"{failure.operator_message}"</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div class="bg-slate-800 rounded-lg p-8 border border-slate-700 text-center">
+            <p class="text-slate-400">No failure profiles available. Start Django backend to load failure catalogue.</p>
+          </div>
+        )}
+      </section>
+
+      <!-- Hardware States Section -->
+      <section class="mb-16">
+        <h2 class="text-3xl font-bold mb-6">Hardware State Model</h2>
+        <p class="text-slate-300 mb-6">
+          Every agent and asset progresses through lifecycle states. The platform tracks state changes,
+          records reasons, and maintains confidence scores for state transitions.
+        </p>
+        <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {hardwareStates.map(state => (
+            <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+              <div class="flex items-center gap-2 mb-2">
+                <div class={`w-3 h-3 rounded-full ${state.color}`}></div>
+                <span class="font-semibold text-sm">{state.state}</span>
+              </div>
+              <p class="text-xs text-slate-400">{state.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- NFC / Black-box Recovery Section -->
+      <section class="mb-16">
+        <h2 class="text-3xl font-bold mb-6">NFC / Black-box Recovery</h2>
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <p class="text-slate-300 mb-4">
+            Failed or abandoned assets may support near-field recovery interfaces for post-mission 
+            data retrieval and identity confirmation.
+          </p>
+          
+          <div class="grid md:grid-cols-2 gap-6">
+            <div>
+              <h3 class="font-semibold mb-2 text-rescue-300">NFC Identity Tag</h3>
+              <ul class="text-sm text-slate-300 space-y-1">
+                <li>• Asset ID and mission ID</li>
+                <li>• Last known position</li>
+                <li>• Final state snapshot</li>
+                <li>• Failure reason</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold mb-2 text-rescue-300">Black-box Recovery</h3>
+              <ul class="text-sm text-slate-300 space-y-1">
+                <li>• Mission event log</li>
+                <li>• Map fragments</li>
+                <li>• Sensor observations</li>
+                <li>• Priority detections</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="mt-4 p-4 bg-slate-900 rounded border border-slate-700">
+            <p class="text-sm text-slate-400">
+              <strong class="text-rescue-400">Recovery Workflow:</strong> 
+              Tap asset with NFC reader → Read identity → Check black-box available → 
+              Apply external power if needed → Download full logs → Mark as recovered
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Integration Note -->
+      <section>
+        <div class="bg-blue-900/20 border border-blue-700 rounded-lg p-6">
+          <h3 class="font-semibold mb-2 text-blue-300">Django API Integration</h3>
+          <p class="text-sm text-slate-300">
+            This page fetches hardware data from the Django backend API. If Django is offline, 
+            fallback data is displayed. Available endpoints:
+          </p>
+          <ul class="text-sm text-slate-400 mt-2 space-y-1">
+            <li>• <code class="text-rescue-400">GET /api/v1/sensors/</code> - Sensor packages</li>
+            <li>• <code class="text-rescue-400">GET /api/v1/failures/</code> - Failure profiles</li>
+            <li>• <code class="text-rescue-400">GET /api/v1/outputs/outputs/</code> - Expected outputs</li>
+            <li>• <code class="text-rescue-400">GET /api/v1/usecases/</code> - Use case templates</li>
+          </ul>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</BaseLayout>
