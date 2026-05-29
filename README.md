@@ -298,9 +298,10 @@ MIT License - See [LICENSE](LICENSE) file for details
 ## Contact
 
 For questions, suggestions, or collaboration:
-- 📧 Email: [your-email]
-- 🐛 Issues: [GitHub Issues](https://github.com/your-org/rescuemesh/issues)
-- 📖 Docs: [Documentation](docs/)
+- [LinkedIn](https://www.linkedin.com/in/duncanfalconer/)
+- [GitHub](https://github.com/ddeveloper72)
+- [GitHub Issues](https://github.com/ddeveloper72/rescuemesh-mission-platform/issues)
+- [Documentation](docs/)
 
 ---
 
