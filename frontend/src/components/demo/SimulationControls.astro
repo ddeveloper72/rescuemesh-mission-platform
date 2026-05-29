@@ -1,0 +1,103 @@
+---
+import type { SimulationClock } from '../../types/simulation';
+
+interface Props {
+  clock: SimulationClock;
+  missionPk: string;
+}
+
+const { clock, missionPk } = Astro.props;
+
+// TODO: These controls need client-side JavaScript to function
+// Will need to be converted to a React/Preact/Svelte island for interactivity
+---
+
+<div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-2xl font-bold">Simulation Controls</h2>
+    <div class="text-sm text-slate-400">
+      {clock.is_running ? (
+        <span class="px-3 py-1 bg-green-900 text-green-300 rounded-full">● Running</span>
+      ) : (
+        <span class="px-3 py-1 bg-slate-700 text-slate-300 rounded-full">⏸ Paused</span>
+      )}
+    </div>
+  </div>
+
+  <!-- Mission Clock -->
+  <div class="mb-6">
+    <div class="text-center">
+      <div class="text-5xl font-bold font-mono text-rescue-400 mb-2">
+        {Math.floor(clock.elapsed_seconds / 60).toString().padStart(2, '0')}:{(clock.elapsed_seconds % 60).toFixed(0).padStart(2, '0')}
+      </div>
+      <div class="text-sm text-slate-400">
+        Mission Elapsed Time ({clock.speed_multiplier}x speed)
+      </div>
+    </div>
+  </div>
+
+  <!-- Control Buttons -->
+  <div class="grid grid-cols-3 gap-3 mb-4">
+    <button
+      data-action="start"
+      data-mission-pk={missionPk}
+      class="px-4 py-2 bg-green-700 hover:bg-green-600 text-white rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed sim-control-btn"
+      disabled={clock.is_running}
+    >
+      ▶ Start
+    </button>
+    
+    <button
+      data-action="pause"
+      data-mission-pk={missionPk}
+      class="px-4 py-2 bg-yellow-700 hover:bg-yellow-600 text-white rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed sim-control-btn"
+      disabled={!clock.is_running}
+    >
+      ⏸ Pause
+    </button>
+    
+    <button
+      data-action="reset"
+      data-mission-pk={missionPk}
+      class="px-4 py-2 bg-red-700 hover:bg-red-600 text-white rounded font-semibold transition-colors sim-control-btn"
+    >
+      ↻ Reset
+    </button>
+  </div>
+
+  <!-- Speed Selector -->
+  <div>
+    <label for="speed-select" class="block text-sm font-semibold mb-2">
+      Simulation Speed
+    </label>
+    <select
+      id="speed-select"
+      data-mission-pk={missionPk}
+      class="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded text-white focus:outline-none focus:border-rescue-400"
+    >
+      <option value="0.5" selected={clock.speed_multiplier === 0.5}>0.5x (Slow)</option>
+      <option value="1" selected={clock.speed_multiplier === 1}>1x (Real-time)</option>
+      <option value="2" selected={clock.speed_multiplier === 2}>2x</option>
+      <option value="5" selected={clock.speed_multiplier === 5}>5x</option>
+      <option value="10" selected={clock.speed_multiplier === 10}>10x (Fast)</option>
+      <option value="20" selected={clock.speed_multiplier === 20}>20x (Very Fast)</option>
+    </select>
+  </div>
+
+  <!-- Info -->
+  <div class="mt-4 p-3 bg-slate-900 rounded text-xs text-slate-400">
+    <p><strong>Status:</strong> Deterministic simulation (no WebSockets yet)</p>
+    <p><strong>Polling:</strong> Page refreshes state every 2 seconds</p>
+  </div>
+</div>
+
+<script>
+  // TODO: Convert this to a proper interactive island (React/Preact/Svelte)
+  // For now, this is a static representation
+  // Client-side interactivity will be added in the next iteration
+  
+  // Placeholder for future implementation:
+  // - Start/pause/reset buttons will call API endpoints
+  // - Speed selector will update simulation speed
+  // - Auto-refresh will poll state endpoint every 1-2 seconds
+</script>

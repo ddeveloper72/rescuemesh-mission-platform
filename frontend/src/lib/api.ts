@@ -215,3 +215,154 @@ export async function getOutputs(): Promise<APIResult<PaginatedResponse<Expected
 export async function getAgentRoles(): Promise<APIResult<PaginatedResponse<AgentRoleTemplate>>> {
   return fetchAPI<PaginatedResponse<AgentRoleTemplate>>(API_ENDPOINTS.agentRoles.list());
 }
+
+/**
+ * Mission simulation functions
+ */
+import type {
+  MissionSimulationState,
+  SpeedControlRequest,
+  SpeedControlResponse,
+  SimulationControlResponse
+} from '../types/simulation';
+
+/**
+ * Get the current mission simulation state.
+ * 
+ * @param missionPk - Mission primary key (UUID)
+ * @returns Current simulation state including agents, sensors, map, events, AI analysis
+ */
+export async function getMissionState(
+  missionPk: string
+): Promise<APIResult<MissionSimulationState>> {
+  return fetchAPI<MissionSimulationState>(
+    `${API_BASE_URL}/missions/${missionPk}/state/`
+  );
+}
+
+/**
+ * Start the mission simulation.
+ * 
+ * @param missionPk - Mission primary key (UUID)
+ * @returns Control response with status
+ */
+export async function startSimulation(
+  missionPk: string
+): Promise<APIResult<SimulationControlResponse>> {
+  const response = await fetch(`${API_BASE_URL}/missions/${missionPk}/start-sim/`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    return {
+      success: false,
+      error: `Start simulation failed: ${response.status} ${response.statusText}`,
+    };
+  }
+
+  const data = await response.json();
+  return {
+    success: true,
+    data,
+  };
+}
+
+/**
+ * Pause the mission simulation.
+ * 
+ * @param missionPk - Mission primary key (UUID)
+ * @returns Control response with status
+ */
+export async function pauseSimulation(
+  missionPk: string
+): Promise<APIResult<SimulationControlResponse>> {
+  const response = await fetch(`${API_BASE_URL}/missions/${missionPk}/pause-sim/`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    return {
+      success: false,
+      error: `Pause simulation failed: ${response.status} ${response.statusText}`,
+    };
+  }
+
+  const data = await response.json();
+  return {
+    success: true,
+    data,
+  };
+}
+
+/**
+ * Reset the mission simulation.
+ * 
+ * @param missionPk - Mission primary key (UUID)
+ * @returns Control response with status
+ */
+export async function resetSimulation(
+  missionPk: string
+): Promise<APIResult<SimulationControlResponse>> {
+  const response = await fetch(`${API_BASE_URL}/missions/${missionPk}/reset-sim/`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    return {
+      success: false,
+      error: `Reset simulation failed: ${response.status} ${response.statusText}`,
+    };
+  }
+
+  const data = await response.json();
+  return {
+    success: true,
+    data,
+  };
+}
+
+/**
+ * Set simulation speed multiplier.
+ * 
+ * @param missionPk - Mission primary key (UUID)
+ * @param speed - Speed multiplier (0.5, 1.0, 2.0, 5.0, 10.0, 20.0)
+ * @returns Speed control response
+ */
+export async function setSimulationSpeed(
+  missionPk: string,
+  speed: number
+): Promise<APIResult<SpeedControlResponse>> {
+  const response = await fetch(`${API_BASE_URL}/missions/${missionPk}/speed-sim/`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ speed_multiplier: speed }),
+  });
+
+  if (!response.ok) {
+    return {
+      success: false,
+      error: `Set speed failed: ${response.status} ${response.statusText}`,
+    };
+  }
+
+  const data = await response.json();
+  return {
+    success: true,
+    data,
+  };
+}
