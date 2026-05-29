@@ -102,17 +102,19 @@ class UseCaseTemplateDetailSerializer(serializers.ModelSerializer):
 
 class DemoProfileSerializer(serializers.Serializer):
     """
-    Serializer for demo profile matching frontend TypeScript structure.
+    Serializer for demo profile matching frontend TypeScript UseCaseDemoProfile interface.
     This aggregates all use case data into the format expected by the demo dashboard.
     """
     slug = serializers.CharField()
     title = serializers.CharField()
     priority = serializers.CharField()
-    objective = serializers.CharField()
+    missionId = serializers.CharField()
+    status = serializers.CharField()
+    missionObjective = serializers.CharField()
     terrain = serializers.DictField()
     agents = serializers.ListField()
     expectedFailures = serializers.ListField()
     expectedOutputs = serializers.ListField()
-    simulationParams = serializers.DictField()
+    simulation = serializers.DictField()
     timeline = serializers.ListField()
     aiAnalyst = serializers.DictField()

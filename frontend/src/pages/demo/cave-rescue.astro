@@ -1,9 +1,19 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import DemoDashboard from '../../../components/demo/DemoDashboard.astro';
-import { getDemoProfileBySlug } from '../../../data/useCaseDemoProfiles';
+import { API_ENDPOINTS, fetchAPI } from '../../../config/api';
+import type { UseCaseDemoProfile } from '../../../types/demo';
 
-const profile = getDemoProfileBySlug('cave-rescue');
+let profile: UseCaseDemoProfile | null = null;
+
+try {
+  profile = await fetchAPI<UseCaseDemoProfile>(
+    API_ENDPOINTS.useCases.demoProfile('cave-rescue')
+  );
+} catch (error) {
+  console.error('Failed to fetch demo profile:', error);
+  return Astro.redirect('/404');
+}
 
 if (!profile) {
   return Astro.redirect('/404');

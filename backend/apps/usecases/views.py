@@ -88,17 +88,16 @@ class UseCaseTemplateViewSet(viewsets.ReadOnlyModelViewSet):
             for output in use_case.expected_outputs.all().order_by('-display_priority')
         ]
         
-        # Build simulation params
+        # Build simulation params (matching frontend TypeScript structure)
+        comms_risk = self._assess_comms_risk(terrain)
         simulation_params = {
             'mapType': self._get_map_type(use_case.slug),
             'environmentTags': terrain.hazards if terrain else [],
-            'riskAssessment': {
-                'communications': self._assess_comms_risk(terrain),
-                'battery': 'High',  # Default
-                'sensors': 'Medium'  # Default
-            },
-            'duration': '15-20 minutes',
-            'missionConfidence': 0.75
+            'defaultConfidence': 0.75,
+            'communicationRisk': comms_risk.lower(),
+            'batteryRisk': 'high' if use_case.priority == 'life_safety' else 'medium',
+            'sensorRisk': 'medium',
+            'missionDurationMinutes': 18
         }
         
         # Build timeline (sample - would be generated from simulation)
@@ -111,27 +110,29 @@ class UseCaseTemplateViewSet(viewsets.ReadOnlyModelViewSet):
             ai_analyst = {
                 'role': first_prompt.role,
                 'promptSummary': first_prompt.description,
-                'findings': [],
+                'expectedFindings': [],
                 'humanReviewRequired': first_prompt.requires_human_review
             }
         
-        # Build response
+        # Build response (matching frontend TypeScript UseCaseDemoProfile interface)
         profile_data = {
             'slug': use_case.slug,
             'title': use_case.title,
             'priority': use_case.priority,
-            'objective': use_case.objective,
+            'missionId': f'mission-demo-{use_case.slug[:8]}',
+            'status': 'Simulated',
+            'missionObjective': use_case.objective,
             'terrain': {
                 'type': terrain.terrain_type if terrain else '',
-                'gpsStatus': terrain.gps_status if terrain else 'unknown',
+                'gps': 'denied' if terrain and terrain.gps_status == 'denied' else 'available',
+                'communications': comms_risk,
                 'lighting': terrain.lighting_conditions if terrain else '',
-                'hazards': terrain.hazards if terrain else [],
-                'accessibility': terrain.accessibility if terrain else ''
+                'hazards': terrain.hazards if terrain else []
             },
             'agents': agents,
             'expectedFailures': expected_failures,
             'expectedOutputs': expected_outputs,
-            'simulationParams': simulation_params,
+            'simulation': simulation_params,
             'timeline': timeline,
             'aiAnalyst': ai_analyst
         }
@@ -152,12 +153,12 @@ class UseCaseTemplateViewSet(viewsets.ReadOnlyModelViewSet):
     def _assess_comms_risk(self, terrain):
         """Assess communications risk from terrain"""
         if not terrain:
-            return 'Medium'
+            return 'medium'
         if terrain.gps_status == 'denied':
-            return 'Critical'
+            return 'severe'
         elif terrain.gps_status == 'degraded':
-            return 'High'
-        return 'Medium'
+            return 'high'
+        return 'low'
     
     def _generate_sample_timeline(self, use_case, agents):
         """Generate sample timeline events"""

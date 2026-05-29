@@ -1,6 +1,26 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { useCaseDemoProfiles } from '../../data/useCaseDemoProfiles';
+import { API_ENDPOINTS, fetchAPI } from '../../config/api';
+import type { UseCaseDemoProfile } from '../../types/demo';
+
+// Fetch all demo profiles from the API
+let useCaseDemoProfiles: UseCaseDemoProfile[] = [];
+
+try {
+  // Fetch the list of use cases
+  const useCasesResponse = await fetchAPI<{ results: Array<{ slug: string }> }>(
+    API_ENDPOINTS.useCases.list()
+  );
+  
+  // Fetch demo profiles for each use case
+  const profilePromises = useCasesResponse.results.map(uc => 
+    fetchAPI<UseCaseDemoProfile>(API_ENDPOINTS.useCases.demoProfile(uc.slug))
+  );
+  
+  useCaseDemoProfiles = await Promise.all(profilePromises);
+} catch (error) {
+  console.error('Failed to fetch demo profiles:', error);
+}
 ---
 
 <BaseLayout title="Mission Demos" description="Interactive simulated missions for RescueMesh use cases">
