@@ -8,8 +8,8 @@ interface Props {
 
 const { clock, missionPk } = Astro.props;
 
-// TODO: These controls need client-side JavaScript to function
-// Will need to be converted to a React/Preact/Svelte island for interactivity
+// NOTE: Client-side interactivity powered by simulation-manager.ts
+// Interactive controls added via script in pages that use this component
 ---
 
 <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
@@ -92,12 +92,8 @@ const { clock, missionPk } = Astro.props;
 </div>
 
 <script>
-  // TODO: Convert this to a proper interactive island (React/Preact/Svelte)
-  // For now, this is a static representation
-  // Client-side interactivity will be added in the next iteration
-  
-  // Placeholder for future implementation:
-  // - Start/pause/reset buttons will call API endpoints
-  // - Speed selector will update simulation speed
-  // - Auto-refresh will poll state endpoint every 1-2 seconds
+  // NOTE: Interactive controls are implemented in simulation-manager.ts
+  // Pages using this component should initialize the simulation manager:
+  //   import { initializeSimulation } from '../../lib/simulation-manager';
+  //   const manager = initializeSimulation(MISSION_PK);
 </script>
