@@ -3,15 +3,20 @@
  * 
  * Renders and updates SVG tactical maps based on mission state.
  * Use-case specific layouts for different simulation types.
+ * 
+ * Now includes animated agent movement, progressive sector reveal,
+ * and time-based detection markers.
  */
 
 import type { MissionSimulationState, Agent } from '../types/simulation';
 
 interface MapConfig {
-  sectors: Sector[];
+  sectors: TacticalSector[];
   hazardZones?: HazardZone[];
   width: number;
   height: number;
+  routes?: TacticalAgentRoute[];
+  detectionMarkers?: DetectionMarker[];
 }
 
 interface Sector {
@@ -24,6 +29,11 @@ interface Sector {
   type?: 'accessible' | 'blocked' | 'void' | 'water' | 'hazard';
 }
 
+interface TacticalSector extends Sector {
+  revealAt: number; // simulated elapsed seconds
+  confidenceAtReveal?: number;
+}
+
 interface HazardZone {
   id: string;
   x: number;
@@ -32,21 +42,104 @@ interface HazardZone {
   type: 'thermal' | 'gas' | 'electrical' | 'pressure';
 }
 
+export interface TacticalWaypoint {
+  time: number; // simulated elapsed seconds
+  x: number;
+  y: number;
+  sectorId: string;
+  label?: string;
+}
+
+export interface TacticalAgentRoute {
+  agentId: string;
+  startsAt: number;
+  route: TacticalWaypoint[];
+  leavesAssetBehind?: {
+    time: number;
+    assetId: string;
+    label: string;
+    x: number;
+    y: number;
+    state: 'relay' | 'static_sensor' | 'failed' | 'nfc_readable' | 'sacrificed';
+  };
+}
+
+export interface DetectionMarker {
+  id: string;
+  type: 'thermal' | 'audio' | 'gas' | 'electrical' | 'pressure';
+  x: number;
+  y: number;
+  appearsAt: number; // simulated elapsed seconds
+  label: string;
+  icon: string;
+}
+
 /**
  * Industrial Inspection Map Configuration
  */
 export function getIndustrialInspectionMapConfig(): MapConfig {
+  const sectors: TacticalSector[] = [
+    { id: 'entry', label: 'Entry Point', x: 50, y: 50, width: 120, height: 80, type: 'accessible', revealAt: 0 },
+    { id: 'plant-room', label: 'Plant Room', x: 50, y: 150, width: 180, height: 120, type: 'accessible', revealAt: 30 },
+    { id: 'pipe-gallery', label: 'Pipe Gallery', x: 250, y: 150, width: 200, height: 120, type: 'accessible', revealAt: 90 },
+    { id: 'duct-section', label: 'Duct Section', x: 470, y: 150, width: 150, height: 120, type: 'accessible', revealAt: 150 },
+    { id: 'control-cabinet', label: 'Control Cabinet', x: 640, y: 150, width: 110, height: 120, type: 'accessible', revealAt: 210 },
+    { id: 'tank-interior', label: 'Tank Interior', x: 250, y: 290, width: 200, height: 110, type: 'hazard', revealAt: 120 },
+  ];
+
+  const routes: TacticalAgentRoute[] = [
+    {
+      agentId: 'inspector',  // Matches "Industrial Inspector" and "inspection-drone-a"
+      startsAt: 30,
+      route: [
+        { time: 30, x: 110, y: 90, sectorId: 'entry', label: 'Start' },
+        { time: 60, x: 140, y: 210, sectorId: 'plant-room', label: 'Plant Room inspection' },
+        { time: 120, x: 350, y: 210, sectorId: 'pipe-gallery', label: 'Pipe Gallery scan' },
+        { time: 180, x: 545, y: 210, sectorId: 'duct-section', label: 'Duct Section' },
+        { time: 240, x: 695, y: 210, sectorId: 'control-cabinet', label: 'Control Cabinet' },
+      ]
+    },
+    {
+      agentId: 'monitor',  // Matches "Plant Room Monitor"
+      startsAt: 120,
+      route: [
+        { time: 120, x: 110, y: 90, sectorId: 'entry', label: 'Deploy' },
+        { time: 130, x: 140, y: 210, sectorId: 'plant-room', label: 'Station' },
+      ],
+      leavesAssetBehind: {
+        time: 130,
+        assetId: 'plant-room-monitor',
+        label: 'Monitoring Node',
+        x: 140,
+        y: 210,
+        state: 'static_sensor'
+      }
+    },
+    {
+      agentId: 'thermal',  // Matches "Thermal Specialist"
+      startsAt: 240,
+      route: [
+        { time: 240, x: 110, y: 90, sectorId: 'entry', label: 'Thermal deploy' },
+        { time: 270, x: 350, y: 210, sectorId: 'pipe-gallery', label: 'Thermal scan' },
+        { time: 330, x: 545, y: 210, sectorId: 'duct-section', label: 'Hotspot investigation' },
+        { time: 390, x: 695, y: 210, sectorId: 'control-cabinet', label: 'Critical thermal' },
+      ]
+    },
+  ];
+
+  const detectionMarkers: DetectionMarker[] = [
+    { id: 'thermal-pipe-joint', type: 'thermal', x: 380, y: 240, appearsAt: 150, label: 'Pipe Joint A3', icon: '🔥' },
+    { id: 'gas-methane', type: 'gas', x: 320, y: 180, appearsAt: 180, label: 'Methane', icon: '☁' },
+    { id: 'pressure-leak', type: 'pressure', x: 520, y: 200, appearsAt: 390, label: 'Pressure leak', icon: '💨' },
+    { id: 'thermal-critical', type: 'thermal', x: 680, y: 190, appearsAt: 450, label: 'Control Cabinet C2', icon: '🔥' },
+  ];
+
   return {
     width: 800,
     height: 450,
-    sectors: [
-      { id: 'entry', label: 'Entry Point', x: 50, y: 50, width: 120, height: 80, type: 'accessible' },
-      { id: 'plant-room', label: 'Plant Room', x: 50, y: 150, width: 180, height: 120, type: 'accessible' },
-      { id: 'pipe-gallery', label: 'Pipe Gallery', x: 250, y: 150, width: 200, height: 120, type: 'accessible' },
-      { id: 'duct-section', label: 'Duct Section', x: 470, y: 150, width: 150, height: 120, type: 'accessible' },
-      { id: 'control-cabinet', label: 'Control Cabinet', x: 640, y: 150, width: 110, height: 120, type: 'accessible' },
-      { id: 'tank-interior', label: 'Tank Interior', x: 250, y: 290, width: 200, height: 110, type: 'hazard' },
-    ]
+    sectors,
+    routes,
+    detectionMarkers,
   };
 }
 
@@ -54,16 +147,72 @@ export function getIndustrialInspectionMapConfig(): MapConfig {
  * Collapsed Building Map Configuration
  */
 export function getCollapsedBuildingMapConfig(): MapConfig {
+  const sectors: TacticalSector[] = [
+    { id: 'entry', label: 'Entry', x: 50, y: 200, width: 100, height: 80, type: 'accessible', revealAt: 0 },
+    { id: 'corridor-a', label: 'Corridor A', x: 170, y: 200, width: 150, height: 80, type: 'accessible', revealAt: 30 },
+    { id: 'void-1', label: 'Void Space 1', x: 340, y: 140, width: 180, height: 120, type: 'void', revealAt: 120 },
+    { id: 'corridor-b', label: 'Corridor B', x: 340, y: 280, width: 180, height: 100, type: 'accessible', revealAt: 90 },
+    { id: 'collapsed', label: 'Collapsed Section', x: 540, y: 180, width: 200, height: 140, type: 'blocked', revealAt: 180 },
+  ];
+
+  const routes: TacticalAgentRoute[] = [
+    {
+      agentId: 'scout',  // Matches "Scout Drone A"
+      startsAt: 30,
+      route: [
+        { time: 30, x: 100, y: 240, sectorId: 'entry', label: 'Start' },
+        { time: 60, x: 245, y: 240, sectorId: 'corridor-a', label: 'Mapping' },
+        { time: 120, x: 430, y: 200, sectorId: 'void-1', label: 'Void exploration' },
+        { time: 240, x: 430, y: 200, sectorId: 'void-1', label: 'Deep scan' },
+      ]
+    },
+    {
+      agentId: 'thermal',  // Matches "Thermal/Audio Drone"
+      startsAt: 60,
+      route: [
+        { time: 60, x: 100, y: 240, sectorId: 'entry', label: 'Deploy' },
+        { time: 120, x: 245, y: 240, sectorId: 'corridor-a', label: 'Scan' },
+        { time: 210, x: 430, y: 330, sectorId: 'corridor-b', label: 'Detection' },
+        { time: 360, x: 430, y: 330, sectorId: 'corridor-b', label: 'Relay position' },
+      ],
+      leavesAssetBehind: {
+        time: 360,
+        assetId: 'thermal-audio-drone',
+        label: 'Relay (Battery critical)',
+        x: 430,
+        y: 330,
+        state: 'relay'
+      }
+    },
+    {
+      agentId: 'relay',  // Matches "Relay Drone"
+      startsAt: 90,
+      route: [
+        { time: 90, x: 100, y: 240, sectorId: 'entry', label: 'Deploy relay' },
+        { time: 150, x: 200, y: 240, sectorId: 'corridor-a', label: 'Relay position' },
+      ],
+      leavesAssetBehind: {
+        time: 150,
+        assetId: 'relay-drone',
+        label: 'Sacrificed Relay',
+        x: 200,
+        y: 240,
+        state: 'sacrificed'
+      }
+    },
+  ];
+
+  const detectionMarkers: DetectionMarker[] = [
+    { id: 'thermal-void', type: 'thermal', x: 450, y: 200, appearsAt: 180, label: 'Heat signature', icon: '🔥' },
+    { id: 'audio-voice', type: 'audio', x: 470, y: 220, appearsAt: 240, label: 'Voice-like audio', icon: '🔊' },
+  ];
+
   return {
     width: 800,
     height: 450,
-    sectors: [
-      { id: 'entry', label: 'Entry', x: 50, y: 200, width: 100, height: 80, type: 'accessible' },
-      { id: 'corridor-a', label: 'Corridor A', x: 170, y: 200, width: 150, height: 80, type: 'accessible' },
-      { id: 'void-1', label: 'Void Space 1', x: 340, y: 140, width: 180, height: 120, type: 'void' },
-      { id: 'corridor-b', label: 'Corridor B', x: 340, y: 280, width: 180, height: 100, type: 'accessible' },
-      { id: 'collapsed', label: 'Collapsed Section', x: 540, y: 180, width: 200, height: 140, type: 'blocked' },
-    ]
+    sectors,
+    routes,
+    detectionMarkers,
   };
 }
 
@@ -71,16 +220,38 @@ export function getCollapsedBuildingMapConfig(): MapConfig {
  * Cave Rescue Map Configuration
  */
 export function getCaveRescueMapConfig(): MapConfig {
+  const sectors: TacticalSector[] = [
+    { id: 'entrance', label: 'Entrance Chamber', x: 50, y: 180, width: 140, height: 120, type: 'accessible', revealAt: 0 },
+    { id: 'main-tunnel', label: 'Main Tunnel', x: 210, y: 200, width: 180, height: 80, type: 'accessible', revealAt: 60 },
+    { id: 'narrow', label: 'Narrow Passage', x: 410, y: 220, width: 100, height: 40, type: 'hazard', revealAt: 180 },
+    { id: 'junction', label: 'Junction Chamber', x: 530, y: 160, width: 140, height: 140, type: 'accessible', revealAt: 240 },
+    { id: 'deep-squeeze', label: 'Deep Squeeze', x: 690, y: 200, width: 60, height: 80, type: 'blocked', revealAt: 360 },
+  ];
+
+  const routes: TacticalAgentRoute[] = [
+    {
+      agentId: 'scout',  // Matches "Cave Scout Drone"
+      startsAt: 30,
+      route: [
+        { time: 30, x: 120, y: 240, sectorId: 'entrance', label: 'Start' },
+        { time: 90, x: 300, y: 240, sectorId: 'main-tunnel', label: 'Tunnel mapping' },
+        { time: 210, x: 460, y: 240, sectorId: 'narrow', label: 'Narrow passage' },
+        { time: 300, x: 600, y: 230, sectorId: 'junction', label: 'Junction' },
+        { time: 390, x: 720, y: 240, sectorId: 'deep-squeeze', label: 'Deep exploration' },
+      ]
+    },
+  ];
+
+  const detectionMarkers: DetectionMarker[] = [
+    { id: 'audio-tap', type: 'audio', x: 630, y: 250, appearsAt: 330, label: 'Tapping sounds', icon: '🔊' },
+  ];
+
   return {
     width: 800,
     height: 450,
-    sectors: [
-      { id: 'entrance', label: 'Entrance Chamber', x: 50, y: 180, width: 140, height: 120, type: 'accessible' },
-      { id: 'main-tunnel', label: 'Main Tunnel', x: 210, y: 200, width: 180, height: 80, type: 'accessible' },
-      { id: 'narrow', label: 'Narrow Passage', x: 410, y: 220, width: 100, height: 40, type: 'hazard' },
-      { id: 'junction', label: 'Junction Chamber', x: 530, y: 160, width: 140, height: 140, type: 'accessible' },
-      { id: 'deep-squeeze', label: 'Deep Squeeze', x: 690, y: 200, width: 60, height: 80, type: 'blocked' },
-    ]
+    sectors,
+    routes,
+    detectionMarkers,
   };
 }
 
@@ -88,15 +259,37 @@ export function getCaveRescueMapConfig(): MapConfig {
  * Flooded Structure Map Configuration
  */
 export function getFloodedStructureMapConfig(): MapConfig {
+  const sectors: TacticalSector[] = [
+    { id: 'entry-pool', label: 'Entry Pool (surface)', x: 50, y: 50, width: 150, height: 80, type: 'water', revealAt: 0 },
+    { id: 'flooded-corridor', label: 'Flooded Corridor', x: 220, y: 50, width: 200, height: 150, type: 'water', revealAt: 60 },
+    { id: 'plant-room', label: 'Plant Room (shallow)', x: 440, y: 50, width: 150, height: 150, type: 'water', revealAt: 120 },
+    { id: 'submerged-zone', label: 'Submerged Zone', x: 220, y: 220, width: 370, height: 180, type: 'hazard', revealAt: 180 },
+  ];
+
+  const routes: TacticalAgentRoute[] = [
+    {
+      agentId: 'amphibious',  // Matches "Amphibious Explorer"
+      startsAt: 30,
+      route: [
+        { time: 30, x: 125, y: 90, sectorId: 'entry-pool', label: 'Surface start' },
+        { time: 90, x: 320, y: 125, sectorId: 'flooded-corridor', label: 'Shallow scan' },
+        { time: 180, x: 515, y: 125, sectorId: 'plant-room', label: 'Plant room' },
+        { time: 270, x: 405, y: 310, sectorId: 'submerged-zone', label: 'Deep dive' },
+      ]
+    },
+  ];
+
+  const detectionMarkers: DetectionMarker[] = [
+    { id: 'electrical-hazard', type: 'electrical', x: 280, y: 150, appearsAt: 120, label: 'Electrical hazard', icon: '⚡' },
+    { id: 'thermal-above-water', type: 'thermal', x: 480, y: 80, appearsAt: 210, label: 'Thermal anomaly', icon: '🔥' },
+  ];
+
   return {
     width: 800,
     height: 450,
-    sectors: [
-      { id: 'entry-pool', label: 'Entry Pool (surface)', x: 50, y: 50, width: 150, height: 80, type: 'water' },
-      { id: 'flooded-corridor', label: 'Flooded Corridor', x: 220, y: 50, width: 200, height: 150, type: 'water' },
-      { id: 'plant-room', label: 'Plant Room (shallow)', x: 440, y: 50, width: 150, height: 150, type: 'water' },
-      { id: 'submerged-zone', label: 'Submerged Zone', x: 220, y: 220, width: 370, height: 180, type: 'hazard' },
-    ]
+    sectors,
+    routes,
+    detectionMarkers,
   };
 }
 
@@ -119,15 +312,82 @@ export function getMapConfig(useCase: string): MapConfig {
 }
 
 /**
- * Render sectors on the map
+ * Interpolate position between two waypoints based on current time
  */
-export function renderSectors(config: MapConfig) {
+function interpolatePosition(
+  current: TacticalWaypoint,
+  next: TacticalWaypoint,
+  currentTime: number
+): { x: number; y: number } {
+  const timeDelta = next.time - current.time;
+  if (timeDelta <= 0) return { x: current.x, y: current.y };
+  
+  const progress = Math.min(1, (currentTime - current.time) / timeDelta);
+  
+  return {
+    x: current.x + (next.x - current.x) * progress,
+    y: current.y + (next.y - current.y) * progress,
+  };
+}
+
+/**
+ * Get agent position at specific time from route
+ */
+function getAgentPositionAtTime(route: TacticalAgentRoute, time: number): { x: number; y: number; stopped: boolean } | null {
+  if (time < route.startsAt) {
+    return null; // Agent hasn't started yet
+  }
+
+  // Check if agent leaves asset behind and should stop
+  if (route.leavesAssetBehind && time >= route.leavesAssetBehind.time) {
+    return {
+      x: route.leavesAssetBehind.x,
+      y: route.leavesAssetBehind.y,
+      stopped: true,
+    };
+  }
+
+  // Find current position on route
+  const waypoints = route.route;
+  
+  // If before first waypoint, stay at start
+  if (time < waypoints[0].time) {
+    return { x: waypoints[0].x, y: waypoints[0].y, stopped: false };
+  }
+
+  // If after last waypoint, stay at end
+  if (time >= waypoints[waypoints.length - 1].time) {
+    const last = waypoints[waypoints.length - 1];
+    return { x: last.x, y: last.y, stopped: false };
+  }
+
+  // Find the two waypoints to interpolate between
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    const current = waypoints[i];
+    const next = waypoints[i + 1];
+    
+    if (time >= current.time && time < next.time) {
+      return { ...interpolatePosition(current, next, time), stopped: false };
+    }
+  }
+
+  // Fallback to last position
+  const last = waypoints[waypoints.length - 1];
+  return { x: last.x, y: last.y, stopped: false };
+}
+
+/**
+ * Render sectors on the map with progressive reveal
+ */
+export function renderSectors(config: MapConfig, currentTime: number) {
   const sectorsGroup = document.getElementById('map-sectors');
   if (!sectorsGroup) return;
 
   sectorsGroup.innerHTML = config.sectors.map(sector => {
     let fillColor = 'rgba(71, 85, 105, 0.3)'; // slate-600 default
     let strokeColor = 'rgba(148, 163, 184, 0.5)'; // slate-400
+    let opacity = currentTime >= sector.revealAt ? 1.0 : 0.15;
+    let labelOpacity = currentTime >= sector.revealAt ? 1.0 : 0.3;
 
     if (sector.type === 'blocked') {
       fillColor = 'rgba(153, 27, 27, 0.3)'; // red-900
@@ -143,6 +403,8 @@ export function renderSectors(config: MapConfig) {
       strokeColor = 'rgba(252, 211, 77, 0.5)'; // yellow-300
     }
 
+    const label = currentTime >= sector.revealAt ? sector.label : '???';
+
     return `
       <rect 
         id="sector-${sector.id}"
@@ -155,6 +417,7 @@ export function renderSectors(config: MapConfig) {
         stroke="${strokeColor}"
         stroke-width="2"
         rx="4"
+        opacity="${opacity}"
       />
       <text 
         x="${sector.x + sector.width / 2}" 
@@ -162,33 +425,124 @@ export function renderSectors(config: MapConfig) {
         text-anchor="middle"
         dominant-baseline="middle"
         class="text-xs"
-      >${sector.label}</text>
+        opacity="${labelOpacity}"
+      >${label}</text>
     `;
   }).join('');
 }
 
 /**
- * Update agent markers on the map
+ * Update agent markers on the map using route-based positioning
  */
-export function updateAgents(agents: Agent[], config: MapConfig) {
+export function updateAgents(agents: Agent[], config: MapConfig, currentTime: number) {
   const agentsGroup = document.getElementById('map-agents');
   if (!agentsGroup) return;
 
-  agentsGroup.innerHTML = agents.map(agent => {
-    // Map agent location to sector
-    const location = agent.location_label.toLowerCase();
-    let sector = config.sectors.find(s => 
-      location.includes(s.id) || location.includes(s.label.toLowerCase())
-    );
-    
-    if (!sector) {
-      // Default to first sector if no match
-      sector = config.sectors[0];
+  const elements: string[] = [];
+
+  // Render path trails for each route
+  if (config.routes) {
+    config.routes.forEach(route => {
+      const pos = getAgentPositionAtTime(route, currentTime);
+      if (!pos) return;
+
+      // Draw path trail from start to current position
+      const pathPoints: string[] = [];
+      for (const waypoint of route.route) {
+        if (waypoint.time <= currentTime) {
+          pathPoints.push(`${waypoint.x},${waypoint.y}`);
+        }
+      }
+
+      if (pathPoints.length > 1) {
+        elements.push(`
+          <polyline
+            points="${pathPoints.join(' ')}"
+            fill="none"
+            stroke="rgba(148, 163, 184, 0.3)"
+            stroke-width="2"
+            stroke-dasharray="5,5"
+          />
+        `);
+      }
+    });
+  }
+
+  // Render left-behind assets
+  if (config.routes) {
+    config.routes.forEach(route => {
+      if (route.leavesAssetBehind && currentTime >= route.leavesAssetBehind.time) {
+        const asset = route.leavesAssetBehind;
+        let color = '#a855f7'; // purple-500 for relay/sacrificed
+        if (asset.state === 'failed') color = '#ef4444'; // red-500
+        if (asset.state === 'static_sensor') color = '#3b82f6'; // blue-500
+
+        elements.push(`
+          <g class="asset-marker">
+            <rect
+              x="${asset.x - 6}"
+              y="${asset.y - 6}"
+              width="12"
+              height="12"
+              fill="${color}"
+              stroke="#1e293b"
+              stroke-width="2"
+              rx="2"
+            />
+            <title>${asset.label}</title>
+          </g>
+        `);
+      }
+    });
+  }
+
+  // Render active agents
+  agents.forEach(agent => {
+    let pos: { x: number; y: number; stopped: boolean } | null = null;
+
+    // Try to find position from route with flexible matching
+    if (config.routes) {
+      const agentIdLower = agent.agent_id.toLowerCase();
+      const agentNameLower = agent.name.toLowerCase();
+      
+      const route = config.routes.find(r => {
+        const routeIdLower = r.agentId.toLowerCase();
+        return (
+          agentIdLower.includes(routeIdLower) || 
+          routeIdLower.includes(agentIdLower) ||
+          agentNameLower.includes(routeIdLower) ||
+          routeIdLower.includes(agentNameLower) ||
+          // Try word matching
+          agentNameLower.split(/\s+/).some(word => routeIdLower.includes(word)) ||
+          routeIdLower.split(/[-_\s]+/).some(word => agentNameLower.includes(word))
+        );
+      });
+      
+      if (route) {
+        pos = getAgentPositionAtTime(route, currentTime);
+      }
     }
 
-    // Position agent within sector (with some randomness for multiple agents)
-    const x = sector.x + sector.width / 2 + (Math.random() - 0.5) * (sector.width * 0.3);
-    const y = sector.y + sector.height / 2 + (Math.random() - 0.5) * (sector.height * 0.3);
+    // If no route found, use fallback position
+    if (!pos) {
+      const location = agent.location_label.toLowerCase();
+      let sector = config.sectors.find(s => 
+        location.includes(s.id) || location.includes(s.label.toLowerCase())
+      );
+      
+      if (!sector) {
+        sector = config.sectors[0];
+      }
+
+      pos = {
+        x: sector.x + sector.width / 2,
+        y: sector.y + sector.height / 2,
+        stopped: false,
+      };
+    }
+
+    // Don't render if agent hasn't started yet
+    if (!pos) return;
 
     // Color based on agent state
     let color = '#10b981'; // green-500 for active/healthy
@@ -200,11 +554,41 @@ export function updateAgents(agents: Agent[], config: MapConfig) {
       color = '#a855f7'; // purple-500
     }
 
-    return `
+    // Add scan pulse for active agents
+    const showPulse = !pos.stopped && 
+      (agent.state === 'healthy' || agent.state === 'active' || agent.state === 'degraded');
+
+    elements.push(`
       <g id="agent-${agent.agent_id}" class="agent-marker">
+        ${showPulse ? `
+          <circle 
+            cx="${pos.x}" 
+            cy="${pos.y}" 
+            r="12"
+            fill="none"
+            stroke="${color}"
+            stroke-width="1.5"
+            opacity="0.4"
+          >
+            <animate
+              attributeName="r"
+              from="8"
+              to="16"
+              dur="2s"
+              repeatCount="indefinite"
+            />
+            <animate
+              attributeName="opacity"
+              from="0.6"
+              to="0"
+              dur="2s"
+              repeatCount="indefinite"
+            />
+          </circle>
+        ` : ''}
         <circle 
-          cx="${x}" 
-          cy="${y}" 
+          cx="${pos.x}" 
+          cy="${pos.y}" 
           r="8"
           fill="${color}"
           stroke="#1e293b"
@@ -212,47 +596,67 @@ export function updateAgents(agents: Agent[], config: MapConfig) {
         />
         <title>${agent.name} - ${agent.state} (Battery: ${agent.battery_percent}%)</title>
       </g>
-    `;
-  }).join('');
-}
-
-/**
- * Render hazard markers (thermal, gas, etc.)
- */
-export function renderHazards(state: MissionSimulationState) {
-  const hazardsGroup = document.getElementById('map-hazards');
-  if (!hazardsGroup) return;
-
-  const markers: string[] = [];
-
-  // Thermal anomalies
-  state.sensors.thermal_anomalies.forEach((thermal, index) => {
-    const x = 100 + index * 150; // Simple layout
-    const y = 100;
-    markers.push(`
-      <g class="hazard-marker">
-        <circle 
-          cx="${x}" 
-          cy="${y}" 
-          r="12"
-          fill="rgba(239, 68, 68, 0.3)"
-          stroke="#ef4444"
-          stroke-width="2"
-        />
-        <text x="${x}" y="${y + 25}" text-anchor="middle" class="text-xs">🔥</text>
-      </g>
     `);
   });
 
-  hazardsGroup.innerHTML = markers.join('');
+  agentsGroup.innerHTML = elements.join('');
 }
+
+/**
+ * Render detection markers (thermal, gas, etc.) - only after their appear time
+ */
+export function renderDetectionMarkers(config: MapConfig, currentTime: number) {
+  const markersGroup = document.getElementById('map-hazards');
+  if (!markersGroup) return;
+
+  const markers: string[] = [];
+
+  if (config.detectionMarkers) {
+    config.detectionMarkers.forEach(marker => {
+      if (currentTime >= marker.appearsAt) {
+        let color = '#ef4444'; // red for thermal
+        if (marker.type === 'gas') color = '#eab308'; // yellow
+        if (marker.type === 'electrical') color = '#3b82f6'; // blue
+        if (marker.type === 'audio') color = '#8b5cf6'; // purple
+        if (marker.type === 'pressure') color = '#06b6d4'; // cyan
+
+        markers.push(`
+          <g class="detection-marker">
+            <circle 
+              cx="${marker.x}" 
+              cy="${marker.y}" 
+              r="14"
+              fill="rgba(239, 68, 68, 0.2)"
+              stroke="${color}"
+              stroke-width="2"
+            />
+            <text 
+              x="${marker.x}" 
+              y="${marker.y + 22}" 
+              text-anchor="middle" 
+              class="text-xs"
+              style="font-size: 16px;"
+            >${marker.icon}</text>
+            <title>${marker.label}</title>
+          </g>
+        `);
+      }
+    });
+  }
+
+  markersGroup.innerHTML = markers.join('');
+}
+
+// Store the last config for use in updates
+let lastConfig: MapConfig | null = null;
 
 /**
  * Initialize tactical map
  */
 export function initializeTacticalMap(useCase: string) {
   const config = getMapConfig(useCase);
-  renderSectors(config);
+  lastConfig = config;
+  renderSectors(config, 0);
   
   return config;
 }
@@ -261,6 +665,15 @@ export function initializeTacticalMap(useCase: string) {
  * Update tactical map with new mission state
  */
 export function updateTacticalMap(state: MissionSimulationState, config: MapConfig) {
-  updateAgents(state.agents, config);
-  renderHazards(state);
+  // Get current elapsed time from mission state
+  const currentTime = state.simulation_clock?.elapsed_seconds || 0;
+  
+  // Update sectors with progressive reveal
+  renderSectors(config, currentTime);
+  
+  // Update agents with route-based positioning
+  updateAgents(state.agents, config, currentTime);
+  
+  // Update detection markers
+  renderDetectionMarkers(config, currentTime);
 }
