@@ -1,0 +1,107 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Architecture" description="Technical architecture of the RescueMesh Mission Platform">
+  <div class="py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-5xl mx-auto">
+      <h1 class="text-4xl font-bold mb-8">Architecture</h1>
+      
+      <section class="mb-12">
+        <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Overview</h2>
+        <p class="text-slate-300 mb-4">
+          The RescueMesh Mission Platform is built as a <strong>simulation-first</strong> system, 
+          not requiring real drone hardware for MVP features.
+        </p>
+        <p class="text-slate-300 mb-4">
+          The architecture is <strong>agent-based</strong>, treating drones, ground robots, relay nodes, 
+          sensors, and even AI analyst services as cooperative agents within a mission framework.
+        </p>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Technology Stack</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h3 class="text-xl font-semibold mb-3">Frontend</h3>
+            <ul class="space-y-2 text-slate-300">
+              <li>• <strong>Astro</strong> - Static site generation with islands architecture</li>
+              <li>• <strong>Tailwind CSS</strong> - Utility-first styling</li>
+              <li>• <strong>TypeScript</strong> - Type-safe interactive components</li>
+            </ul>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h3 class="text-xl font-semibold mb-3">Backend</h3>
+            <ul class="space-y-2 text-slate-300">
+              <li>• <strong>Django</strong> - Domain models and business logic</li>
+              <li>• <strong>Django REST Framework</strong> - RESTful APIs</li>
+              <li>• <strong>PostgreSQL + PostGIS</strong> - Spatial data (future)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Core Concepts</h2>
+        
+        <div class="space-y-6">
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h3 class="text-lg font-semibold mb-2">Agent</h3>
+            <p class="text-slate-300">
+              Any autonomous or semi-autonomous entity participating in a mission: drones, ground robots, 
+              relay nodes, sensors, base stations, or AI analyst services.
+            </p>
+          </div>
+
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h3 class="text-lg font-semibold mb-2">Asset</h3>
+            <p class="text-slate-300">
+              Physical or logical components: complete agents, attached sensors, dropped relays, 
+              NFC-readable modules, or black-box recovery devices.
+            </p>
+          </div>
+
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h3 class="text-lg font-semibold mb-2">Mission Event</h3>
+            <p class="text-slate-300">
+              Timestamped, structured records of state changes, detections, failures, AI analyses, 
+              and operator decisions during a mission.
+            </p>
+          </div>
+
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h3 class="text-lg font-semibold mb-2">Failure Modeling</h3>
+            <p class="text-slate-300">
+              Intentional simulation of hardware degradation, intermittent failures, battery drain, 
+              sensor noise, and communication loss to demonstrate resilience strategies.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Data Flow</h2>
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <ol class="space-y-3 text-slate-300">
+            <li><strong>1. Mission Setup:</strong> Define use case, terrain, agents, and failure scenarios</li>
+            <li><strong>2. Simulation Engine:</strong> Generate deterministic mission events with optional randomness</li>
+            <li><strong>3. Event Stream:</strong> Telemetry, detections, state changes flow to dashboard</li>
+            <li><strong>4. AI Prompt Generation:</strong> Structured prompts sent to AI analysts for recommendations</li>
+            <li><strong>5. Human Review:</strong> Operator reviews AI suggestions and makes decisions</li>
+            <li><strong>6. Mission Report:</strong> Timeline, outcomes, and after-action analysis exported</li>
+          </ol>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Future Extensions</h2>
+        <ul class="space-y-2 text-slate-300">
+          <li>• <strong>Django Channels:</strong> Real-time WebSocket telemetry streams</li>
+          <li>• <strong>3D Visualization:</strong> Three.js or CesiumJS for point cloud viewing</li>
+          <li>• <strong>ROS 2 Integration:</strong> Real robotics data replay from MCAP logs</li>
+          <li>• <strong>Multi-mission Management:</strong> Concurrent missions and fleet coordination</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</BaseLayout>

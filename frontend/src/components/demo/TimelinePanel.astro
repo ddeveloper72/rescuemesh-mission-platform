@@ -29,7 +29,7 @@ const eventTypeConfig = {
     <!-- Timeline events -->
     <div class="space-y-4">
       {profile.timeline.map((event, index) => {
-        const config = eventTypeConfig[event.eventType];
+        const config = eventTypeConfig[event.type || 'mission-start'];
         
         return (
           <div class="relative pl-14">
@@ -67,6 +67,6 @@ const eventTypeConfig = {
   </div>
 
   <div class="mt-4 text-xs text-slate-500 italic">
-    TODO: Replace with live event stream from Django API endpoint /api/v1/missions/{id}/timeline
+    TODO: Replace with live event stream from Django API endpoint /api/v1/missions/[id]/timeline
   </div>
 </div>
