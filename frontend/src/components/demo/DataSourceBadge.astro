@@ -1,0 +1,34 @@
+---
+/**
+ * Data Source Badge
+ * 
+ * Shows whether the dashboard is using live Django simulation data
+ * or local static fallback data.
+ */
+
+interface Props {
+  source: 'django' | 'fallback';
+  className?: string;
+}
+
+const { source, className = '' } = Astro.props;
+
+const isDjango = source === 'django';
+const badgeClass = isDjango 
+  ? 'bg-green-900 text-green-300 border-green-700'
+  : 'bg-slate-700 text-slate-300 border-slate-600';
+---
+
+<div class={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border ${badgeClass} ${className}`}>
+  {isDjango ? (
+    <>
+      <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+      <span>Live Django Simulation</span>
+    </>
+  ) : (
+    <>
+      <span class="w-2 h-2 bg-slate-400 rounded-full"></span>
+      <span>Local Fallback Data</span>
+    </>
+  )}
+</div>

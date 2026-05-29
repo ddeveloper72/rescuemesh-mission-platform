@@ -1,10 +1,29 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SimulationControls from '../../components/demo/SimulationControls.astro';
+import DataSourceBadge from '../../components/demo/DataSourceBadge.astro';
 
-// Mission PK for the collapsed building search demo
-// This was created by the create_demo_missions management command
-const MISSION_PK = 'c5d0ffd4-2fc8-4b45-841d-88ec93f27e8e';
+// Get use case from query parameter or default to collapsed-building-search
+const url = new URL(Astro.request.url);
+const useCaseParam = url.searchParams.get('use_case') || 'collapsed-building-search';
+
+// Mission PKs for each use case (from create_demo_missions command)
+const MISSION_PKS = {
+  'collapsed-building-search': 'c5d0ffd4-2fc8-4b45-841d-88ec93f27e8e',
+  'cave-rescue': '063218cf-7662-4675-8337-edabd204b793',
+  'flooded-structure': '2c6ccd68-85f6-49ac-b28d-6f5358bc6a68',
+  'industrial-inspection': '7d9f9ad9-2144-4c89-8ef5-08bcf7c41916'
+};
+
+const MISSION_TITLES = {
+  'collapsed-building-search': 'Collapsed Building Search',
+  'cave-rescue': 'Cave Rescue',
+  'flooded-structure': 'Flooded Structure',
+  'industrial-inspection': 'Industrial Inspection'
+};
+
+const MISSION_PK = MISSION_PKS[useCaseParam] || MISSION_PKS['collapsed-building-search'];
+const MISSION_TITLE = MISSION_TITLES[useCaseParam] || MISSION_TITLES['collapsed-building-search'];
 
 // Initial simulation clock (will be updated by polling)
 const initialClock = {
@@ -16,18 +35,48 @@ const initialClock = {
 ---
 
 <BaseLayout 
-  title="Live Simulation Demo - Collapsed Building Search" 
+  title={`Live Simulation Demo - ${MISSION_TITLE}`}
   description="Real-time mission simulation with live updates from Django API"
 >
-  <div class="min-h-screen bg-slate-900 text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen bg-slate-900 text-slate-100 py-8 px-4 sm:px-6 lg:px-8" data-mission-pk={MISSION_PK}>
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="mb-8">
         <a href="/demo" class="text-rescue-400 hover:text-rescue-300 text-sm mb-4 inline-block">
           ← Back to Demo Overview
         </a>
-        <h1 class="text-4xl font-bold mb-2">Live Simulation Demo</h1>
-        <p class="text-slate-400">Collapsed Building Search - Real-time updates</p>
+        <div class="flex items-start justify-between">
+          <div>
+            <h1 class="text-4xl font-bold mb-2">Live Simulation Demo</h1>
+            <p class="text-slate-400">{MISSION_TITLE} - Real-time updates</p>
+          </div>
+          <DataSourceBadge source="django" />
+        </div>
+      </div>
+
+      <!-- Use Case Selector -->
+      <div class="mb-6 bg-slate-800 rounded-lg p-4 border border-slate-700">
+        <label for="use-case-selector" class="block text-sm font-semibold mb-2">
+          Select Use Case:
+        </label>
+        <select
+          id="use-case-selector"
+          class="w-full md:w-auto px-4 py-2 bg-slate-700 border border-slate-600 rounded text-white focus:outline-none focus:border-rescue-400"
+          onchange="window.location.href = '/demo/live?use_case=' + this.value"
+        >
+          <option value="collapsed-building-search" selected={useCaseParam === 'collapsed-building-search'}>
+            Collapsed Building Search
+          </option>
+          <option value="cave-rescue" selected={useCaseParam === 'cave-rescue'}>
+            Cave Rescue
+          </option>
+          <option value="flooded-structure" selected={useCaseParam === 'flooded-structure'}>
+            Flooded Structure
+          </option>
+          <option value="industrial-inspection" selected={useCaseParam === 'industrial-inspection'}>
+            Industrial Inspection
+          </option>
+        </select>
       </div>
 
       <!-- Simulation Controls -->
@@ -140,8 +189,8 @@ const initialClock = {
 <script>
   import { initializeSimulation } from '../../lib/simulation-manager';
   
-  // Mission PK for the demo
-  const MISSION_PK = 'c5d0ffd4-2fc8-4b45-841d-88ec93f27e8e';
+  // Mission PK from Astro props (passed via data attribute)
+  const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
   
   // Initialize simulation manager
   const manager = initializeSimulation(MISSION_PK);
