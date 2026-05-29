@@ -77,7 +77,7 @@ const { useCase } = Astro.props;
 
     <div class="text-center bg-gradient-to-r from-rescue-800 to-rescue-900 rounded-lg p-8 border border-rescue-700">
       <h3 class="text-2xl font-bold mb-4">Experience This Mission</h3>
-      <a href="/missions/demo" class="inline-block bg-rescue-500 hover:bg-rescue-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors">
+      <a href={`/demo/${useCase.slug}`} class="inline-block bg-rescue-500 hover:bg-rescue-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors">
         Launch Demo
       </a>
     </div>
