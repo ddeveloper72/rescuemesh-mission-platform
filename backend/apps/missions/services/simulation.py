@@ -1472,6 +1472,52 @@ def simulate_flooded_structure(
         human_review = True
         ai_confidence = 0.73
     
+    # Terrain reconstruction with progressive sector reveal
+    # All agents start from entry-pool (surface)
+    terrain_sectors = [
+        {
+            'sector_id': 'entry-pool',
+            'reveal_at': 0,
+            'scan_rules': [
+                {'time': 0, 'agent_id': 'surface-relay'},  # Surface relay knows entry
+                {'time': 30, 'agent_id': 'amp-unit-a'},  # Amphibious unit starts here
+                {'time': 120, 'agent_id': 'drone-b'},  # Aerial scout starts here
+            ]
+        },
+        {
+            'sector_id': 'flooded-corridor',
+            'reveal_at': 60,
+            'scan_rules': [
+                {'time': 60, 'agent_id': 'amp-unit-a'},  # Amphibious unit discovers corridor
+                {'time': 120, 'agent_id': 'amp-unit-a'},  # Amphibious unit maps corridor
+            ]
+        },
+        {
+            'sector_id': 'plant-room',
+            'reveal_at': 120,
+            'scan_rules': [
+                {'time': 120, 'agent_id': 'amp-unit-a'},  # Amphibious unit discovers plant room
+                {'time': 240, 'agent_id': 'drone-b'},  # Aerial scout scans from above
+            ]
+        },
+        {
+            'sector_id': 'submerged-zone',
+            'reveal_at': 180,
+            'scan_rules': [
+                {'time': 180, 'agent_id': 'amp-unit-a'},  # Amphibious unit deep dive
+                {'time': 240, 'agent_id': 'env-sensor-1'},  # Water quality sensor deployed
+            ],
+            'is_hazardous': True,
+            'hazard_detected_at': 240
+        },
+    ]
+    
+    terrain_reconstruction = calculate_terrain_reconstruction(
+        terrain_sectors,
+        agents,
+        elapsed_seconds
+    )
+    
     ai_analysis = {
         'summary': ai_summary,
         'priority_findings': priority_findings,
@@ -1497,7 +1543,8 @@ def simulate_flooded_structure(
         'map': map_data,
         'sensors': sensors,
         'events': events,
-        'ai_analysis': ai_analysis
+        'ai_analysis': ai_analysis,
+        'terrain_reconstruction': terrain_reconstruction
     }
 
 
