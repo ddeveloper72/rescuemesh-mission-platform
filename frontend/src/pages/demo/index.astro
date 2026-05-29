@@ -1,0 +1,114 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { useCaseDemoProfiles } from '../../data/useCaseDemoProfiles';
+---
+
+<BaseLayout title="Mission Demos" description="Interactive simulated missions for RescueMesh use cases">
+  <div class="py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-5xl mx-auto">
+      <div class="mb-8">
+        <a href="/" class="text-rescue-400 hover:text-rescue-300">← Back to Home</a>
+      </div>
+
+      <h1 class="text-4xl font-bold mb-4">Mission Demos</h1>
+      <p class="text-xl text-slate-300 mb-12">
+        Experience simulated missions for each RescueMesh use case. Each demo showcases agent behavior,
+        sensor outputs, failure scenarios, and AI analysis in a data-driven dashboard.
+      </p>
+
+      <div class="grid md:grid-cols-2 gap-6 mb-12">
+        {useCaseDemoProfiles.map(profile => (
+          <a 
+            href={`/demo/${profile.slug}`}
+            class="bg-slate-800 rounded-lg p-6 border border-slate-700 hover:border-rescue-400 transition-colors group"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <h2 class="text-xl font-semibold group-hover:text-rescue-400">{profile.title}</h2>
+              <span class="px-2 py-1 bg-blue-900 text-blue-300 rounded text-xs border border-blue-700">
+                {profile.status}
+              </span>
+            </div>
+            
+            <p class="text-sm text-alert-400 font-semibold mb-3">
+              Priority: {profile.priority}
+            </p>
+            
+            <p class="text-slate-300 mb-4 text-sm line-clamp-2">
+              {profile.missionObjective}
+            </p>
+            
+            <div class="flex items-center justify-between text-xs text-slate-400 mb-4">
+              <div>{profile.agents.length} Agents</div>
+              <div>{profile.simulation.missionDurationMinutes} min</div>
+              <div>{Math.round(profile.simulation.defaultConfidence * 100)}% confidence</div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 mb-4">
+              {profile.simulation.environmentTags.slice(0, 3).map(tag => (
+                <span class="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs">
+                  {tag}
+                </span>
+              ))}
+            </div>
+            
+            <div class="flex items-center justify-between">
+              <div class="text-xs">
+                <div class="text-slate-500 mb-1">Risk Level</div>
+                <div class="flex gap-2">
+                  <span class="px-2 py-0.5 bg-alert-900 text-alert-300 rounded text-xs">
+                    Comms: {profile.simulation.communicationRisk}
+                  </span>
+                </div>
+              </div>
+              <span class="text-rescue-400 text-sm font-medium">Launch Demo →</span>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      <div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
+        <h3 class="text-lg font-semibold mb-3">Demo Features</h3>
+        <ul class="space-y-2 text-slate-300 text-sm">
+          <li class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-rescue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Real-time mission dashboard with map, agent status, and telemetry</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-rescue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Simulated hardware failures and tactical decisions</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-rescue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Mission timeline with confidence-scored events</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-rescue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>AI analyst findings with human review requirements</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-rescue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Mission report with asset recovery and safety recommendations</span>
+          </li>
+        </ul>
+
+        <div class="mt-4 p-4 bg-blue-900 bg-opacity-20 border border-blue-700 rounded">
+          <p class="text-sm text-blue-200">
+            <strong>Note:</strong> These are simulated missions using local TypeScript data.
+            Future integration with Django will provide dynamic mission templates, real-time telemetry streams,
+            and persistent mission history.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

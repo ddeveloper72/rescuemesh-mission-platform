@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import DemoDashboard from '../../../components/demo/DemoDashboard.astro';
+import { getDemoProfileBySlug } from '../../../data/useCaseDemoProfiles';
+
+const profile = getDemoProfileBySlug('flooded-structure');
+
+if (!profile) {
+  return Astro.redirect('/404');
+}
+---
+
+<BaseLayout title={`${profile.title} - Demo`} description={profile.missionObjective}>
+  <div class="py-8 px-4 sm:px-6 lg:px-8 bg-slate-900">
+    <div class="max-w-7xl mx-auto mb-6">
+      <a href="/demo" class="text-rescue-400 hover:text-rescue-300 text-sm">← Back to Demo Overview</a>
+    </div>
+  </div>
+  <DemoDashboard profile={profile} />
+</BaseLayout>
