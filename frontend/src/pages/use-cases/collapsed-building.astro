@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import UseCaseDetail from '../../components/usecases/UseCaseDetail.astro';
+import { getUseCaseBySlug } from '../../data/usecases';
+
+const useCase = getUseCaseBySlug('collapsed-building');
+
+if (!useCase) {
+  return Astro.redirect('/404');
+}
+---
+
+<BaseLayout title={useCase.title} description={useCase.missionObjective}>
+  <UseCaseDetail useCase={useCase} />
+</BaseLayout>
