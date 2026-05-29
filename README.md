@@ -51,6 +51,42 @@ Generate structured prompts for AI analysis with:
 - Confidence scoring
 - Human review requirements
 
+## Demo Routes
+
+The platform provides two types of demo experiences:
+
+### Static Mission Profiles (`/demo/{use-case}`)
+Static overview pages showing mission objectives, agent configurations, sensor packages, risk assessments, and expected outputs using local TypeScript fallback data. These pages provide:
+- Mission planning information
+- Hardware and sensor specifications
+- Environmental hazards and constraints
+- Tactical approach recommendations
+- Expected detection types
+
+Example routes:
+- `/demo/collapsed-building-search`
+- `/demo/cave-rescue`
+- `/demo/flooded-structure`
+- `/demo/industrial-inspection`
+
+### Live Django Simulations (`/demo/live/{use-case}`)
+Interactive simulation pages connected to the Django API showing real-time mission state changes via HTTP polling. These pages provide:
+- Live agent telemetry (battery, signal, location)
+- Mission event timeline
+- Map coverage and confidence updates
+- Sensor detection events
+- Hardware failure scenarios
+- AI analyst summaries
+- Simulation controls (start, pause, reset, speed)
+
+Example routes:
+- `/demo/live/collapsed-building-search`
+- `/demo/live/cave-rescue`
+- `/demo/live/flooded-structure`
+- `/demo/live/industrial-inspection`
+
+The live simulations use **deterministic state calculation** - each mission progresses the same way for a given elapsed time, making scenarios reproducible. No WebSockets or real-time infrastructure required yet.
+
 ## Technology Stack
 
 ### Frontend

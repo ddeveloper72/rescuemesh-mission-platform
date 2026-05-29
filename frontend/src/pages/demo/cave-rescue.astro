@@ -19,9 +19,21 @@ const profile = result.data;
 <BaseLayout title={`${profile.title} - Demo`} description={profile.missionObjective}>
   <div class="py-8 px-4 sm:px-6 lg:px-8 bg-slate-900">
     <div class="max-w-7xl mx-auto mb-6">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between mb-4">
         <a href="/demo" class="text-rescue-400 hover:text-rescue-300 text-sm">← Back to Demo Overview</a>
         <DataSourceBadge source="fallback" />
+      </div>
+      
+      <!-- Live Simulation CTA -->
+      <div class="bg-gradient-to-r from-rescue-900 to-rescue-800 border border-rescue-700 rounded-lg p-6 text-center">
+        <h2 class="text-xl font-bold mb-2">Want to see this mission in action?</h2>
+        <p class="text-slate-300 mb-4 text-sm">This is a static mission profile. Open the live simulation to see real-time agent telemetry, changing mission state, sensor events, and AI analysis.</p>
+        <a 
+          href="/demo/live/cave-rescue" 
+          class="inline-block bg-rescue-500 hover:bg-rescue-600 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+        >
+          Open Live Simulation →
+        </a>
       </div>
     </div>
   </div>

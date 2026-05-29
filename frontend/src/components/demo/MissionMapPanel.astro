@@ -45,7 +45,8 @@ const failedAgents = profile.agents.filter(a =>
     </div>
   </div>
 
-  <!-- Map Placeholder - Awaiting live 3D map rendering integration -->
+  <!-- Map Placeholder - Static profile view -->
+  <!-- Live telemetry map available in simulation mode -->
   <div class="relative bg-slate-900 rounded-lg border-2 border-slate-700 aspect-video flex items-center justify-center overflow-hidden">
     <!-- Background pattern -->
     <div class="absolute inset-0 opacity-10">
@@ -105,6 +106,6 @@ const failedAgents = profile.agents.filter(a =>
   </div>
 
   <div class="mt-4 text-xs text-slate-500 italic">
-    Awaiting: Interactive 3D map integration (Three.js or CesiumJS with real-time agent positions)
+    Static profile view - Open live simulation to view agent movement and map coverage updates
   </div>
 </div>
