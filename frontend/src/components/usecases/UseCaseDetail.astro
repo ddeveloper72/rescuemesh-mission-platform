@@ -1,0 +1,85 @@
+---
+import type { UseCaseProfile } from '../types/usecases';
+
+interface Props {
+  useCase: UseCaseProfile;
+}
+
+const { useCase } = Astro.props;
+---
+
+<div class="py-16 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-5xl mx-auto">
+    <div class="mb-8">
+      <a href="/" class="text-rescue-400 hover:text-rescue-300">← Back to Home</a>
+    </div>
+
+    <h1 class="text-4xl font-bold mb-4">{useCase.title}</h1>
+    <p class="text-xl text-slate-300 mb-8">
+      Priority: <span class="text-alert-400 font-semibold">{useCase.priority}</span>
+    </p>
+
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Mission Objective</h2>
+      <p class="text-slate-300">
+        {useCase.missionObjective}
+      </p>
+    </section>
+
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Terrain Characteristics</h2>
+      <ul class="space-y-2 text-slate-300">
+        <li>• <strong>Type:</strong> {useCase.terrainCharacteristics.type}</li>
+        <li>• <strong>GPS:</strong> {useCase.terrainCharacteristics.gps}</li>
+        <li>• <strong>Communications:</strong> {useCase.terrainCharacteristics.communications}</li>
+        <li>• <strong>Lighting:</strong> {useCase.terrainCharacteristics.lighting}</li>
+        <li>• <strong>Hazards:</strong> {useCase.terrainCharacteristics.hazards.join(', ')}</li>
+      </ul>
+    </section>
+
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Recommended Agents</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        {useCase.recommendedAgents.map(agent => (
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h3 class="text-lg font-semibold mb-2">{agent.name}</h3>
+            <p class="text-slate-400 mb-3">{agent.role}</p>
+            <ul class="text-sm text-slate-300 space-y-1">
+              {agent.capabilities.map(capability => (
+                <li>• {capability}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Expected Failures</h2>
+      <div class="space-y-4">
+        {useCase.expectedFailures.map(failure => (
+          <div class="bg-slate-800 border-l-4 border-alert-500 rounded p-4">
+            <h4 class="font-semibold text-alert-400 mb-1">{failure.name}</h4>
+            <p class="text-slate-300 text-sm">{failure.description}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Expected Outputs</h2>
+      <ul class="space-y-2 text-slate-300">
+        {useCase.expectedOutputs.map(output => (
+          <li>• <strong>{output.name}:</strong> {output.description}</li>
+        ))}
+      </ul>
+    </section>
+
+    <div class="text-center bg-gradient-to-r from-rescue-800 to-rescue-900 rounded-lg p-8 border border-rescue-700">
+      <h3 class="text-2xl font-bold mb-4">Experience This Mission</h3>
+      <a href="/missions/demo" class="inline-block bg-rescue-500 hover:bg-rescue-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors">
+        Launch Demo
+      </a>
+    </div>
+  </div>
+</div>
