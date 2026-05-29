@@ -127,6 +127,22 @@ const initialClock = {
           </div>
         </div>
 
+        <!-- Atmosphere Sensors Panel -->
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <h2 class="text-2xl font-bold mb-4">Atmosphere Sensors</h2>
+          <p class="text-xs text-slate-400 mb-4">Confined space atmosphere monitoring for survivor detection</p>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Oxygen (O₂):</span>
+              <span id="o2-reading" class="font-semibold text-slate-500">--</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Carbon Dioxide (CO₂):</span>
+              <span id="co2-reading" class="font-semibold text-slate-500">--</span>
+            </div>
+          </div>
+        </div>
+
         <!-- AI Analysis Panel -->
         <div class="bg-slate-800 rounded-lg p-6 border border-slate-700 lg:col-span-2">
           <h2 class="text-2xl font-bold mb-4">AI Analysis</h2>
@@ -253,6 +269,36 @@ const initialClock = {
       
       // Update tactical map
       updateTacticalMap(state, mapConfig);
+      
+      // Update atmosphere sensors
+      if (state.sensors && state.sensors.environmental_readings) {
+        const readings = state.sensors.environmental_readings;
+        
+        const getStatusClass = (status: string) => {
+          switch (status) {
+            case 'normal': return 'text-green-400';
+            case 'watch': return 'text-yellow-400';
+            case 'warning': return 'text-orange-400';
+            case 'critical': return 'text-red-400';
+            default: return 'text-slate-300';
+          }
+        };
+        
+        const o2El = document.getElementById('o2-reading');
+        const co2El = document.getElementById('co2-reading');
+        
+        const o2Reading = readings.find((r: any) => r.sensor_type === 'oxygen');
+        if (o2Reading && o2El) {
+          o2El.className = `font-semibold ${getStatusClass(o2Reading.status)}`;
+          o2El.textContent = `${o2Reading.value}${o2Reading.unit}`;
+        }
+        
+        const co2Reading = readings.find((r: any) => r.sensor_type === 'carbon_dioxide');
+        if (co2Reading && co2El) {
+          co2El.className = `font-semibold ${getStatusClass(co2Reading.status)}`;
+          co2El.textContent = `${co2Reading.value}${co2Reading.unit}`;
+        }
+      }
       
       // Update debug panel
       const debugEl = document.getElementById('debug-json');

@@ -218,32 +218,66 @@ export function getCollapsedBuildingMapConfig(): MapConfig {
 
 /**
  * Cave Rescue Map Configuration
+ * 
+ * Per claude_prompt09.md: All agents must start from entrance-chamber.
+ * No agent should spawn directly in Narrow Passage or Deep Squeeze.
+ * Routes show progression: Entrance → Main Tunnel → Narrow Passage → Junction → Deep Squeeze
  */
 export function getCaveRescueMapConfig(): MapConfig {
   const sectors: TacticalSector[] = [
-    { id: 'entrance', label: 'Entrance Chamber', x: 50, y: 180, width: 140, height: 120, type: 'accessible', revealAt: 0 },
+    { id: 'entrance-chamber', label: 'Entrance Chamber', x: 50, y: 180, width: 140, height: 120, type: 'accessible', revealAt: 0 },
     { id: 'main-tunnel', label: 'Main Tunnel', x: 210, y: 200, width: 180, height: 80, type: 'accessible', revealAt: 60 },
-    { id: 'narrow', label: 'Narrow Passage', x: 410, y: 220, width: 100, height: 40, type: 'hazard', revealAt: 180 },
-    { id: 'junction', label: 'Junction Chamber', x: 530, y: 160, width: 140, height: 140, type: 'accessible', revealAt: 240 },
-    { id: 'deep-squeeze', label: 'Deep Squeeze', x: 690, y: 200, width: 60, height: 80, type: 'blocked', revealAt: 360 },
+    { id: 'narrow-passage', label: 'Narrow Passage', x: 410, y: 220, width: 100, height: 40, type: 'hazard', revealAt: 120 },
+    { id: 'junction-chamber', label: 'Junction Chamber', x: 530, y: 160, width: 140, height: 140, type: 'accessible', revealAt: 180 },
+    { id: 'deep-squeeze', label: 'Deep Squeeze', x: 690, y: 200, width: 60, height: 80, type: 'blocked', revealAt: 300 },
   ];
 
   const routes: TacticalAgentRoute[] = [
     {
-      agentId: 'scout',  // Matches "Cave Scout Drone"
+      agentId: 'scout',  // Matches "Cave Scout Drone" (drone-a)
       startsAt: 30,
       route: [
-        { time: 30, x: 120, y: 240, sectorId: 'entrance', label: 'Start' },
-        { time: 90, x: 300, y: 240, sectorId: 'main-tunnel', label: 'Tunnel mapping' },
-        { time: 210, x: 460, y: 240, sectorId: 'narrow', label: 'Narrow passage' },
-        { time: 300, x: 600, y: 230, sectorId: 'junction', label: 'Junction' },
-        { time: 390, x: 720, y: 240, sectorId: 'deep-squeeze', label: 'Deep exploration' },
+        { time: 30, x: 120, y: 240, sectorId: 'entrance-chamber', label: 'Start from entrance' },
+        { time: 60, x: 300, y: 240, sectorId: 'main-tunnel', label: 'Map main tunnel' },
+        { time: 120, x: 460, y: 240, sectorId: 'narrow-passage', label: 'Detect narrow passage' },
+        { time: 180, x: 600, y: 230, sectorId: 'junction-chamber', label: 'Discover junction' },
+        { time: 300, x: 720, y: 240, sectorId: 'deep-squeeze', label: 'Enter deep squeeze' },
+        { time: 420, x: 720, y: 240, sectorId: 'deep-squeeze', label: 'Audio detection scan' },
       ]
+    },
+    {
+      agentId: 'micro',  // Matches "Micro Mapper" (drone-b)
+      startsAt: 90,
+      route: [
+        { time: 90, x: 120, y: 240, sectorId: 'entrance-chamber', label: 'Deploy from entrance' },
+        { time: 120, x: 300, y: 240, sectorId: 'main-tunnel', label: 'Follow mapped route' },
+        { time: 180, x: 460, y: 240, sectorId: 'narrow-passage', label: 'Narrow passage exploration' },
+        { time: 240, x: 460, y: 240, sectorId: 'narrow-passage', label: 'Lost - NFC available' },
+      ]
+    },
+    {
+      agentId: 'relay',  // Matches "Junction Relay Drone" (relay-1)
+      startsAt: 180,
+      route: [
+        { time: 180, x: 120, y: 240, sectorId: 'entrance-chamber', label: 'Deploy relay' },
+        { time: 210, x: 300, y: 240, sectorId: 'main-tunnel', label: 'Travel to junction' },
+        { time: 240, x: 600, y: 230, sectorId: 'junction-chamber', label: 'Position at junction' },
+        { time: 300, x: 600, y: 230, sectorId: 'junction-chamber', label: 'Landed relay mode' },
+      ],
+      leavesAssetBehind: {
+        time: 300,
+        assetId: 'junction-relay',
+        label: 'Junction Relay (static)',
+        x: 600,
+        y: 230,
+        state: 'relay'
+      }
     },
   ];
 
   const detectionMarkers: DetectionMarker[] = [
-    { id: 'audio-tap', type: 'audio', x: 630, y: 250, appearsAt: 330, label: 'Tapping sounds', icon: '🔊' },
+    { id: 'audio-tap', type: 'audio', x: 720, y: 250, appearsAt: 420, label: 'Tapping sounds', icon: '🔊' },
+    { id: 'audio-voice', type: 'audio', x: 720, y: 220, appearsAt: 480, label: 'Voice-like audio', icon: '🗣' },
   ];
 
   return {

@@ -530,6 +530,94 @@ def simulate_collapsed_building(
         'confidence': ai_confidence
     }
     
+    # Terrain reconstruction with progressive sector reveal
+    # All sectors start unknown, revealed as agents scan them
+    terrain_sectors = [
+        {
+            'sector_id': 'entry',
+            'reveal_at': 0,
+            'scan_rules': [
+                {'time': 0, 'agent_id': 'relay-1'},  # Base station knows entry
+                {'time': 30, 'agent_id': 'drone-a'},  # Scout passes through
+                {'time': 60, 'agent_id': 'drone-b'},  # Thermal/audio passes through
+            ]
+        },
+        {
+            'sector_id': 'corridor-a',
+            'reveal_at': 30,
+            'scan_rules': [
+                {'time': 60, 'agent_id': 'drone-a'},  # Scout maps corridor
+                {'time': 120, 'agent_id': 'drone-b'},  # Thermal/audio scans
+                {'time': 150, 'agent_id': 'drone-c'},  # Relay positioned here
+            ]
+        },
+        {
+            'sector_id': 'corridor-b',
+            'reveal_at': 90,
+            'scan_rules': [
+                {'time': 150, 'agent_id': 'drone-a'},  # Scout detects corridor B
+                {'time': 210, 'agent_id': 'drone-b'},  # Thermal/audio scans for survivors
+            ]
+        },
+        {
+            'sector_id': 'void-1',
+            'reveal_at': 120,
+            'scan_rules': [
+                {'time': 120, 'agent_id': 'drone-a'},  # Scout discovers void
+                {'time': 180, 'agent_id': 'drone-a'},  # Scout detailed scan
+                {'time': 240, 'agent_id': 'drone-a'},  # Scout deep scan
+            ]
+        },
+        {
+            'sector_id': 'collapsed',
+            'reveal_at': 180,
+            'scan_rules': [
+                {'time': 180, 'agent_id': 'drone-a'},  # Scout detects collapsed section
+            ],
+            'is_blocked': True
+        },
+    ]
+    
+    terrain_reconstruction = calculate_terrain_reconstruction(
+        terrain_sectors,
+        agents,
+        elapsed_seconds
+    )
+    
+    # Environmental sensors - O₂ and CO₂ for survivor detection
+    # O₂ sensor appears at 60s when thermal/audio drone activates
+    if elapsed_seconds >= 60:
+        o2_value = max(19.8, 20.9 - (elapsed_seconds / 800))  # Slowly decreasing in confined space
+        o2_status = 'normal' if o2_value >= 19.5 else 'watch' if o2_value >= 19.0 else 'warning'
+        sensors['environmental_readings'].append({
+            'sensor_type': 'oxygen',
+            'display_name': 'O₂',
+            'value': round(o2_value, 1),
+            'unit': '%',
+            'status': o2_status,
+            'location_label': drone_b_location,
+            'confidence': 0.88,
+            'detected_at': 60,
+            'timestamp': format_time(elapsed_seconds)
+        })
+    
+    # CO₂ sensor appears at 90s
+    if elapsed_seconds >= 90:
+        # Higher CO₂ suggests human presence or confined space buildup
+        co2_value = min(1500, 420 + (elapsed_seconds * 1.8))
+        co2_status = 'normal' if co2_value <= 800 else 'watch' if co2_value <= 1000 else 'warning' if co2_value <= 1200 else 'critical'
+        sensors['environmental_readings'].append({
+            'sensor_type': 'carbon_dioxide',
+            'display_name': 'CO₂',
+            'value': int(co2_value),
+            'unit': 'ppm',
+            'status': co2_status,
+            'location_label': drone_b_location,
+            'confidence': 0.82,
+            'detected_at': 90,
+            'timestamp': format_time(elapsed_seconds)
+        })
+    
     # Build complete state
     return {
         'mission': {
@@ -549,7 +637,8 @@ def simulate_collapsed_building(
         'map': map_data,
         'sensors': sensors,
         'events': events,
-        'ai_analysis': ai_analysis
+        'ai_analysis': ai_analysis,
+        'terrain_reconstruction': terrain_reconstruction
     }
 
 
@@ -903,6 +992,97 @@ def simulate_cave_rescue(
         human_review = True
         ai_confidence = 0.72
     
+    # Terrain reconstruction with progressive sector reveal
+    # Critical: All agents start from entrance-chamber per claude_prompt09.md
+    # No agent should spawn directly in Narrow Passage or Deep Squeeze
+    terrain_sectors = [
+        {
+            'sector_id': 'entrance-chamber',
+            'reveal_at': 0,
+            'scan_rules': [
+                {'time': 0, 'agent_id': 'base-station'},  # Base station knows entrance
+                {'time': 30, 'agent_id': 'drone-a'},  # Scout starts here
+                {'time': 90, 'agent_id': 'drone-b'},  # Micro mapper starts here
+                {'time': 180, 'agent_id': 'relay-1'},  # Relay starts here
+            ]
+        },
+        {
+            'sector_id': 'main-tunnel',
+            'reveal_at': 60,
+            'scan_rules': [
+                {'time': 60, 'agent_id': 'drone-a'},  # Scout discovers and maps main tunnel
+                {'time': 120, 'agent_id': 'drone-b'},  # Micro mapper follows mapped route
+                {'time': 180, 'agent_id': 'relay-1'},  # Relay travels through
+            ]
+        },
+        {
+            'sector_id': 'narrow-passage',
+            'reveal_at': 120,
+            'scan_rules': [
+                {'time': 120, 'agent_id': 'drone-a'},  # Scout detects narrow passage
+                {'time': 180, 'agent_id': 'drone-b'},  # Micro mapper explores (narrow_passage_navigation capability)
+            ]
+        },
+        {
+            'sector_id': 'junction-chamber',
+            'reveal_at': 180,
+            'scan_rules': [
+                {'time': 180, 'agent_id': 'drone-a'},  # Scout discovers junction
+                {'time': 210, 'agent_id': 'relay-1'},  # Relay positioned here
+                {'time': 240, 'agent_id': 'drone-a'},  # Scout continues mapping
+            ]
+        },
+        {
+            'sector_id': 'deep-squeeze',
+            'reveal_at': 300,
+            'scan_rules': [
+                {'time': 300, 'agent_id': 'drone-a'},  # Scout enters deep passage
+                {'time': 360, 'agent_id': 'drone-a'},  # Scout deep scan
+                {'time': 420, 'agent_id': 'drone-a'},  # Scout detection scan
+            ]
+        },
+    ]
+    
+    terrain_reconstruction = calculate_terrain_reconstruction(
+        terrain_sectors,
+        agents,
+        elapsed_seconds
+    )
+    
+    # Environmental sensors - O₂ and CO₂ for cave atmosphere monitoring
+    # O₂ sensor appears at 90s when micro mapper activates
+    if elapsed_seconds >= 90:
+        o2_value = max(19.5, 20.9 - (elapsed_seconds / 1200))  # Slowly decreasing in cave
+        o2_status = 'normal' if o2_value >= 19.5 else 'watch' if o2_value >= 19.0 else 'warning'
+        environmental_readings.append({
+            'sensor_type': 'oxygen',
+            'display_name': 'O₂',
+            'value': round(o2_value, 1),
+            'unit': '%',
+            'status': o2_status,
+            'location_label': drone_a_loc,
+            'confidence': 0.85,
+            'detected_at': 90,
+            'timestamp': format_time(elapsed_seconds)
+        })
+    
+    # CO₂ sensor appears at 120s
+    if elapsed_seconds >= 120:
+        # Cave CO₂ can build up but typically lower than collapsed building
+        co2_value = min(1200, 380 + (elapsed_seconds * 1.2))
+        co2_status = 'normal' if co2_value <= 800 else 'watch' if co2_value <= 1000 else 'warning'
+        environmental_readings.append({
+            'sensor_type': 'carbon_dioxide',
+            'display_name': 'CO₂',
+            'value': int(co2_value),
+            'unit': 'ppm',
+            'status': co2_status,
+            'location_label': drone_a_loc,
+            'confidence': 0.78,
+            'detected_at': 120,
+            'timestamp': format_time(elapsed_seconds)
+        })
+    
     ai_analysis = {
         'summary': ai_summary,
         'priority_findings': priority_findings,
@@ -928,7 +1108,8 @@ def simulate_cave_rescue(
         'map': map_data,
         'sensors': sensors,
         'events': events,
-        'ai_analysis': ai_analysis
+        'ai_analysis': ai_analysis,
+        'terrain_reconstruction': terrain_reconstruction
     }
 
 
