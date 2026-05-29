@@ -14,6 +14,7 @@ export interface MissionSimulationState {
   sensors: SensorData;
   events: MissionEvent[];
   ai_analysis: AIAnalysis;
+  terrain_reconstruction?: TerrainReconstruction;
 }
 
 export interface MissionInfo {
@@ -135,11 +136,27 @@ export interface DeviceSignal {
 }
 
 export interface EnvironmentalReading {
-  sensor_type: string;
+  sensor_type:
+    | 'temperature'
+    | 'humidity'
+    | 'pressure'
+    | 'oxygen'
+    | 'carbon_dioxide'
+    | 'hydrogen'
+    | 'methane'
+    | 'air_quality'
+    | 'water_depth'
+    | 'contamination'
+    | string;
+  display_name: string;
   value: number;
   unit: string;
-  location: string;
-  timestamp: string;
+  status: 'normal' | 'watch' | 'warning' | 'critical';
+  location_label: string;
+  confidence: number;
+  detected_at: number;
+  timestamp?: string;
+  location?: string;
 }
 
 export interface MissionEvent {
@@ -156,6 +173,35 @@ export interface AIAnalysis {
   priority_findings: string[];
   human_review_required: boolean;
   confidence: number;
+}
+
+/**
+ * Terrain reconstruction types for progressive map reveal
+ */
+
+export interface TerrainReconstruction {
+  overall_confidence: number;
+  overall_detail_level: number;
+  total_scan_count: number;
+  sectors: TacticalSectorState[];
+}
+
+export interface TacticalSectorState {
+  sector_id: string;
+  status:
+    | 'unknown'
+    | 'detected'
+    | 'partially_mapped'
+    | 'mapped'
+    | 'high_confidence'
+    | 'hazardous'
+    | 'blocked';
+  confidence: number; // 0-100
+  detail_level: number; // 0-5
+  mapped_by_agent_ids: string[];
+  first_detected_at?: number;
+  last_updated_at?: number;
+  scan_count: number;
 }
 
 /**

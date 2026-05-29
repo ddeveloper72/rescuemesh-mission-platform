@@ -116,7 +116,23 @@ const initialClock = {
         <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
           <h2 class="text-2xl font-bold mb-4">Environmental Sensors</h2>
           <div class="space-y-3">
-            <div class="flex justify-between">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Oxygen (O\u2082):</span>
+              <span id="o2-reading" class="font-semibold">--</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">CO\u2082:</span>
+              <span id="co2-reading" class="font-semibold">--</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Hydrogen (H\u2082):</span>
+              <span id="h2-reading" class="font-semibold">--</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Methane (CH\u2084):</span>
+              <span id="ch4-reading" class="font-semibold">--</span>
+            </div>
+            <div class="flex justify-between mt-4 pt-4 border-t border-slate-700">
               <span class="text-slate-400">Thermal Hotspots:</span>
               <span id="thermal-count" class="font-semibold">0</span>
             </div>
@@ -253,6 +269,78 @@ const initialClock = {
         const thermalCountEl = document.getElementById('thermal-count');
         if (thermalCountEl && state.sensors.thermal_anomalies) {
           thermalCountEl.textContent = state.sensors.thermal_anomalies.length.toString();
+        }
+      }
+      
+      // Update environmental sensor readings
+      if (state.sensors && state.sensors.environmental_readings) {
+        const readings = state.sensors.environmental_readings;
+        
+        // Helper to get status color class
+        const getStatusClass = (status: string) => {
+          switch (status) {
+            case 'normal': return 'text-green-400';
+            case 'watch': return 'text-yellow-400';
+            case 'warning': return 'text-orange-400';
+            case 'critical': return 'text-red-400';
+            default: return 'text-slate-300';
+          }
+        };
+        
+        // Update O2
+        const o2Reading = readings.find((r: any) => r.sensor_type === 'oxygen');
+        const o2El = document.getElementById('o2-reading');
+        if (o2El) {
+          if (o2Reading) {
+            const className = getStatusClass((o2Reading as any).status);
+            o2El.className = `font-semibold ${className}`;
+            o2El.textContent = `${(o2Reading as any).value}${(o2Reading as any).unit}`;
+          } else {
+            o2El.className = 'font-semibold text-slate-500';
+            o2El.textContent = '--';
+          }
+        }
+        
+        // Update CO2
+        const co2Reading = readings.find((r: any) => r.sensor_type === 'carbon_dioxide');
+        const co2El = document.getElementById('co2-reading');
+        if (co2El) {
+          if (co2Reading) {
+            const className = getStatusClass((co2Reading as any).status);
+            co2El.className = `font-semibold ${className}`;
+            co2El.textContent = `${(co2Reading as any).value}${(co2Reading as any).unit}`;
+          } else {
+            co2El.className = 'font-semibold text-slate-500';
+            co2El.textContent = '--';
+          }
+        }
+        
+        // Update H2
+        const h2Reading = readings.find((r: any) => r.sensor_type === 'hydrogen');
+        const h2El = document.getElementById('h2-reading');
+        if (h2El) {
+          if (h2Reading) {
+            const className = getStatusClass((h2Reading as any).status);
+            h2El.className = `font-semibold ${className}`;
+            h2El.textContent = `${(h2Reading as any).value}${(h2Reading as any).unit}`;
+          } else {
+            h2El.className = 'font-semibold text-slate-500';
+            h2El.textContent = '--';
+          }
+        }
+        
+        // Update CH4
+        const ch4Reading = readings.find((r: any) => r.sensor_type === 'methane');
+        const ch4El = document.getElementById('ch4-reading');
+        if (ch4El) {
+          if (ch4Reading) {
+            const className = getStatusClass((ch4Reading as any).status);
+            ch4El.className = `font-semibold ${className}`;
+            ch4El.textContent = `${(ch4Reading as any).value}${(ch4Reading as any).unit}`;
+          } else {
+            ch4El.className = 'font-semibold text-slate-500';
+            ch4El.textContent = '--';
+          }
         }
       }
       

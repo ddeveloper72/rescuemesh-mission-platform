@@ -37,6 +37,117 @@ def format_time(seconds: float) -> str:
     return f"{minutes:02d}:{secs:02d}"
 
 
+def calculate_terrain_reconstruction(
+    sectors: List[Dict[str, Any]],
+    agents: List[Dict[str, Any]],
+    elapsed_seconds: float
+) -> Dict[str, Any]:
+    """
+    Calculate progressive terrain reconstruction state for fog-of-war map reveal.
+    
+    Sectors are revealed as agents move through them. Multiple agents scanning
+    the same sector increase confidence and detail level.
+    
+    Args:
+        sectors: List of sector definitions with reveal timing and scan rules
+        agents: List of active agents with their positions
+        elapsed_seconds: Mission elapsed time
+        
+    Returns:
+        Terrain reconstruction dict with overall stats and per-sector state
+    """
+    sector_states = []
+    total_scan_count = 0
+    total_confidence = 0
+    total_detail = 0
+    
+    for sector in sectors:
+        sector_id = sector['sector_id']
+        reveal_at = sector.get('reveal_at', 0)
+        scan_rules = sector.get('scan_rules', [])
+        
+        # Determine sector status based on elapsed time and scan rules
+        if elapsed_seconds < reveal_at:
+            status = 'unknown'
+            confidence = 0
+            detail_level = 0
+            mapped_by = []
+            scan_count = 0
+            first_detected = None
+            last_updated = None
+        else:
+            # Sector is at least detected
+            first_detected = reveal_at
+            last_updated = elapsed_seconds
+            
+            # Count how many scans have occurred
+            scan_count = 0
+            mapped_by = []
+            
+            for rule in scan_rules:
+                scan_time = rule.get('time', 0)
+                agent_id = rule.get('agent_id', '')
+                
+                if elapsed_seconds >= scan_time:
+                    scan_count += 1
+                    if agent_id and agent_id not in mapped_by:
+                        mapped_by.append(agent_id)
+            
+            # Calculate confidence and detail based on scan count
+            if scan_count == 0:
+                status = 'detected'
+                confidence = 20
+                detail_level = 1
+            elif scan_count == 1:
+                status = 'partially_mapped'
+                confidence = 45
+                detail_level = 2
+            elif scan_count == 2:
+                status = 'mapped'
+                confidence = 70
+                detail_level = 3
+            elif scan_count >= 3:
+                status = 'high_confidence'
+                confidence = min(95, 70 + (scan_count - 2) * 10)
+                detail_level = min(5, 3 + (scan_count - 2))
+            
+            # Check for hazardous/blocked status overrides
+            if sector.get('is_hazardous') and elapsed_seconds >= sector.get('hazard_detected_at', reveal_at + 60):
+                status = 'hazardous'
+                confidence = min(100, confidence + 10)
+            elif sector.get('is_blocked') and elapsed_seconds >= sector.get('blocked_detected_at', reveal_at + 30):
+                status = 'blocked'
+                confidence = min(100, confidence + 5)
+        
+        sector_state = {
+            'sector_id': sector_id,
+            'status': status,
+            'confidence': confidence,
+            'detail_level': detail_level,
+            'mapped_by_agent_ids': mapped_by,
+            'first_detected_at': first_detected,
+            'last_updated_at': last_updated,
+            'scan_count': scan_count
+        }
+        
+        sector_states.append(sector_state)
+        total_scan_count += scan_count
+        total_confidence += confidence
+        total_detail += detail_level
+    
+    # Calculate overall stats
+    num_sectors = len(sectors) if sectors else 1
+    overall_confidence = int(total_confidence / num_sectors) if num_sectors > 0 else 0
+    overall_detail_level = int(total_detail / num_sectors) if num_sectors > 0 else 0
+    
+    return {
+        'overall_confidence': overall_confidence,
+        'overall_detail_level': overall_detail_level,
+        'total_scan_count': total_scan_count,
+        'sectors': sector_states
+    }
+
+
 def calculate_mission_state(
     mission_id: str,
     mission_name: str,
@@ -1372,23 +1483,114 @@ def simulate_industrial_inspection(
     device_signals = []
     environmental_readings = []
     
-    # Gas readings
-    if elapsed_seconds >= 60:
+    # Oxygen concentration (normal range 20.9%)
+    if elapsed_seconds >= 30:
+        o2_value = max(19.2, 20.9 - (elapsed_seconds / 600))  # Gradual O2 depletion in confined space
+        o2_status = 'normal'
+        if o2_value < 19.5:
+            o2_status = 'watch'
+        if o2_value < 19.0:
+            o2_status = 'warning'
+        
         environmental_readings.append({
-            'sensor_type': 'CO2',
-            'value': min(1200, 400 + (elapsed_seconds * 2)),
-            'unit': 'ppm',
-            'location': drone_a_loc,
-            'timestamp': format_time(elapsed_seconds)
+            'sensor_type': 'oxygen',
+            'display_name': 'Oxygen (O₂)',
+            'value': round(o2_value, 1),
+            'unit': '%',
+            'status': o2_status,
+            'location_label': drone_a_loc,
+            'confidence': 92,
+            'detected_at': int(elapsed_seconds),
+            'timestamp': format_time(elapsed_seconds),
+            'location': drone_a_loc
         })
     
-    if elapsed_seconds >= 180:
+    # CO2 levels (normal <1000 ppm)
+    if elapsed_seconds >= 60:
+        co2_value = min(1200, 400 + (elapsed_seconds * 2))
+        co2_status = 'normal'
+        if co2_value > 800:
+            co2_status = 'watch'
+        if co2_value > 1000:
+            co2_status = 'warning'
+        
         environmental_readings.append({
-            'sensor_type': 'Methane',
-            'value': 120,
+            'sensor_type': 'carbon_dioxide',
+            'display_name': 'Carbon Dioxide (CO₂)',
+            'value': int(co2_value),
             'unit': 'ppm',
-            'location': 'Pipe Gallery',
-            'timestamp': format_time(180)
+            'status': co2_status,
+            'location_label': drone_a_loc,
+            'confidence': 88,
+            'detected_at': int(elapsed_seconds),
+            'timestamp': format_time(elapsed_seconds),
+            'location': drone_a_loc
+        })
+    
+    # Hydrogen detection (explosive risk)
+    if elapsed_seconds >= 240:
+        h2_value = 50 if elapsed_seconds < 450 else 120
+        h2_status = 'normal' if h2_value < 100 else 'watch'
+        
+        environmental_readings.append({
+            'sensor_type': 'hydrogen',
+            'display_name': 'Hydrogen (H₂)',
+            'value': int(h2_value),
+            'unit': 'ppm',
+            'status': h2_status,
+            'location_label': 'Pipe Gallery',
+            'confidence': 84,
+            'detected_at': int(elapsed_seconds),
+            'timestamp': format_time(elapsed_seconds),
+            'location': 'Pipe Gallery'
+        })
+    
+    # Methane detection (industrial/explosive risk)
+    if elapsed_seconds >= 180:
+        ch4_value = 120 if elapsed_seconds < 300 else 180
+        ch4_status = 'watch' if ch4_value < 150 else 'warning'
+        
+        environmental_readings.append({
+            'sensor_type': 'methane',
+            'display_name': 'Methane (CH₄)',
+            'value': int(ch4_value),
+            'unit': 'ppm',
+            'status': ch4_status,
+            'location_label': 'Pipe Gallery',
+            'confidence': 86,
+            'detected_at': int(elapsed_seconds),
+            'timestamp': format_time(180),
+            'location': 'Pipe Gallery'
+        })
+    
+    # Temperature readings
+    if elapsed_seconds >= 150:
+        environmental_readings.append({
+            'sensor_type': 'temperature',
+            'display_name': 'Temperature',
+            'value': 28.5 + (elapsed_seconds / 60),
+            'unit': '°C',
+            'status': 'normal' if elapsed_seconds < 300 else 'watch',
+            'location_label': drone_a_loc,
+            'confidence': 95,
+            'detected_at': int(elapsed_seconds),
+            'timestamp': format_time(elapsed_seconds),
+            'location': drone_a_loc
+        })
+    
+    # Humidity readings
+    if elapsed_seconds >= 90:
+        environmental_readings.append({
+            'sensor_type': 'humidity',
+            'display_name': 'Humidity',
+            'value': 65 + (elapsed_seconds / 120),
+            'unit': '%',
+            'status': 'normal',
+            'location_label': drone_a_loc,
+            'confidence': 91,
+            'detected_at': int(elapsed_seconds),
+            'timestamp': format_time(elapsed_seconds),
+            'location': drone_a_loc
         })
     
     # Temperature hotspots
@@ -1605,6 +1807,62 @@ def simulate_industrial_inspection(
         'confidence': ai_confidence
     }
     
+    # Terrain reconstruction - progressive sector reveal with multi-agent scans
+    terrain_sectors = [
+        {
+            'sector_id': 'entry',
+            'reveal_at': 0,
+            'scan_rules': [
+                {'time': 0, 'agent_id': 'base-station'},
+            ]
+        },
+        {
+            'sector_id': 'plant-room',
+            'reveal_at': 30,
+            'scan_rules': [
+                {'time': 30, 'agent_id': 'inspection-drone-a'},
+                {'time': 120, 'agent_id': 'monitor-node-1'},
+            ]
+        },
+        {
+            'sector_id': 'pipe-gallery',
+            'reveal_at': 60,
+            'scan_rules': [
+                {'time': 60, 'agent_id': 'inspection-drone-a'},
+                {'time': 270, 'agent_id': 'thermal-drone-b'},
+            ]
+        },
+        {
+            'sector_id': 'tank-interior',
+            'reveal_at': 180,
+            'scan_rules': [
+                {'time': 180, 'agent_id': 'inspection-drone-a'},
+            ]
+        },
+        {
+            'sector_id': 'duct-section',
+            'reveal_at': 300,
+            'scan_rules': [
+                {'time': 300, 'agent_id': 'inspection-drone-a'},
+                {'time': 330, 'agent_id': 'thermal-drone-b'},
+            ]
+        },
+        {
+            'sector_id': 'control-cabinet',
+            'reveal_at': 420,
+            'scan_rules': [
+                {'time': 420, 'agent_id': 'inspection-drone-a'},
+                {'time': 450, 'agent_id': 'thermal-drone-b'},
+            ],
+            'is_hazardous': True,
+            'hazard_detected_at': 450
+        },
+    ]
+    
+    terrain_reconstruction = calculate_terrain_reconstruction(
+        terrain_sectors, agents, elapsed_seconds
+    )
+    
     return {
         'mission': {
             'mission_id': mission_id,
@@ -1623,7 +1881,8 @@ def simulate_industrial_inspection(
         'map': map_data,
         'sensors': sensors,
         'events': events,
-        'ai_analysis': ai_analysis
+        'ai_analysis': ai_analysis,
+        'terrain_reconstruction': terrain_reconstruction
     }
 
 

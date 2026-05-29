@@ -379,31 +379,97 @@ function getAgentPositionAtTime(route: TacticalAgentRoute, time: number): { x: n
 /**
  * Render sectors on the map with progressive reveal
  */
-export function renderSectors(config: MapConfig, currentTime: number) {
+export function renderSectors(
+  config: MapConfig,
+  currentTime: number,
+  terrainReconstruction?: { sectors: any[] }
+) {
   const sectorsGroup = document.getElementById('map-sectors');
   if (!sectorsGroup) return;
 
   sectorsGroup.innerHTML = config.sectors.map(sector => {
-    let fillColor = 'rgba(71, 85, 105, 0.3)'; // slate-600 default
-    let strokeColor = 'rgba(148, 163, 184, 0.5)'; // slate-400
-    let opacity = currentTime >= sector.revealAt ? 1.0 : 0.15;
-    let labelOpacity = currentTime >= sector.revealAt ? 1.0 : 0.3;
-
-    if (sector.type === 'blocked') {
-      fillColor = 'rgba(153, 27, 27, 0.3)'; // red-900
-      strokeColor = 'rgba(252, 165, 165, 0.5)'; // red-300
-    } else if (sector.type === 'void') {
-      fillColor = 'rgba(88, 28, 135, 0.3)'; // purple-900
-      strokeColor = 'rgba(216, 180, 254, 0.5)'; // purple-300
-    } else if (sector.type === 'water') {
-      fillColor = 'rgba(12, 74, 110, 0.3)'; // cyan-900
-      strokeColor = 'rgba(103, 232, 249, 0.5)'; // cyan-300
-    } else if (sector.type === 'hazard') {
-      fillColor = 'rgba(133, 77, 14, 0.3)'; // yellow-900
-      strokeColor = 'rgba(252, 211, 77, 0.5)'; // yellow-300
+    // Try to find terrain reconstruction state for this sector
+    let sectorState = null;
+    if (terrainReconstruction) {
+      sectorState = terrainReconstruction.sectors.find(
+        (s: any) => s.sector_id === sector.id
+      );
     }
 
-    const label = currentTime >= sector.revealAt ? sector.label : '???';
+    // Use terrain reconstruction if available, otherwise fallback to revealAt timing
+    let fillColor = 'rgba(71, 85, 105, 0.3)'; // slate-600 default
+    let strokeColor = 'rgba(148, 163, 184, 0.5)'; // slate-400
+    let opacity = 0.15;
+    let labelOpacity = 0.3;
+    let label = '???';
+    let strokeWidth = 2;
+    
+    if (sectorState) {
+      // Use terrain reconstruction state
+      const status = sectorState.status;
+      const confidence = sectorState.confidence || 0;
+      
+      if (status === 'unknown') {
+        opacity = 0.05;
+        labelOpacity = 0.15;
+        label = '???';
+      } else if (status === 'detected') {
+        opacity = 0.3;
+        labelOpacity = 0.5;
+        label = `${sector.label} (${confidence}%)`;
+        strokeColor = 'rgba(148, 163, 184, 0.7)';
+        strokeWidth = 1;
+      } else if (status === 'partially_mapped') {
+        opacity = 0.5;
+        labelOpacity = 0.7;
+        label = `${sector.label} (${confidence}%)`;
+        strokeWidth = 2;
+      } else if (status === 'mapped') {
+        opacity = 0.8;
+        labelOpacity = 1.0;
+        label = sector.label;
+        strokeWidth = 2;
+      } else if (status === 'high_confidence') {
+        opacity = 1.0;
+        labelOpacity = 1.0;
+        label = sector.label;
+        strokeWidth = 3;
+        strokeColor = 'rgba(148, 163, 184, 0.9)';
+      } else if (status === 'hazardous') {
+        opacity = 1.0;
+        labelOpacity = 1.0;
+        label = `⚠️ ${sector.label}`;
+        fillColor = 'rgba(133, 77, 14, 0.4)';
+        strokeColor = 'rgba(252, 211, 77, 0.8)';
+        strokeWidth = 3;
+      } else if (status === 'blocked') {
+        opacity = 1.0;
+        labelOpacity = 1.0;
+        label = `🚫 ${sector.label}`;
+        fillColor = 'rgba(153, 27, 27, 0.4)';
+        strokeColor = 'rgba(252, 165, 165, 0.8)';
+        strokeWidth = 3;
+      }
+    } else {
+      // Fallback to revealAt timing
+      opacity = currentTime >= sector.revealAt ? 1.0 : 0.15;
+      labelOpacity = currentTime >= sector.revealAt ? 1.0 : 0.3;
+      label = currentTime >= sector.revealAt ? sector.label : '???';
+      
+      if (sector.type === 'blocked') {
+        fillColor = 'rgba(153, 27, 27, 0.3)';
+        strokeColor = 'rgba(252, 165, 165, 0.5)';
+      } else if (sector.type === 'void') {
+        fillColor = 'rgba(88, 28, 135, 0.3)';
+        strokeColor = 'rgba(216, 180, 254, 0.5)';
+      } else if (sector.type === 'water') {
+        fillColor = 'rgba(12, 74, 110, 0.3)';
+        strokeColor = 'rgba(103, 232, 249, 0.5)';
+      } else if (sector.type === 'hazard') {
+        fillColor = 'rgba(133, 77, 14, 0.3)';
+        strokeColor = 'rgba(252, 211, 77, 0.5)';
+      }
+    }
 
     return `
       <rect 
@@ -415,7 +481,7 @@ export function renderSectors(config: MapConfig, currentTime: number) {
         height="${sector.height}"
         fill="${fillColor}"
         stroke="${strokeColor}"
-        stroke-width="2"
+        stroke-width="${strokeWidth}"
         rx="4"
         opacity="${opacity}"
       />
@@ -668,8 +734,8 @@ export function updateTacticalMap(state: MissionSimulationState, config: MapConf
   // Get current elapsed time from mission state
   const currentTime = state.simulation_clock?.elapsed_seconds || 0;
   
-  // Update sectors with progressive reveal
-  renderSectors(config, currentTime);
+  // Update sectors with progressive reveal and terrain reconstruction
+  renderSectors(config, currentTime, state.terrain_reconstruction);
   
   // Update agents with route-based positioning
   updateAgents(state.agents, config, currentTime);
