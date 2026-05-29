@@ -97,11 +97,11 @@ const initialClock = {
             </div>
             <div class="flex justify-between">
               <span class="text-slate-400">Major:</span>
-              <span id="defect-major" class="font-semibold text-yellow-400">0</span>
+              <span id="defect-major" class="font-semibold text-orange-400">0</span>
             </div>
             <div class="flex justify-between">
               <span class="text-slate-400">Minor:</span>
-              <span id="defect-minor" class="font-semibold">0</span>
+              <span id="defect-minor" class="font-semibold text-yellow-400">0</span>
             </div>
           </div>
         </div>
@@ -216,21 +216,63 @@ const initialClock = {
         `).join('');
       }
       
+      // Update defect counters from events
+      if (state.events) {
+        const defectEvents = state.events.filter(e => e.type === 'defect-detected');
+        const criticalCount = defectEvents.filter(e => (e as any).severity === 'critical').length;
+        const highCount = defectEvents.filter(e => (e as any).severity === 'high').length;
+        const moderateCount = defectEvents.filter(e => (e as any).severity === 'moderate').length;
+        
+        const criticalEl = document.getElementById('defect-critical');
+        if (criticalEl) criticalEl.textContent = criticalCount.toString();
+        
+        const majorEl = document.getElementById('defect-major');
+        if (majorEl) majorEl.textContent = highCount.toString();
+        
+        const minorEl = document.getElementById('defect-minor');
+        if (minorEl) minorEl.textContent = moderateCount.toString();
+        
+        // Update gas detection counter
+        const gasEvents = state.events.filter(e => 
+          e.type === 'hazard-alert' && e.title.toLowerCase().includes('gas')
+        );
+        const gasCountEl = document.getElementById('gas-count');
+        if (gasCountEl) gasCountEl.textContent = gasEvents.length.toString();
+        
+        // Update thermal count from sensor data
+        const thermalCountEl = document.getElementById('thermal-count');
+        if (thermalCountEl && state.sensors.thermal_anomalies) {
+          thermalCountEl.textContent = state.sensors.thermal_anomalies.length.toString();
+        }
+      }
+      
       // Update events display
       const eventsContainer = document.getElementById('events-container');
       if (eventsContainer && state.events) {
         if (state.events.length === 0) {
           eventsContainer.innerHTML = '<p class="text-slate-400">No events yet...</p>';
         } else {
-          eventsContainer.innerHTML = state.events.slice().reverse().map(event => `
-            <div class="p-3 bg-slate-700 rounded-lg text-sm">
-              <div class="flex justify-between items-start mb-1">
-                <span class="font-semibold">${event.title}</span>
-                <span class="text-xs text-slate-400">${event.time}</span>
+          eventsContainer.innerHTML = state.events.slice().reverse().map(event => {
+            const severity = (event as any).severity;
+            let severityBadge = '';
+            if (severity === 'critical') {
+              severityBadge = '<span class="ml-2 px-2 py-0.5 bg-red-900 text-red-300 rounded text-xs font-semibold">CRITICAL</span>';
+            } else if (severity === 'high') {
+              severityBadge = '<span class="ml-2 px-2 py-0.5 bg-orange-900 text-orange-300 rounded text-xs font-semibold">HIGH</span>';
+            } else if (severity === 'moderate') {
+              severityBadge = '<span class="ml-2 px-2 py-0.5 bg-yellow-900 text-yellow-300 rounded text-xs font-semibold">MODERATE</span>';
+            }
+            
+            return `
+              <div class="p-3 bg-slate-700 rounded-lg text-sm">
+                <div class="flex justify-between items-start mb-1">
+                  <span class="font-semibold">${event.title}${severityBadge}</span>
+                  <span class="text-xs text-slate-400">${event.time}</span>
+                </div>
+                <p class="text-slate-300 text-xs">${event.description}</p>
               </div>
-              <p class="text-slate-300 text-xs">${event.description}</p>
-            </div>
-          `).join('');
+            `;
+          }).join('');
         }
       }
       
