@@ -116,6 +116,11 @@ export class SimulationManager {
       clockEl.textContent = timeStr;
     }
     
+    const speedEl = document.getElementById('sim-speed');
+    if (speedEl) {
+      speedEl.textContent = clock.speed_multiplier.toString();
+    }
+    
     const statusEl = document.getElementById('sim-status');
     if (statusEl) {
       statusEl.textContent = clock.is_running ? '● Running' : '⏸ Paused';

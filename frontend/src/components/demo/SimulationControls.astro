@@ -15,7 +15,7 @@ const { clock, missionPk } = Astro.props;
 <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
   <div class="flex items-center justify-between mb-4">
     <h2 class="text-2xl font-bold">Simulation Controls</h2>
-    <div class="text-sm text-slate-400">
+    <div id="sim-status" class="text-sm text-slate-400">
       {clock.is_running ? (
         <span class="px-3 py-1 bg-green-900 text-green-300 rounded-full">● Running</span>
       ) : (
@@ -27,11 +27,11 @@ const { clock, missionPk } = Astro.props;
   <!-- Mission Clock -->
   <div class="mb-6">
     <div class="text-center">
-      <div class="text-5xl font-bold font-mono text-rescue-400 mb-2">
+      <div id="sim-clock" class="text-5xl font-bold font-mono text-rescue-400 mb-2">
         {Math.floor(clock.elapsed_seconds / 60).toString().padStart(2, '0')}:{(clock.elapsed_seconds % 60).toFixed(0).padStart(2, '0')}
       </div>
       <div class="text-sm text-slate-400">
-        Mission Elapsed Time ({clock.speed_multiplier}x speed)
+        Mission Elapsed Time (<span id="sim-speed">{clock.speed_multiplier}</span>x speed)
       </div>
     </div>
   </div>
