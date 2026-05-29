@@ -168,10 +168,11 @@ const initialClock = {
   
   const originalPoll = (manager as any).poll;
   (manager as any).poll = async function() {
-    await originalPoll.call(this);
-    
-    const state = this.getLastState();
-    if (state) {
+    try {
+      await originalPoll.call(this);
+      
+      const state = this.getLastState();
+      if (!state) return;
       // Update agents display
       const agentsContainer = document.getElementById('agents-container');
       if (agentsContainer && state.agents) {
@@ -235,6 +236,8 @@ const initialClock = {
       if (debugEl) {
         debugEl.textContent = JSON.stringify(state, null, 2);
       }
+    } catch (error) {
+      console.error('Error in poll override:', error);
     }
   };
   
