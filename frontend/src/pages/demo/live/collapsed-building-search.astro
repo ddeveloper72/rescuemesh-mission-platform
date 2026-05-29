@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SimulationControls from '../../../components/demo/SimulationControls.astro';
+import TacticalMap from '../../../components/demo/TacticalMap.astro';
 import DataSourceBadge from '../../../components/demo/DataSourceBadge.astro';
 
 const MISSION_PK = 'c5d0ffd4-2fc8-4b45-841d-88ec93f27e8e';
@@ -60,6 +61,11 @@ const initialClock = {
       <!-- Simulation Controls -->
       <div class="mb-8">
         <SimulationControls clock={initialClock} missionPk={MISSION_PK} />
+      </div>
+
+      <!-- Tactical Map -->
+      <div class="mb-8">
+        <TacticalMap useCase={USE_CASE} />
       </div>
 
       <!-- Dashboard Grid -->
@@ -166,12 +172,16 @@ const initialClock = {
 
 <script>
   import { initializeSimulation } from '../../../lib/simulation-manager';
+  import { initializeTacticalMap, updateTacticalMap } from '../../../lib/tactical-map-manager';
   
   // Mission PK from Astro props (passed via data attribute)
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
   
   // Initialize simulation manager
   const manager = initializeSimulation(MISSION_PK);
+  
+  // Initialize tactical map
+  const mapConfig = initializeTacticalMap('collapsed-building-search');
   
   // Enhanced UI update function to show agents
   // This is a temporary extension until we refactor to a proper framework
@@ -240,6 +250,9 @@ const initialClock = {
           `).join('');
         }
       }
+      
+      // Update tactical map
+      updateTacticalMap(state, mapConfig);
       
       // Update debug panel
       const debugEl = document.getElementById('debug-json');
