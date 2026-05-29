@@ -1,0 +1,110 @@
+---
+import type { UseCaseDemoProfile } from '../../types/demo';
+
+interface Props {
+  profile: UseCaseDemoProfile;
+}
+
+const { profile } = Astro.props;
+
+const mapTypeLabels = {
+  'void-map': 'Void Map - Collapsed Structure',
+  'cave-map': 'Cave Passage Map - Underground System',
+  'flood-map': 'Flood Extent Map - Submerged Zones',
+  'industrial-map': 'Industrial Asset Map - Plant Layout'
+};
+
+const mapDescriptions = {
+  'void-map': 'LiDAR-generated 3D void space reconstruction showing accessible areas, obstructions, and structural hazards',
+  'cave-map': 'SLAM-based tunnel network map showing passages, chambers, squeeze points, and relay positions',
+  'flood-map': 'Multi-sensor flood zone map showing water depth, dry areas, submerged obstacles, and safe routes',
+  'industrial-map': 'Geometric asset map showing tanks, pipes, ducts, machinery, and inspection coverage zones'
+};
+
+// Get agents that are still active or in relay mode
+const activeAgents = profile.agents.filter(a => 
+  a.state === 'healthy' || a.state === 'degraded' || a.state === 'landed_relay'
+);
+
+const failedAgents = profile.agents.filter(a => 
+  a.state === 'failed' || a.state === 'abandoned' || a.state === 'nfc_readable'
+);
+---
+
+<div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
+  <div class="flex items-start justify-between mb-4">
+    <div>
+      <h2 class="text-xl font-bold mb-1">Mission Map</h2>
+      <p class="text-sm text-slate-400">{mapTypeLabels[profile.simulation.mapType]}</p>
+    </div>
+    <div class="text-right">
+      <div class="text-sm text-slate-400">Confidence</div>
+      <div class="text-lg font-semibold text-rescue-400">
+        {Math.round(profile.simulation.defaultConfidence * 100)}%
+      </div>
+    </div>
+  </div>
+
+  <!-- Map Placeholder - TODO: Replace with actual 3D map rendering -->
+  <div class="relative bg-slate-900 rounded-lg border-2 border-slate-700 aspect-video flex items-center justify-center overflow-hidden">
+    <!-- Background pattern -->
+    <div class="absolute inset-0 opacity-10">
+      <div class="absolute inset-0" style="background-image: radial-gradient(circle at 2px 2px, rgb(148, 163, 184) 1px, transparent 0); background-size: 20px 20px;"></div>
+    </div>
+
+    <!-- Map content -->
+    <div class="relative z-10 text-center p-8">
+      <div class="text-slate-500 mb-4">
+        <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+        </svg>
+      </div>
+      <div class="font-mono text-rescue-400 text-lg mb-2">
+        {mapTypeLabels[profile.simulation.mapType]}
+      </div>
+      <div class="text-sm text-slate-400 max-w-md">
+        {mapDescriptions[profile.simulation.mapType]}
+      </div>
+    </div>
+
+    <!-- Asset markers overlay -->
+    <div class="absolute top-4 left-4 space-y-2">
+      {activeAgents.map(agent => (
+        <div class="flex items-center gap-2 bg-slate-800 bg-opacity-90 px-3 py-1 rounded border border-rescue-500 text-xs">
+          <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+          <span class="text-slate-200">{agent.name}</span>
+        </div>
+      ))}
+      {failedAgents.map(agent => (
+        <div class="flex items-center gap-2 bg-slate-800 bg-opacity-90 px-3 py-1 rounded border border-alert-500 text-xs">
+          <span class="w-2 h-2 bg-alert-400 rounded-full"></span>
+          <span class="text-slate-200">{agent.name}</span>
+          {agent.nfcRecoveryAvailable && (
+            <span class="text-alert-300">(NFC)</span>
+          )}
+        </div>
+      ))}
+    </div>
+
+    <!-- Coverage indicator -->
+    <div class="absolute bottom-4 right-4 bg-slate-800 bg-opacity-90 px-4 py-2 rounded border border-slate-700">
+      <div class="text-xs text-slate-400 mb-1">Map Coverage</div>
+      <div class="text-sm font-semibold text-rescue-400">
+        {Math.round(profile.simulation.defaultConfidence * 100)}%
+      </div>
+    </div>
+
+    <!-- Environment tags -->
+    <div class="absolute bottom-4 left-4 flex gap-2">
+      {profile.simulation.environmentTags.slice(0, 3).map(tag => (
+        <span class="px-2 py-1 bg-slate-800 bg-opacity-90 text-slate-300 rounded text-xs border border-slate-700">
+          {tag}
+        </span>
+      ))}
+    </div>
+  </div>
+
+  <div class="mt-4 text-xs text-slate-500 italic">
+    TODO: Replace placeholder with interactive 3D map using Three.js or CesiumJS with real-time agent positions
+  </div>
+</div>

@@ -1,0 +1,111 @@
+---
+import type { UseCaseDemoProfile } from '../../types/demo';
+
+interface Props {
+  profile: UseCaseDemoProfile;
+}
+
+const { profile } = Astro.props;
+
+const stateConfig = {
+  healthy: { color: 'border-green-500 bg-green-900', badge: 'bg-green-500 text-green-900', label: 'Healthy' },
+  degraded: { color: 'border-yellow-500 bg-yellow-900', badge: 'bg-yellow-500 text-yellow-900', label: 'Degraded' },
+  intermittent: { color: 'border-orange-500 bg-orange-900', badge: 'bg-orange-500 text-orange-900', label: 'Intermittent' },
+  failed: { color: 'border-red-500 bg-red-900', badge: 'bg-red-500 text-red-900', label: 'Failed' },
+  landed_relay: { color: 'border-blue-500 bg-blue-900', badge: 'bg-blue-500 text-blue-900', label: 'Relay Mode' },
+  abandoned: { color: 'border-slate-500 bg-slate-800', badge: 'bg-slate-500 text-slate-900', label: 'Abandoned' },
+  sacrificed: { color: 'border-purple-500 bg-purple-900', badge: 'bg-purple-500 text-purple-900', label: 'Sacrificed' },
+  nfc_readable: { color: 'border-amber-500 bg-amber-900', badge: 'bg-amber-500 text-amber-900', label: 'NFC Readable' },
+  black_box_recovered: { color: 'border-slate-500 bg-slate-800', badge: 'bg-slate-400 text-slate-900', label: 'Recovered' }
+};
+
+function getBatteryColor(percent: number): string {
+  if (percent > 60) return 'bg-green-500';
+  if (percent > 30) return 'bg-yellow-500';
+  if (percent > 15) return 'bg-orange-500';
+  return 'bg-red-500';
+}
+---
+
+<div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
+  <h2 class="text-xl font-bold mb-4">Agent Status</h2>
+  
+  <div class="grid md:grid-cols-2 gap-4">
+    {profile.agents.map(agent => {
+      const stateStyle = stateConfig[agent.state];
+      const batteryColor = getBatteryColor(agent.batteryPercent);
+      
+      return (
+        <div class={`rounded-lg p-4 border-l-4 ${stateStyle.color}`}>
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <h3 class="font-semibold text-lg">{agent.name}</h3>
+              <p class="text-sm text-slate-400">{agent.role}</p>
+            </div>
+            <span class={`px-2 py-1 rounded text-xs font-semibold ${stateStyle.badge}`}>
+              {stateStyle.label}
+            </span>
+          </div>
+
+          <div class="space-y-2 mb-3">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-400">Battery</span>
+              <div class="flex items-center gap-2">
+                <div class="w-20 h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div 
+                    class={`h-full ${batteryColor}`}
+                    style={`width: ${agent.batteryPercent}%`}
+                  ></div>
+                </div>
+                <span class="text-slate-200 font-mono w-10">{agent.batteryPercent}%</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-slate-400">Location</span>
+              <span class="text-slate-200 text-right">{agent.locationLabel}</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="text-xs text-slate-400 mb-1">Capabilities</div>
+            <div class="flex flex-wrap gap-1">
+              {agent.capabilities.slice(0, 3).map(cap => (
+                <span class="px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-xs">
+                  {cap}
+                </span>
+              ))}
+              {agent.capabilities.length > 3 && (
+                <span class="px-2 py-0.5 bg-slate-700 text-slate-400 rounded text-xs">
+                  +{agent.capabilities.length - 3}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <div class="text-xs text-slate-400 mb-1">Sensors</div>
+            <div class="text-xs text-slate-300">
+              {agent.sensors.join(', ')}
+            </div>
+          </div>
+
+          {agent.nfcRecoveryAvailable && (
+            <div class="mt-3 pt-3 border-t border-slate-700">
+              <div class="flex items-center gap-2 text-xs text-amber-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>NFC black-box recovery available</span>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    })}
+  </div>
+
+  <div class="mt-4 text-xs text-slate-500 italic">
+    TODO: Replace with live telemetry from Django API endpoint /api/v1/missions/{id}/agents/status
+  </div>
+</div>

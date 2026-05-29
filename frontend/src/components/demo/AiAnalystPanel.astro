@@ -1,0 +1,68 @@
+---
+import type { UseCaseDemoProfile } from '../../types/demo';
+
+interface Props {
+  profile: UseCaseDemoProfile;
+}
+
+const { profile } = Astro.props;
+---
+
+<div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
+  <div class="flex items-start gap-4 mb-4">
+    <div class="text-purple-400">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+      </svg>
+    </div>
+    <div class="flex-1">
+      <h2 class="text-xl font-bold mb-1">AI Analyst</h2>
+      <p class="text-sm text-slate-400">{profile.aiAnalyst.role}</p>
+    </div>
+    {profile.aiAnalyst.humanReviewRequired && (
+      <span class="px-3 py-1 bg-amber-900 text-amber-300 rounded text-sm font-semibold border border-amber-700">
+        Human Review Required
+      </span>
+    )}
+  </div>
+
+  <div class="mb-4 p-4 bg-slate-900 rounded border border-slate-700">
+    <h3 class="text-sm font-semibold text-slate-400 uppercase mb-2">Prompt Summary</h3>
+    <p class="text-slate-300">{profile.aiAnalyst.promptSummary}</p>
+  </div>
+
+  <div class="mb-4">
+    <h3 class="text-sm font-semibold text-slate-400 uppercase mb-3">Expected Findings</h3>
+    <div class="space-y-2">
+      {profile.aiAnalyst.expectedFindings.map((finding, index) => (
+        <div class="flex items-start gap-3 p-3 bg-slate-900 rounded border border-slate-700">
+          <span class="flex-shrink-0 w-6 h-6 bg-purple-900 text-purple-300 rounded-full flex items-center justify-center text-xs font-semibold border border-purple-700">
+            {index + 1}
+          </span>
+          <p class="text-sm text-slate-300">{finding}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {profile.aiAnalyst.humanReviewRequired && (
+    <div class="p-4 bg-amber-900 bg-opacity-20 border border-amber-700 rounded">
+      <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-amber-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div>
+          <h4 class="font-semibold text-amber-300 mb-1">Human Review Required</h4>
+          <p class="text-sm text-amber-200">
+            AI confidence levels require expert validation before operational decisions.
+            All findings must be reviewed by qualified personnel.
+          </p>
+        </div>
+      </div>
+    </div>
+  )}
+
+  <div class="mt-4 text-xs text-slate-500 italic">
+    TODO: Replace with AI-generated analysis from Django API endpoint /api/v1/missions/{id}/ai-analysis
+  </div>
+</div>

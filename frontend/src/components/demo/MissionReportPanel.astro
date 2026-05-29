@@ -1,0 +1,139 @@
+---
+import type { UseCaseDemoProfile } from '../../types/demo';
+
+interface Props {
+  profile: UseCaseDemoProfile;
+}
+
+const { profile } = Astro.props;
+
+// Calculate summary stats
+const failedAgents = profile.agents.filter(a => a.state === 'failed' || a.state === 'abandoned').length;
+const degradedAgents = profile.agents.filter(a => a.state === 'degraded' || a.state === 'intermittent').length;
+const relayAgents = profile.agents.filter(a => a.state === 'landed_relay').length;
+const nfcRecoverableAgents = profile.agents.filter(a => a.nfcRecoveryAvailable).length;
+
+const criticalFailures = profile.expectedFailures.filter(f => f.severity === 'critical').length;
+const highFailures = profile.expectedFailures.filter(f => f.severity === 'high').length;
+
+const reviewRequired = profile.expectedOutputs.filter(o => o.confidenceRequired).length;
+---
+
+<div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
+  <div class="flex items-start justify-between mb-4">
+    <div>
+      <h2 class="text-xl font-bold mb-1">Mission Report</h2>
+      <p class="text-sm text-slate-400">Automated summary and recommendations</p>
+    </div>
+    <button class="px-4 py-2 bg-rescue-500 hover:bg-rescue-600 text-white rounded text-sm font-semibold transition-colors">
+      Export Report
+    </button>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-4 mb-6">
+    <div class="bg-slate-900 rounded p-4 border border-slate-700">
+      <div class="text-sm text-slate-400 mb-1">Mission Status</div>
+      <div class="text-2xl font-bold text-rescue-400">{profile.status}</div>
+    </div>
+    <div class="bg-slate-900 rounded p-4 border border-slate-700">
+      <div class="text-sm text-slate-400 mb-1">Duration</div>
+      <div class="text-2xl font-bold text-slate-200">{profile.simulation.missionDurationMinutes} min</div>
+    </div>
+    <div class="bg-slate-900 rounded p-4 border border-slate-700">
+      <div class="text-sm text-slate-400 mb-1">Map Confidence</div>
+      <div class="text-2xl font-bold text-slate-200">
+        {Math.round(profile.simulation.defaultConfidence * 100)}%
+      </div>
+    </div>
+    <div class="bg-slate-900 rounded p-4 border border-slate-700">
+      <div class="text-sm text-slate-400 mb-1">Total Agents</div>
+      <div class="text-2xl font-bold text-slate-200">{profile.agents.length}</div>
+    </div>
+  </div>
+
+  <div class="space-y-4 mb-6">
+    <div>
+      <h3 class="text-sm font-semibold text-slate-400 uppercase mb-2">Mission Objective</h3>
+      <p class="text-slate-300">{profile.missionObjective}</p>
+    </div>
+
+    <div>
+      <h3 class="text-sm font-semibold text-slate-400 uppercase mb-2">Outputs Generated</h3>
+      <div class="flex flex-wrap gap-2">
+        {profile.expectedOutputs.map(output => (
+          <span class="px-3 py-1 bg-rescue-900 text-rescue-300 rounded text-sm border border-rescue-700">
+            {output.name}
+          </span>
+        ))}
+      </div>
+    </div>
+
+    <div>
+      <h3 class="text-sm font-semibold text-slate-400 uppercase mb-2">Asset Status Summary</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {failedAgents > 0 && (
+          <div class="bg-red-900 bg-opacity-20 border border-red-700 rounded p-2 text-center">
+            <div class="text-2xl font-bold text-red-400">{failedAgents}</div>
+            <div class="text-xs text-red-300">Failed</div>
+          </div>
+        )}
+        {degradedAgents > 0 && (
+          <div class="bg-yellow-900 bg-opacity-20 border border-yellow-700 rounded p-2 text-center">
+            <div class="text-2xl font-bold text-yellow-400">{degradedAgents}</div>
+            <div class="text-xs text-yellow-300">Degraded</div>
+          </div>
+        )}
+        {relayAgents > 0 && (
+          <div class="bg-blue-900 bg-opacity-20 border border-blue-700 rounded p-2 text-center">
+            <div class="text-2xl font-bold text-blue-400">{relayAgents}</div>
+            <div class="text-xs text-blue-300">Relay Mode</div>
+          </div>
+        )}
+        {nfcRecoverableAgents > 0 && (
+          <div class="bg-amber-900 bg-opacity-20 border border-amber-700 rounded p-2 text-center">
+            <div class="text-2xl font-bold text-amber-400">{nfcRecoverableAgents}</div>
+            <div class="text-xs text-amber-300">NFC Recovery</div>
+          </div>
+        )}
+      </div>
+    </div>
+
+    {(criticalFailures > 0 || highFailures > 0) && (
+      <div>
+        <h3 class="text-sm font-semibold text-slate-400 uppercase mb-2">Critical Issues</h3>
+        <div class="space-y-2">
+          {criticalFailures > 0 && (
+            <div class="flex items-center gap-2 text-sm text-red-300">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>{criticalFailures} critical failure(s) detected</span>
+            </div>
+          )}
+          {highFailures > 0 && (
+            <div class="flex items-center gap-2 text-sm text-orange-300">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>{highFailures} high-severity failure(s) detected</span>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+
+    {reviewRequired > 0 && (
+      <div class="p-4 bg-amber-900 bg-opacity-20 border border-amber-700 rounded">
+        <h3 class="text-sm font-semibold text-amber-300 uppercase mb-2">Human Review Required</h3>
+        <p class="text-sm text-amber-200">
+          {reviewRequired} output(s) require human expert validation before operational use.
+          Review all confidence-flagged detections and findings.
+        </p>
+      </div>
+    )}
+  </div>
+
+  <div class="text-xs text-slate-500 italic">
+    TODO: Replace with Django-generated mission report from /api/v1/missions/{id}/report
+  </div>
+</div>

@@ -1,0 +1,51 @@
+---
+import type { UseCaseDemoProfile } from '../../types/demo';
+import MissionHeader from './MissionHeader.astro';
+import MissionMapPanel from './MissionMapPanel.astro';
+import AgentStatusPanel from './AgentStatusPanel.astro';
+import TelemetryPanel from './TelemetryPanel.astro';
+import SensorOutputsPanel from './SensorOutputsPanel.astro';
+import TimelinePanel from './TimelinePanel.astro';
+import AiAnalystPanel from './AiAnalystPanel.astro';
+import MissionReportPanel from './MissionReportPanel.astro';
+
+interface Props {
+  profile: UseCaseDemoProfile;
+}
+
+const { profile } = Astro.props;
+---
+
+<div class="min-h-screen bg-slate-900 text-slate-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Mission Header -->
+    <MissionHeader profile={profile} />
+
+    <!-- Two-column layout for map and agents -->
+    <div class="grid lg:grid-cols-3 gap-6 mb-6">
+      <div class="lg:col-span-2">
+        <MissionMapPanel profile={profile} />
+      </div>
+      <div>
+        <AgentStatusPanel profile={profile} />
+      </div>
+    </div>
+
+    <!-- Telemetry and Sensor Outputs -->
+    <div class="grid lg:grid-cols-2 gap-6 mb-6">
+      <TelemetryPanel profile={profile} />
+      <SensorOutputsPanel profile={profile} />
+    </div>
+
+    <!-- Timeline (full width) -->
+    <div class="mb-6">
+      <TimelinePanel profile={profile} />
+    </div>
+
+    <!-- AI Analyst and Mission Report -->
+    <div class="grid lg:grid-cols-2 gap-6">
+      <AiAnalystPanel profile={profile} />
+      <MissionReportPanel profile={profile} />
+    </div>
+  </div>
+</div>

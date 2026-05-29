@@ -1,0 +1,61 @@
+---
+import type { UseCaseDemoProfile } from '../../types/demo';
+
+interface Props {
+  profile: UseCaseDemoProfile;
+}
+
+const { profile } = Astro.props;
+
+const severityConfig = {
+  low: { color: 'border-blue-500', bg: 'bg-blue-900', text: 'text-blue-300', badge: 'bg-blue-500 text-blue-900' },
+  medium: { color: 'border-yellow-500', bg: 'bg-yellow-900', text: 'text-yellow-300', badge: 'bg-yellow-500 text-yellow-900' },
+  high: { color: 'border-orange-500', bg: 'bg-orange-900', text: 'text-orange-300', badge: 'bg-orange-500 text-orange-900' },
+  critical: { color: 'border-red-500', bg: 'bg-red-900', text: 'text-red-300', badge: 'bg-red-500 text-red-900' }
+};
+---
+
+<div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
+  <h2 class="text-xl font-bold mb-4">Telemetry & Failures</h2>
+  
+  <div class="space-y-3">
+    {profile.expectedFailures.map(failure => {
+      const style = severityConfig[failure.severity];
+      
+      return (
+        <div class={`rounded-lg p-4 border-l-4 ${style.color} ${style.bg}`}>
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <h3 class={`font-semibold ${style.text}`}>{failure.name}</h3>
+              <p class="text-sm text-slate-400 mt-1">{failure.affectedComponent}</p>
+            </div>
+            <span class={`px-2 py-1 rounded text-xs font-semibold uppercase ${style.badge}`}>
+              {failure.severity}
+            </span>
+          </div>
+          
+          <p class="text-sm text-slate-300 mb-2">
+            {failure.description}
+          </p>
+          
+          <div class="mt-3 pt-3 border-t border-slate-700">
+            <div class="text-xs text-slate-400 mb-1">Dashboard Effect</div>
+            <div class="text-sm text-slate-200">
+              {failure.dashboardEffect}
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  {profile.expectedFailures.length === 0 && (
+    <div class="text-center py-8 text-slate-400">
+      No failures detected. All systems nominal.
+    </div>
+  )}
+
+  <div class="mt-4 text-xs text-slate-500 italic">
+    TODO: Replace with live telemetry stream from Django Channels WebSocket endpoint
+  </div>
+</div>
