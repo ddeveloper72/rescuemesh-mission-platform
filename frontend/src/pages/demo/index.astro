@@ -36,18 +36,17 @@ if (useCasesResult.success && useCasesResult.data) {
 
       <h1 class="text-4xl font-bold mb-4">Mission Demos</h1>
       <p class="text-xl text-slate-300 mb-12">
-        Experience simulated missions for each RescueMesh use case. Each demo showcases agent behavior,
-        sensor outputs, failure scenarios, and AI analysis in a data-driven dashboard.
+        Experience simulated missions for each RescueMesh use case. View static mission profiles
+        or run live Django-backed simulations with real-time agent telemetry, sensor events, and AI analysis.
       </p>
 
       <div class="grid md:grid-cols-2 gap-6 mb-12">
         {useCaseDemoProfiles.map(profile => (
-          <a 
-            href={`/demo/${profile.slug}`}
-            class="bg-slate-800 rounded-lg p-6 border border-slate-700 hover:border-rescue-400 transition-colors group"
+          <div
+            class="bg-slate-800 rounded-lg p-6 border border-slate-700"
           >
             <div class="flex items-start justify-between mb-3">
-              <h2 class="text-xl font-semibold group-hover:text-rescue-400">{profile.title}</h2>
+              <h2 class="text-xl font-semibold">{profile.title}</h2>
               <span class="px-2 py-1 bg-blue-900 text-blue-300 rounded text-xs border border-blue-700">
                 {profile.status}
               </span>
@@ -75,18 +74,43 @@ if (useCasesResult.success && useCasesResult.data) {
               ))}
             </div>
             
-            <div class="flex items-center justify-between">
-              <div class="text-xs">
-                <div class="text-slate-500 mb-1">Risk Level</div>
-                <div class="flex gap-2">
-                  <span class="px-2 py-0.5 bg-alert-900 text-alert-300 rounded text-xs">
-                    Comms: {profile.simulation.communicationRisk}
-                  </span>
-                </div>
+            <div class="mb-4">
+              <div class="text-xs text-slate-500 mb-2">Risk Level</div>
+              <div class="flex gap-2">
+                <span class="px-2 py-0.5 bg-alert-900 text-alert-300 rounded text-xs">
+                  Comms: {profile.simulation.communicationRisk}
+                </span>
               </div>
-              <span class="text-rescue-400 text-sm font-medium">Launch Demo →</span>
             </div>
-          </a>
+
+            <!-- Data availability indicators -->
+            <div class="flex gap-3 mb-4 text-xs">
+              <div class="flex items-center gap-1 text-slate-400">
+                <span class="w-2 h-2 bg-slate-500 rounded-full"></span>
+                <span>Static profile available</span>
+              </div>
+              <div class="flex items-center gap-1 text-green-400">
+                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span>Live simulation available</span>
+              </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex gap-3">
+              <a 
+                href={`/demo/${profile.slug}`}
+                class="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-center rounded font-semibold transition-colors text-sm"
+              >
+                View Profile
+              </a>
+              <a 
+                href={`/demo/live/${profile.slug}`}
+                class="flex-1 px-4 py-2 bg-rescue-600 hover:bg-rescue-500 text-white text-center rounded font-semibold transition-colors text-sm"
+              >
+                Run Live Simulation
+              </a>
+            </div>
+          </div>
         ))}
       </div>
 
@@ -97,39 +121,45 @@ if (useCasesResult.success && useCasesResult.data) {
             <svg class="w-5 h-5 text-rescue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
-            <span>Real-time mission dashboard with map, agent status, and telemetry</span>
+            <span>Static mission profile views</span>
           </li>
           <li class="flex items-start gap-2">
             <svg class="w-5 h-5 text-rescue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
-            <span>Simulated hardware failures and tactical decisions</span>
+            <span>Live Django-backed simulation pages</span>
           </li>
           <li class="flex items-start gap-2">
             <svg class="w-5 h-5 text-rescue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
-            <span>Mission timeline with confidence-scored events</span>
+            <span>Simulated agent battery and signal changes</span>
           </li>
           <li class="flex items-start gap-2">
             <svg class="w-5 h-5 text-rescue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
-            <span>AI analyst findings with human review requirements</span>
+            <span>Mission map coverage and confidence updates</span>
           </li>
           <li class="flex items-start gap-2">
             <svg class="w-5 h-5 text-rescue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
-            <span>Mission report with asset recovery and safety recommendations</span>
+            <span>Sensor detections and failure events</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-rescue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>AI analyst summaries and human review prompts</span>
           </li>
         </ul>
 
         <div class="mt-4 p-4 bg-blue-900 bg-opacity-20 border border-blue-700 rounded">
           <p class="text-sm text-blue-200">
-            <strong>Note:</strong> These are simulated missions using local TypeScript data.
-            Future integration with Django will provide dynamic mission templates, real-time telemetry streams,
-            and persistent mission history.
+            <strong>Note:</strong> Static profile pages use local TypeScript fallback data.
+            Live simulation pages connect to the Django API and show changing mission state, agent telemetry,
+            map coverage, sensor events, failure scenarios, and AI analysis.
           </p>
         </div>
       </div>
