@@ -1,14 +1,17 @@
 /**
- * Client-side mission simulation manager.
+ * Mission Simulation Manager
  * 
- * Handles:
- * - Polling mission state from Django API
- * - Updating dashboard UI with live data
- * - Control button interactions (start/pause/reset/speed)
+ * Manages the lifecycle and state of mission simulations:
+ * - Polls Django REST API for mission state updates (2-second interval)
+ * - Updates dashboard UI elements with live mission data
+ * - Handles user control interactions (start/pause/reset/speed)
+ * - Coordinates auto-scroll behavior to guide user attention
  * 
- * TODO: This is a simple vanilla implementation.
- * TODO: Future: Convert to React/Preact/Svelte island for better state management.
- * TODO: Future: Add WebSocket support for real-time updates instead of polling.
+ * Architecture: Vanilla TypeScript with direct DOM manipulation.
+ * Future enhancement path: Convert to reactive framework (React/Preact/Svelte) for better state management.
+ * Future enhancement path: Replace polling with WebSocket for real-time updates.
+ * 
+ * @module simulation-manager
  */
 
 import type { MissionSimulationState } from '../types/simulation';
@@ -21,46 +24,278 @@ import {
 } from './api';
 import { updateDetectionData } from './detection-modal-manager';
 
+// ====================
+// DOM SELECTOR CONSTANTS
+// ====================
+
+/** Primary UI element selectors */
+const SELECTORS = {
+  // Simulation Controls
+  CLOCK: 'sim-clock',
+  SPEED: 'sim-speed',
+  STATUS: 'sim-status',
+  SPEED_SELECT: 'speed-select',
+  
+  // Network Status
+  MESH_HEALTH: 'mesh-health',
+  PACKET_LOSS: 'packet-loss',
+  BASE_SIGNAL: 'base-signal',
+  NETWORK_HEALTH_INDICATOR: 'network-health-indicator',
+  NETWORK_HEALTH_ICON: 'network-health-icon',
+  NETWORK_HEALTH_LABEL: 'network-health-label',
+  RELAY_CHAIN: 'relay-chain',
+  
+  // Map Status
+  MAP_COVERAGE: 'map-coverage',
+  MAP_CONFIDENCE: 'map-confidence',
+  MAP_POINTS: 'map-points',
+  
+  // Sensors
+  THERMAL_COUNT: 'thermal-count',
+  AUDIO_COUNT: 'audio-count',
+  
+  // AI Analysis
+  AI_SUMMARY: 'ai-summary',
+  AI_CONFIDENCE: 'ai-confidence',
+  
+  // Events
+  EVENT_COUNT: 'event-count',
+  
+  // Tactical Map Container (for auto-scroll)
+  TACTICAL_MAP_CONTAINER: 'tactical-map-container',
+} as const;
+
+/** Data attribute selectors for agent-specific elements */
+const AGENT_SELECTORS = {
+  BATTERY: 'data-agent-battery',
+  BATTERY_BAR: 'data-agent-battery-bar',
+  SIGNAL: 'data-agent-signal',
+  STATE: 'data-agent-state',
+} as const;
+
+/** Control button action identifiers */
+const CONTROL_ACTIONS = {
+  START: 'start',
+  PAUSE: 'pause',
+  RESET: 'reset',
+} as const;
+
+/** Custom event names for inter-component communication */
+const CUSTOM_EVENTS = {
+  AUDIO_DETECTIONS_UPDATE: 'audio-detections-update',
+} as const;
+
+// ====================
+// CONFIGURATION CONSTANTS
+// ====================
+
+/** Polling interval in milliseconds */
+const POLLING_INTERVAL_MS = 2000;
+
+/** Battery level thresholds for visual indicators */
+const BATTERY_THRESHOLDS = {
+  HEALTHY: 50,
+  WARNING: 20,
+} as const;
+
+/** Network health thresholds */
+const NETWORK_THRESHOLDS = {
+  HEALTHY: { MESH_HEALTH: 80, PACKET_LOSS: 10 },
+  DEGRADED: { MESH_HEALTH: 60, PACKET_LOSS: 20 },
+} as const;
+
+/** Smooth scroll configuration */
+const SCROLL_CONFIG = {
+  BEHAVIOR: 'smooth' as ScrollBehavior,
+  BLOCK: 'start' as ScrollLogicalPosition,
+  INLINE: 'nearest' as ScrollLogicalPosition,
+} as const;
+
+// ====================
+// TYPE DEFINITIONS
+// ====================
+
+/** Agent identifier to display name mapping */
+type AgentNameMap = Record<string, string>;
+
+/** Network health status levels */
+type NetworkHealthStatus = 'healthy' | 'degraded' | 'critical';
+
+/** Agent state classification for visual styling */
+type AgentStateType = 'healthy' | 'active' | 'degraded' | 'intermittent' | 'failed' | 'lost' | 'landed_relay' | 'sacrificed' | 'abandoned';
+
+// ====================
+// UTILITY FUNCTIONS
+// ====================
+
+/**
+ * Safely retrieve a DOM element by ID.
+ * Logs a warning if element is not found (helps catch template issues).
+ */
+function getElementByIdSafe(id: string): HTMLElement | null {
+  const element = document.getElementById(id);
+  if (!element) {
+    console.warn(`[SimulationManager] Element not found: #${id}`);
+  }
+  return element;
+}
+
+/**
+ * Safely query a DOM element by selector.
+ */
+function querySelectorSafe<T extends Element>(selector: string): T | null {
+  return document.querySelector<T>(selector);
+}
+
+/**
+ * Format elapsed seconds into MM:SS display format.
+ */
+function formatMissionTime(elapsedSeconds: number): string {
+  const minutes = Math.floor(elapsedSeconds / 60);
+  const seconds = Math.floor(elapsedSeconds % 60);
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Determine battery health CSS classes based on percentage.
+ */
+function getBatteryHealthClass(batteryPercent: number): string {
+  if (batteryPercent > BATTERY_THRESHOLDS.HEALTHY) {
+    return 'h-full bg-green-500 transition-all duration-500';
+  } else if (batteryPercent > BATTERY_THRESHOLDS.WARNING) {
+    return 'h-full bg-yellow-500 transition-all duration-500';
+  } else {
+    return 'h-full bg-red-500 transition-all duration-500';
+  }
+}
+
+/**
+ * Map agent IDs to human-readable display names.
+ */
+function getAgentDisplayName(agentId: string): string {
+  const agentNames: AgentNameMap = {
+    'relay-1': 'Static Relay',
+    'drone-a': 'Scout Drone A',
+    'drone-b': 'Thermal/Audio Drone',
+    'drone-c': 'Relay Drone',
+  };
+  return agentNames[agentId] || agentId;
+}
+
+/**
+ * Get CSS classes for agent state badges.
+ */
+function getAgentStateClass(state: string): string {
+  const baseClass = 'px-2 py-1 rounded text-xs font-semibold';
+  
+  const stateClassMap: Record<string, string> = {
+    'healthy': `${baseClass} bg-green-900 text-green-300`,
+    'active': `${baseClass} bg-green-900 text-green-300`,
+    'degraded': `${baseClass} bg-yellow-900 text-yellow-300`,
+    'intermittent': `${baseClass} bg-yellow-900 text-yellow-300`,
+    'failed': `${baseClass} bg-red-900 text-red-300`,
+    'lost': `${baseClass} bg-red-900 text-red-300`,
+    'landed_relay': `${baseClass} bg-purple-900 text-purple-300`,
+    'sacrificed': `${baseClass} bg-slate-700 text-slate-300`,
+    'abandoned': `${baseClass} bg-slate-700 text-slate-300`,
+  };
+  
+  return stateClassMap[state] || `${baseClass} bg-slate-800 text-slate-300`;
+}
+
+/**
+ * Smoothly scroll to the tactical map to bring mission activity into view.
+ * Called when simulation starts to guide user attention.
+ */
+function scrollToTacticalMap(): void {
+  // Try multiple possible container IDs/classes (different use cases may use different IDs)
+  const possibleSelectors = [
+    '#tactical-map-container',
+    '[class*="tactical-map"]',
+    '.tactical-map',
+  ];
+  
+  for (const selector of possibleSelectors) {
+    const mapElement = document.querySelector(selector);
+    if (mapElement) {
+      // Small delay to let the UI update first
+      setTimeout(() => {
+        mapElement.scrollIntoView({
+          behavior: SCROLL_CONFIG.BEHAVIOR,
+          block: SCROLL_CONFIG.BLOCK,
+          inline: SCROLL_CONFIG.INLINE,
+        });
+      }, 300);
+      return;
+    }
+  }
+  
+  console.warn('[SimulationManager] Could not find tactical map element for auto-scroll');
+}
+
+/**
+ * SimulationManager Class
+ * 
+ * Orchestrates mission simulation state management and UI updates.
+ * Implements polling-based synchronization with Django backend.
+ */
 export class SimulationManager {
-  private missionPk: string;
-  private pollingInterval: number = 2000; // 2 seconds
+  private readonly missionPk: string;
+  private readonly pollingInterval: number = POLLING_INTERVAL_MS;
   private pollTimer: number | null = null;
   private lastState: MissionSimulationState | null = null;
   private isPolling: boolean = false;
 
+  /**
+   * Create a new SimulationManager instance.
+   * @param missionPk - Unique identifier for the mission to manage
+   */
   constructor(missionPk: string) {
     this.missionPk = missionPk;
   }
 
   /**
-   * Start polling for mission state updates.
+   * Start polling for mission state updates from the API.
+   * Performs an immediate poll followed by recurring polls at configured interval.
+   * Safe to call multiple times (idempotent).
    */
-  startPolling() {
-    if (this.isPolling) return;
+  startPolling(): void {
+    if (this.isPolling) {
+      console.debug('[SimulationManager] Polling already active');
+      return;
+    }
     
     this.isPolling = true;
-    this.poll(); // Initial poll
+    this.poll(); // Immediate initial poll
     
     this.pollTimer = window.setInterval(() => {
       this.poll();
     }, this.pollingInterval);
+    
+    console.debug(`[SimulationManager] Started polling (interval: ${this.pollingInterval}ms)`);
   }
 
   /**
-   * Stop polling.
+   * Stop polling for mission state updates.
+   * Cleans up interval timer to prevent memory leaks.
    */
-  stopPolling() {
+  stopPolling(): void {
     this.isPolling = false;
-    if (this.pollTimer) {
+    
+    if (this.pollTimer !== null) {
       clearInterval(this.pollTimer);
       this.pollTimer = null;
     }
+    
+    console.debug('[SimulationManager] Stopped polling');
   }
 
   /**
-   * Poll the mission state endpoint.
+   * Execute a single poll of the mission state endpoint.
+   * Updates UI if successful, logs errors if failed.
+   * @private
    */
-  private async poll() {
+  private async poll(): Promise<void> {
     try {
       const result = await getMissionState(this.missionPk);
       
@@ -68,20 +303,22 @@ export class SimulationManager {
         this.lastState = result.data;
         this.updateUI(result.data);
       } else {
-        console.warn('Failed to fetch mission state:', result.error);
+        console.warn('[SimulationManager] Failed to fetch mission state:', result.error);
       }
     } catch (error) {
-      console.error('Polling error:', error);
+      console.error('[SimulationManager] Polling error:', error);
+      // Continue polling despite errors (transient network issues should auto-recover)
     }
   }
 
   /**
-   * Update the dashboard UI with new state.
+   * Update all dashboard UI elements with fresh mission state.
+   * Coordinates updates across multiple subsystems (clock, agents, network, map, sensors, AI).
    * 
-   * TODO: This updates DOM elements directly.
-   * TODO: Future: Use a reactive framework for cleaner updates.
+   * @param state - Complete mission state from backend API
+   * @private
    */
-  private updateUI(state: MissionSimulationState) {
+  private updateUI(state: MissionSimulationState): void {
     // Update detection data for modal manager
     updateDetectionData(state);
     
@@ -106,33 +343,36 @@ export class SimulationManager {
     // Update AI analysis
     this.updateAI(state.ai_analysis);
     
-    // Dispatch audio detections event for AudioDetectionsPanel
+    // Dispatch audio detections event for AudioDetectionsPanel (React island)
     if (state.audio_detections) {
-      window.dispatchEvent(new CustomEvent('audio-detections-update', {
+      window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.AUDIO_DETECTIONS_UPDATE, {
         detail: { audioDetections: state.audio_detections }
       }));
     }
     
-    // Update control button states
+    // Update control button states based on running status
     this.updateControlButtons(state.simulation_clock.is_running);
   }
 
-  private updateClock(clock: MissionSimulationState['simulation_clock']) {
-    const minutes = Math.floor(clock.elapsed_seconds / 60);
-    const seconds = Math.floor(clock.elapsed_seconds % 60);
-    const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  /**
+   * Update simulation clock display elements.
+   * @param clock - Simulation clock state from backend
+   * @private
+   */
+  private updateClock(clock: MissionSimulationState['simulation_clock']): void {
+    const timeStr = formatMissionTime(clock.elapsed_seconds);
     
-    const clockEl = document.getElementById('sim-clock');
+    const clockEl = getElementByIdSafe(SELECTORS.CLOCK);
     if (clockEl) {
       clockEl.textContent = timeStr;
     }
     
-    const speedEl = document.getElementById('sim-speed');
+    const speedEl = getElementByIdSafe(SELECTORS.SPEED);
     if (speedEl) {
-      speedEl.textContent = clock.speed_multiplier.toString();
+      speedEl.textContent = `${clock.speed_multiplier}x`;
     }
     
-    const statusEl = document.getElementById('sim-status');
+    const statusEl = getElementByIdSafe(SELECTORS.STATUS);
     if (statusEl) {
       statusEl.textContent = clock.is_running ? '● Running' : '⏸ Paused';
       statusEl.className = clock.is_running
@@ -141,105 +381,155 @@ export class SimulationManager {
     }
   }
 
-  private updateAgents(agents: MissionSimulationState['agents']) {
+  /**
+   * Update all agent status displays (battery, signal, state).
+   * @param agents - Array of agent states from backend
+   * @private
+   */
+  private updateAgents(agents: MissionSimulationState['agents']): void {
     agents.forEach(agent => {
-      // Update battery
-      const batteryEl = document.querySelector(`[data-agent-battery="${agent.agent_id}"]`);
-      if (batteryEl) {
-        batteryEl.textContent = `${agent.battery_percent}%`;
-        
-        // Update battery bar if exists
-        const batteryBarEl = document.querySelector(`[data-agent-battery-bar="${agent.agent_id}"]`) as HTMLElement;
-        if (batteryBarEl) {
-          batteryBarEl.style.width = `${agent.battery_percent}%`;
-          
-          // Color based on battery level
-          if (agent.battery_percent > 50) {
-            batteryBarEl.className = 'h-full bg-green-500 transition-all duration-500';
-          } else if (agent.battery_percent > 20) {
-            batteryBarEl.className = 'h-full bg-yellow-500 transition-all duration-500';
-          } else {
-            batteryBarEl.className = 'h-full bg-red-500 transition-all duration-500';
-          }
-        }
-      }
-      
-      // Update signal strength
-      const signalEl = document.querySelector(`[data-agent-signal="${agent.agent_id}"]`);
-      if (signalEl) {
-        signalEl.textContent = `${agent.signal_strength}%`;
-      }
-      
-      // Update state
-      const stateEl = document.querySelector(`[data-agent-state="${agent.agent_id}"]`);
-      if (stateEl) {
-        stateEl.textContent = agent.state;
-        // Add color classes based on state
-        stateEl.className = this.getStateClass(agent.state);
-      }
+      this.updateAgentBattery(agent.agent_id, agent.battery_percent);
+      this.updateAgentSignal(agent.agent_id, agent.signal_strength);
+      this.updateAgentState(agent.agent_id, agent.state);
     });
   }
 
-  private updateNetwork(network: MissionSimulationState['network']) {
-    const meshHealthEl = document.getElementById('mesh-health');
+  /**
+   * Update battery display and visual indicator for a specific agent.
+   * @private
+   */
+  private updateAgentBattery(agentId: string, batteryPercent: number): void {
+    const batteryEl = querySelectorSafe(`[${AGENT_SELECTORS.BATTERY}="${agentId}"]`);
+    if (batteryEl) {
+      batteryEl.textContent = `${batteryPercent}%`;
+    }
+    
+    const batteryBarEl = querySelectorSafe<HTMLElement>(`[${AGENT_SELECTORS.BATTERY_BAR}="${agentId}"]`);
+    if (batteryBarEl) {
+      batteryBarEl.style.width = `${batteryPercent}%`;
+      batteryBarEl.className = getBatteryHealthClass(batteryPercent);
+    }
+  }
+
+  /**
+   * Update signal strength display for a specific agent.
+   * @private
+   */
+  private updateAgentSignal(agentId: string, signalStrength: number): void {
+    const signalEl = querySelectorSafe(`[${AGENT_SELECTORS.SIGNAL}="${agentId}"]`);
+    if (signalEl) {
+      signalEl.textContent = `${signalStrength}%`;
+    }
+  }
+
+  /**
+   * Update state badge for a specific agent.
+   * @private
+   */
+  private updateAgentState(agentId: string, state: string): void {
+    const stateEl = querySelectorSafe(`[${AGENT_SELECTORS.STATE}="${agentId}"]`);
+    if (stateEl) {
+      stateEl.textContent = state;
+      stateEl.className = getAgentStateClass(state);
+    }
+  }
+
+  /**
+   * Update network status displays (mesh health, packet loss, signal, relay chain).
+   * @param network - Network state from backend
+   * @private
+   */
+  private updateNetwork(network: MissionSimulationState['network']): void {
+    const meshHealthEl = getElementByIdSafe(SELECTORS.MESH_HEALTH);
     if (meshHealthEl) {
       meshHealthEl.textContent = `${network.mesh_health}%`;
     }
     
-    const packetLossEl = document.getElementById('packet-loss');
+    const packetLossEl = getElementByIdSafe(SELECTORS.PACKET_LOSS);
     if (packetLossEl) {
       packetLossEl.textContent = `${network.packet_loss_percent}%`;
     }
 
-    const baseSignalEl = document.getElementById('base-signal');
+    const baseSignalEl = getElementByIdSafe(SELECTORS.BASE_SIGNAL);
     if (baseSignalEl) {
       baseSignalEl.textContent = `${network.base_signal_strength}%`;
     }
 
-    // Update network health indicator
     this.updateNetworkHealthIndicator(network.mesh_health, network.packet_loss_percent);
-
-    // Update relay chain
     this.updateRelayChain(network.relay_chain || []);
   }
 
-  private updateNetworkHealthIndicator(meshHealth: number, packetLoss: number) {
-    const indicatorEl = document.getElementById('network-health-indicator');
-    const iconEl = document.getElementById('network-health-icon');
-    const labelEl = document.getElementById('network-health-label');
+  /**
+   * Update network health indicator based on mesh health and packet loss metrics.
+   * Displays visual status (icon, label, background color) reflecting network quality.
+   * @param meshHealth - Mesh network health percentage (0-100)
+   * @param packetLoss - Packet loss percentage (0-100)
+   * @private
+   */
+  private updateNetworkHealthIndicator(meshHealth: number, packetLoss: number): void {
+    const indicatorEl = getElementByIdSafe(SELECTORS.NETWORK_HEALTH_INDICATOR);
+    const iconEl = getElementByIdSafe(SELECTORS.NETWORK_HEALTH_ICON);
+    const labelEl = getElementByIdSafe(SELECTORS.NETWORK_HEALTH_LABEL);
 
     if (!indicatorEl || !iconEl || !labelEl) return;
 
-    // Determine health status
-    let status: 'healthy' | 'degraded' | 'critical';
-    let icon: string;
-    let label: string;
-    let bgClass: string;
-
-    if (meshHealth >= 80 && packetLoss <= 10) {
-      status = 'healthy';
-      icon = '🟢';
-      label = 'Network Healthy';
-      bgClass = 'bg-green-900/30';
-    } else if (meshHealth >= 60 && packetLoss <= 20) {
-      status = 'degraded';
-      icon = '🟡';
-      label = 'Network Degraded';
-      bgClass = 'bg-amber-900/30';
-    } else {
-      status = 'critical';
-      icon = '🔴';
-      label = 'Network Critical';
-      bgClass = 'bg-red-900/30';
-    }
+    const healthStatus = this.determineNetworkHealthStatus(meshHealth, packetLoss);
+    const { icon, label, bgClass } = this.getNetworkHealthDisplayProps(healthStatus);
 
     iconEl.textContent = icon;
     labelEl.textContent = label;
     indicatorEl.className = `mb-4 p-3 rounded-lg ${bgClass}`;
   }
 
-  private updateRelayChain(relayChain: string[]) {
-    const relayChainEl = document.getElementById('relay-chain');
+  /**
+   * Determine network health status based on metrics.
+   * @private
+   */
+  private determineNetworkHealthStatus(meshHealth: number, packetLoss: number): NetworkHealthStatus {
+    if (meshHealth >= NETWORK_THRESHOLDS.HEALTHY.MESH_HEALTH && 
+        packetLoss <= NETWORK_THRESHOLDS.HEALTHY.PACKET_LOSS) {
+      return 'healthy';
+    } else if (meshHealth >= NETWORK_THRESHOLDS.DEGRADED.MESH_HEALTH && 
+               packetLoss <= NETWORK_THRESHOLDS.DEGRADED.PACKET_LOSS) {
+      return 'degraded';
+    } else {
+      return 'critical';
+    }
+  }
+
+  /**
+   * Get display properties (icon, label, CSS class) for network health status.
+   * @private
+   */
+  private getNetworkHealthDisplayProps(status: NetworkHealthStatus): { icon: string; label: string; bgClass: string } {
+    const displayProps = {
+      'healthy': {
+        icon: '🟢',
+        label: 'Network Healthy',
+        bgClass: 'bg-green-900/30',
+      },
+      'degraded': {
+        icon: '🟡',
+        label: 'Network Degraded',
+        bgClass: 'bg-amber-900/30',
+      },
+      'critical': {
+        icon: '🔴',
+        label: 'Network Critical',
+        bgClass: 'bg-red-900/30',
+      },
+    };
+    
+    return displayProps[status];
+  }
+
+  /**
+   * Update relay chain visualization showing communication path through agents.
+   * @param relayChain - Ordered array of agent IDs forming the relay chain
+   * @private
+   */
+  private updateRelayChain(relayChain: string[]): void {
+    const relayChainEl = getElementByIdSafe(SELECTORS.RELAY_CHAIN);
     if (!relayChainEl) return;
 
     if (!relayChain || relayChain.length === 0) {
@@ -247,17 +537,16 @@ export class SimulationManager {
       return;
     }
 
-    // Build relay chain visualization
     const relayItems = relayChain.map((agentId, index) => {
-      const agentName = this.getAgentName(agentId);
+      const agentName = getAgentDisplayName(agentId);
       const isLast = index === relayChain.length - 1;
-      const arrow = isLast ? '' : '↓';
+      const isBaseRelay = agentId === 'relay-1';
       
       return `
         <div class="flex items-center gap-2">
           <span class="text-slate-400">→</span>
           <span class="text-slate-100">${agentName}</span>
-          ${agentId === 'relay-1' ? '<span class="text-xs text-slate-500">(Base)</span>' : ''}
+          ${isBaseRelay ? '<span class="text-xs text-slate-500">(Base)</span>' : ''}
         </div>
         ${!isLast ? '<div class="text-slate-600 ml-3">↓</div>' : ''}
       `;
@@ -266,68 +555,78 @@ export class SimulationManager {
     relayChainEl.innerHTML = relayItems;
   }
 
-  private getAgentName(agentId: string): string {
-    const agentNames: Record<string, string> = {
-      'relay-1': 'Static Relay',
-      'drone-a': 'Scout Drone A',
-      'drone-b': 'Thermal/Audio Drone',
-      'drone-c': 'Relay Drone',
-    };
-    return agentNames[agentId] || agentId;
-  }
-
-  private updateMap(map: MissionSimulationState['map']) {
-    const coverageEl = document.getElementById('map-coverage');
+  /**
+   * Update map status displays (coverage, confidence, point count).
+   * @private
+   */
+  private updateMap(map: MissionSimulationState['map']): void {
+    const coverageEl = getElementByIdSafe(SELECTORS.MAP_COVERAGE);
     if (coverageEl) {
       coverageEl.textContent = `${map.coverage_percent}%`;
     }
     
-    const confidenceEl = document.getElementById('map-confidence');
+    const confidenceEl = getElementByIdSafe(SELECTORS.MAP_CONFIDENCE);
     if (confidenceEl) {
       confidenceEl.textContent = `${(map.confidence * 100).toFixed(0)}%`;
     }
     
-    const pointsEl = document.getElementById('map-points');
+    const pointsEl = getElementByIdSafe(SELECTORS.MAP_POINTS);
     if (pointsEl) {
       pointsEl.textContent = map.total_points.toLocaleString();
     }
   }
 
-  private updateSensors(sensors: MissionSimulationState['sensors']) {
-    // Update counts
-    const thermalCountEl = document.getElementById('thermal-count');
+  /**
+   * Update sensor event count displays.
+   * @private
+   */
+  private updateSensors(sensors: MissionSimulationState['sensors']): void {
+    const thermalCountEl = getElementByIdSafe(SELECTORS.THERMAL_COUNT);
     if (thermalCountEl) {
       thermalCountEl.textContent = sensors.thermal_anomalies.length.toString();
     }
     
-    const audioCountEl = document.getElementById('audio-count');
+    const audioCountEl = getElementByIdSafe(SELECTORS.AUDIO_COUNT);
     if (audioCountEl) {
       audioCountEl.textContent = sensors.audio_events.length.toString();
     }
   }
 
-  private updateEvents(events: MissionSimulationState['events']) {
-    const eventCountEl = document.getElementById('event-count');
+  /**
+   * Update mission events count display.
+   * @private
+   */
+  private updateEvents(events: MissionSimulationState['events']): void {
+    const eventCountEl = getElementByIdSafe(SELECTORS.EVENT_COUNT);
     if (eventCountEl) {
       eventCountEl.textContent = events.length.toString();
     }
   }
 
-  private updateAI(ai: MissionSimulationState['ai_analysis']) {
-    const aiSummaryEl = document.getElementById('ai-summary');
+  /**
+   * Update AI analysis displays (summary text, confidence).
+   * @private
+   */
+  private updateAI(ai: MissionSimulationState['ai_analysis']): void {
+    const aiSummaryEl = getElementByIdSafe(SELECTORS.AI_SUMMARY);
     if (aiSummaryEl) {
       aiSummaryEl.textContent = ai.summary;
     }
     
-    const aiConfidenceEl = document.getElementById('ai-confidence');
+    const aiConfidenceEl = getElementByIdSafe(SELECTORS.AI_CONFIDENCE);
     if (aiConfidenceEl) {
       aiConfidenceEl.textContent = `${(ai.confidence * 100).toFixed(0)}%`;
     }
   }
 
-  private updateControlButtons(isRunning: boolean) {
-    const startBtn = document.querySelector('[data-action="start"]') as HTMLButtonElement;
-    const pauseBtn = document.querySelector('[data-action="pause"]') as HTMLButtonElement;
+  /**
+   * Update enabled/disabled state of control buttons based on simulation status.
+   * @param isRunning - Whether simulation is currently running
+   * @private
+   */
+  private updateControlButtons(isRunning: boolean): void {
+    const startBtn = querySelectorSafe<HTMLButtonElement>(`[data-action="${CONTROL_ACTIONS.START}"]`);
+    const pauseBtn = querySelectorSafe<HTMLButtonElement>(`[data-action="${CONTROL_ACTIONS.PAUSE}"]`);
     
     if (startBtn) {
       startBtn.disabled = isRunning;
@@ -337,123 +636,183 @@ export class SimulationManager {
     }
   }
 
-  private getStateClass(state: string): string {
-    const baseClass = 'px-2 py-1 rounded text-xs font-semibold';
-    
-    if (state === 'healthy' || state === 'active') {
-      return `${baseClass} bg-green-900 text-green-300`;
-    } else if (state === 'degraded' || state === 'intermittent') {
-      return `${baseClass} bg-yellow-900 text-yellow-300`;
-    } else if (state === 'failed' || state === 'lost') {
-      return `${baseClass} bg-red-900 text-red-300`;
-    } else if (state === 'landed_relay') {
-      return `${baseClass} bg-purple-900 text-purple-300`;
-    } else if (state === 'sacrificed' || state === 'abandoned') {
-      return `${baseClass} bg-slate-700 text-slate-300`;
-    } else {
-      return `${baseClass} bg-slate-800 text-slate-300`;
-    }
-  }
+  // ====================
+  // PUBLIC CONTROL METHODS
+  // ====================
 
   /**
-   * Control actions
+   * Start the mission simulation.
+   * Sends start command to backend and immediately polls for updated state.
+   * Auto-scrolls to tactical map to bring mission activity into user's view.
    */
-  
-  async start() {
+  async start(): Promise<void> {
     const result = await startSimulation(this.missionPk);
+    
     if (result.success) {
-      console.log('Simulation started');
-      this.poll(); // Immediate poll
+      console.log('[SimulationManager] Simulation started successfully');
+      await this.poll(); // Immediate poll to update UI
+      
+      // Auto-scroll to tactical map to bring mission data into view
+      scrollToTacticalMap();
     } else {
-      console.error('Failed to start simulation:', result.error);
-      alert(`Failed to start simulation: ${result.error}`);
-    }
-  }
-
-  async pause() {
-    const result = await pauseSimulation(this.missionPk);
-    if (result.success) {
-      console.log('Simulation paused');
-      this.poll(); // Immediate poll
-    } else {
-      console.error('Failed to pause simulation:', result.error);
-      alert(`Failed to pause simulation: ${result.error}`);
-    }
-  }
-
-  async reset() {
-    const result = await resetSimulation(this.missionPk);
-    if (result.success) {
-      console.log('Simulation reset');
-      this.poll(); // Immediate poll
-    } else {
-      console.error('Failed to reset simulation:', result.error);
-      alert(`Failed to reset simulation: ${result.error}`);
-    }
-  }
-
-  async setSpeed(speed: number) {
-    const result = await setSimulationSpeed(this.missionPk, speed);
-    if (result.success && result.data) {
-      console.log(`Speed set to ${result.data.speed_multiplier}x`);
-      this.poll(); // Immediate poll
-    } else {
-      console.error('Failed to set speed:', result.error);
-      alert(`Failed to set speed: ${result.error}`);
+      console.error('[SimulationManager] Failed to start simulation:', result.error);
+      this.showErrorNotification('Failed to start simulation', result.error);
     }
   }
 
   /**
-   * Get last known state (for debugging/testing).
+   * Pause the mission simulation.
+   * Sends pause command to backend and immediately polls for updated state.
+   */
+  async pause(): Promise<void> {
+    const result = await pauseSimulation(this.missionPk);
+    
+    if (result.success) {
+      console.log('[SimulationManager] Simulation paused');
+      await this.poll();
+    } else {
+      console.error('[SimulationManager] Failed to pause simulation:', result.error);
+      this.showErrorNotification('Failed to pause simulation', result.error);
+    }
+  }
+
+  /**
+   * Reset the mission simulation to initial state.
+   * Sends reset command to backend and immediately polls for updated state.
+   */
+  async reset(): Promise<void> {
+    const result = await resetSimulation(this.missionPk);
+    
+    if (result.success) {
+      console.log('[SimulationManager] Simulation reset');
+      await this.poll();
+    } else {
+      console.error('[SimulationManager] Failed to reset simulation:', result.error);
+      this.showErrorNotification('Failed to reset simulation', result.error);
+    }
+  }
+
+  /**
+   * Set simulation speed multiplier.
+   * @param speed - Speed multiplier (e.g., 1.0 = real-time, 3.0 = 3x speed)
+   */
+  async setSpeed(speed: number): Promise<void> {
+    const result = await setSimulationSpeed(this.missionPk, speed);
+    
+    if (result.success && result.data) {
+      console.log(`[SimulationManager] Speed set to ${result.data.speed_multiplier}x`);
+      await this.poll();
+    } else {
+      console.error('[SimulationManager] Failed to set speed:', result.error);
+      this.showErrorNotification('Failed to set speed', result.error);
+    }
+  }
+
+  /**
+   * Display user-friendly error notification.
+   * Currently uses browser alert; future enhancement: use toast/notification system.
+   * @private
+   */
+  private showErrorNotification(title: string, error: string | undefined): void {
+    const message = error ? `${title}: ${error}` : title;
+    alert(message);
+    // Future: Replace with toast notification system
+  }
+
+  /**
+   * Get the last known mission state.
+   * Useful for debugging, testing, or accessing current state without triggering a poll.
+   * @returns Most recent mission state, or null if no state has been received yet
    */
   getLastState(): MissionSimulationState | null {
     return this.lastState;
   }
 }
 
+// ====================
+// INITIALIZATION FUNCTION
+// ====================
+
+
 /**
- * Initialize simulation manager when page loads.
+ * Initialize and start the simulation manager for a mission.
+ * 
+ * Sets up:
+ * - SimulationManager instance
+ * - Automatic polling (2-second interval)
+ * - Control button event listeners (start/pause/reset)
+ * - Speed selector event listener
+ * - Cleanup on page unload
  * 
  * Usage in Astro pages:
- * 
+ * ```typescript
  * <script>
  *   import { initializeSimulation } from '../lib/simulation-manager';
- *   initializeSimulation('mission-uuid-here');
+ *   const manager = initializeSimulation('mission-uuid-here');
  * </script>
+ * ```
+ * 
+ * @param missionPk - Unique identifier for the mission
+ * @returns SimulationManager instance (for advanced control if needed)
  */
 export function initializeSimulation(missionPk: string): SimulationManager {
   const manager = new SimulationManager(missionPk);
   manager.startPolling();
   
-  // Setup control button event listeners
+  setupControlButtonListeners(manager);
+  setupSpeedSelectorListener(manager);
+  setupCleanupHandler(manager);
+  
+  return manager;
+}
+
+/**
+ * Setup event listeners for simulation control buttons.
+ * @private
+ */
+function setupControlButtonListeners(manager: SimulationManager): void {
   document.querySelectorAll('.sim-control-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       const target = e.target as HTMLButtonElement;
       const action = target.dataset.action;
       
-      if (action === 'start') {
-        await manager.start();
-      } else if (action === 'pause') {
-        await manager.pause();
-      } else if (action === 'reset') {
-        await manager.reset();
+      switch (action) {
+        case CONTROL_ACTIONS.START:
+          await manager.start();
+          break;
+        case CONTROL_ACTIONS.PAUSE:
+          await manager.pause();
+          break;
+        case CONTROL_ACTIONS.RESET:
+          await manager.reset();
+          break;
+        default:
+          console.warn(`[SimulationManager] Unknown control action: ${action}`);
       }
     });
   });
-  
-  // Setup speed selector
-  const speedSelect = document.getElementById('speed-select') as HTMLSelectElement;
+}
+
+/**
+ * Setup event listener for speed selector dropdown.
+ * @private
+ */
+function setupSpeedSelectorListener(manager: SimulationManager): void {
+  const speedSelect = getElementByIdSafe(SELECTORS.SPEED_SELECT) as HTMLSelectElement;
   if (speedSelect) {
     speedSelect.addEventListener('change', async (e) => {
       const speed = parseFloat((e.target as HTMLSelectElement).value);
       await manager.setSpeed(speed);
     });
   }
-  
-  // Cleanup on page unload
+}
+
+/**
+ * Setup cleanup handler to stop polling when page unloads.
+ * @private
+ */
+function setupCleanupHandler(manager: SimulationManager): void {
   window.addEventListener('beforeunload', () => {
     manager.stopPolling();
   });
-  
-  return manager;
 }
