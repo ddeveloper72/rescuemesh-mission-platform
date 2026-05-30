@@ -33,6 +33,7 @@ from .navigation_utils import (
     estimate_return_time,
     calculate_slope_and_incline,
     format_depth_elevation_label,
+    calculate_compass_confidence,
 )
 
 
