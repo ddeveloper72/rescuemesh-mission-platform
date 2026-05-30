@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { API_BASE_URL } from '../../config/api';
 
 interface AudioDetection {
   id: string;
@@ -65,24 +66,6 @@ export default function AudioDetectionsPanel({ missionId, audioDetections = [] }
     }
   };
 
-  // Helper function to get audio type icon
-  const getAudioTypeIcon = (audioType: AudioDetection['audio_type']): string => {
-    switch (audioType) {
-      case 'knocking':
-        return '🔨';
-      case 'tapping':
-        return '👆';
-      case 'voice_like':
-        return '🗣️';
-      case 'static':
-        return '📡';
-      case 'ambient':
-        return '🌊';
-      default:
-        return '🎵';
-    }
-  };
-
   // Helper function to get audio type label
   const getAudioTypeLabel = (audioType: AudioDetection['audio_type']): string => {
     switch (audioType) {
@@ -99,6 +82,16 @@ export default function AudioDetectionsPanel({ missionId, audioDetections = [] }
       default:
         return 'Audio';
     }
+  };
+
+  // Helper to construct full URL
+  const getFullUrl = (relativeUrl?: string): string | undefined => {
+    if (!relativeUrl) return undefined;
+    // If URL already has protocol, return as-is; otherwise prepend API_BASE_URL
+    if (relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://')) {
+      return relativeUrl;
+    }
+    return `${API_BASE_URL}${relativeUrl}`;
   };
 
   // Play/pause audio
@@ -169,7 +162,11 @@ export default function AudioDetectionsPanel({ missionId, audioDetections = [] }
             {/* Detection header */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{getAudioTypeIcon(detection.audio_type)}</span>
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-blue-900/40 border border-blue-600/50 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                  </svg>
+                </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-white">{detection.agent_name}</span>
@@ -192,10 +189,10 @@ export default function AudioDetectionsPanel({ missionId, audioDetections = [] }
             {/* Audio player and spectrogram */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
               {/* Audio waveform placeholder / spectrogram */}
-              {detection.spectrogram_url ? (
+              {getFullUrl(detection.spectrogram_url) ? (
                 <div className="aspect-video bg-black rounded border border-gray-700 overflow-hidden">
                   <img 
-                    src={detection.spectrogram_url} 
+                    src={getFullUrl(detection.spectrogram_url)} 
                     alt="Audio spectrogram"
                     className="w-full h-full object-cover"
                   />
@@ -219,10 +216,10 @@ export default function AudioDetectionsPanel({ missionId, audioDetections = [] }
               )}
 
               {/* Audio playback control */}
-              {detection.audio_url && (
+              {getFullUrl(detection.audio_url) && (
                 <div className="flex flex-col justify-center items-center gap-3 bg-gray-900/60 rounded border border-gray-700 p-4">
                   <button
-                    onClick={() => toggleAudioPlayback(detection.id, detection.audio_url!)}
+                    onClick={() => toggleAudioPlayback(detection.id, getFullUrl(detection.audio_url)!)}
                     className={`p-4 rounded-full transition-colors ${
                       currentlyPlaying === detection.id
                         ? 'bg-red-600 hover:bg-red-700'
