@@ -7,33 +7,215 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div class="max-w-7xl mx-auto">
       <!-- Hero Section -->
       <div class="text-center mb-16">
-        <h1 class="text-5xl font-bold mb-4 bg-gradient-to-r from-rescue-400 to-rescue-600 bg-clip-text text-transparent">
+        <h1 class="text-5xl font-bold mb-6 bg-gradient-to-r from-rescue-400 to-rescue-600 bg-clip-text text-transparent">
           RescueMesh Mission Platform
         </h1>
-        <p class="text-xl text-slate-300 max-w-3xl mx-auto">
-          Simulation-first mission dashboard for dangerous, GPS-denied, partially inaccessible environments
+        <p class="text-xl text-slate-200 max-w-4xl mx-auto mb-4 leading-relaxed">
+          RescueMesh is a simulation-first mission platform for autonomous agents operating in dangerous, GPS-denied environments. It demonstrates how drones, relay nodes and sensor agents can map unknown terrain, share discoveries, relay data through a mesh network, and support human decision-making during rescue, inspection and hazard-response missions.
+        </p>
+        <p class="text-lg text-slate-400 max-w-4xl mx-auto leading-relaxed">
+          Built with Astro, Tailwind and Django, the project simulates changing mission data such as map reconstruction, agent movement, battery drain, signal loss, sensor detections, returned media, hardware failures and AI-assisted analysis.
         </p>
       </div>
 
+      <!-- Why RescueMesh Uses a Mesh -->
+      <div class="mb-16 bg-slate-800/50 rounded-lg p-8 border border-slate-700">
+        <h2 class="text-3xl font-bold mb-6 text-center text-rescue-400">Why RescueMesh Uses a Mesh Network</h2>
+        <div class="max-w-4xl mx-auto space-y-4 text-slate-300 leading-relaxed">
+          <p>
+            <strong class="text-white">Drones can lose direct contact with mission control</strong> when operating inside caves, collapsed buildings, flooded structures, industrial spaces, tunnels, or reinforced concrete environments. GPS may be unavailable, and radio signals may be blocked or severely degraded.
+          </p>
+          <p>
+            <strong class="text-white">Instead of relying on one direct link,</strong> RescueMesh agents can relay data through nearby agents or static relay nodes. Each agent contributes to a shared mission picture. Mapped terrain from one agent helps another agent navigate more safely.
+          </p>
+          <p>
+            <strong class="text-white">A drone may deliberately land and become a relay node</strong> if signal strength is weak or battery reserves are low, extending the communication chain deeper into hazardous terrain.
+          </p>
+          <p>
+            <strong class="text-white">Even failed or abandoned hardware may remain valuable</strong> as a beacon, sensor, NFC-readable black box, or last-known observation point.
+          </p>
+          <p>
+            <strong class="text-white">The platform visualizes the communication chain,</strong> agent status, map confidence, terrain reconstruction progress, and mission events in real time.
+          </p>
+        </div>
+      </div>
+
+      <!-- Mission Flow -->
+      <div class="mb-16">
+        <h2 class="text-3xl font-bold mb-8 text-center">How a Mission Unfolds</h2>
+        <div class="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div class="bg-slate-800 rounded-lg p-5 border border-slate-700 text-center">
+            <div class="mb-3 flex justify-center">
+              <svg class="w-10 h-10 text-rescue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold mb-2 text-sm text-rescue-400">1. Scout Enters</h3>
+            <p class="text-xs text-slate-400">Agent enters unknown terrain</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-5 border border-slate-700 text-center">
+            <div class="mb-3 flex justify-center">
+              <svg class="w-10 h-10 text-rescue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold mb-2 text-sm text-rescue-400">2. Terrain Maps</h3>
+            <p class="text-xs text-slate-400">LiDAR/sonar reveals structure</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-5 border border-slate-700 text-center">
+            <div class="mb-3 flex justify-center">
+              <svg class="w-10 h-10 text-rescue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold mb-2 text-sm text-rescue-400">3. Relay Extends</h3>
+            <p class="text-xs text-slate-400">Communication path grows</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-5 border border-slate-700 text-center">
+            <div class="mb-3 flex justify-center">
+              <svg class="w-10 h-10 text-rescue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold mb-2 text-sm text-rescue-400">4. Map Shared</h3>
+            <p class="text-xs text-slate-400">Other agents use route data</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-5 border border-slate-700 text-center">
+            <div class="mb-3 flex justify-center">
+              <svg class="w-10 h-10 text-rescue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold mb-2 text-sm text-rescue-400">5. Data Streams</h3>
+            <p class="text-xs text-slate-400">Sensors relay through mesh</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-5 border border-slate-700 text-center">
+            <div class="mb-3 flex justify-center">
+              <svg class="w-10 h-10 text-rescue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </div>
+            <h3 class="font-semibold mb-2 text-sm text-rescue-400">6. Control Sees</h3>
+            <p class="text-xs text-slate-400">Mission control reviews AI findings</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Key Features -->
-      <div class="grid md:grid-cols-3 gap-8 mb-16">
-        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h3 class="text-xl font-semibold mb-2 text-rescue-400">Agent-Based Architecture</h3>
-          <p class="text-slate-400">
-            Drones, ground robots, relay nodes, sensors, and AI services cooperating to map dangerous terrain
-          </p>
+      <div class="mb-16">
+        <h2 class="text-3xl font-bold mb-8 text-center">Core Capabilities</h2>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <div class="mb-3">
+              <svg class="w-12 h-12 text-rescue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2 text-rescue-400">Autonomous Mapping</h3>
+            <p class="text-slate-400">
+              Agents progressively reveal unknown terrain as they move through it. LiDAR, sonar, depth cameras and IMU data build a shared mission map.
+            </p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <div class="mb-3">
+              <svg class="w-12 h-12 text-rescue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2 text-rescue-400">Mesh Relay Communications</h3>
+            <p class="text-slate-400">
+              Agents relay data through each other when direct communication to base is blocked or degraded. Extends mission reach into GPS-denied spaces.
+            </p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <div class="mb-3">
+              <svg class="w-12 h-12 text-rescue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2 text-rescue-400">Shared Mission Intelligence</h3>
+            <p class="text-slate-400">
+              Mapped sectors, hazards, routes and sensor findings are shared across the mission. Each agent benefits from discoveries made by others.
+            </p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <div class="mb-3">
+              <svg class="w-12 h-12 text-rescue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2 text-rescue-400">Failure-Aware Simulation</h3>
+            <p class="text-slate-400">
+              Drones can degrade, fail, land as relays, become NFC-readable black boxes, or continue as one-way mission assets. Failures are mission events.
+            </p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <div class="mb-3">
+              <svg class="w-12 h-12 text-rescue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2 text-rescue-400">Hazardous Atmosphere Monitoring</h3>
+            <p class="text-slate-400">
+              Sensor packs include O₂, CO₂, H₂, CH₄, temperature, pressure, humidity and other environmental readings for confined space safety.
+            </p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <div class="mb-3">
+              <svg class="w-12 h-12 text-rescue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2 text-rescue-400">AI-Assisted Human Review</h3>
+            <p class="text-slate-400">
+              AI analysis prioritises detections, flags hazards and recommends human review. Operators make final decisions, not algorithms.
+            </p>
+          </div>
         </div>
-        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h3 class="text-xl font-semibold mb-2 text-rescue-400">GPS-Denied Operations</h3>
-          <p class="text-slate-400">
-            Simulate missions in collapsed buildings, caves, tunnels, and flooded structures
-          </p>
-        </div>
-        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h3 class="text-xl font-semibold mb-2 text-rescue-400">Failure Modeling</h3>
-          <p class="text-slate-400">
-            Hardware degradation, intermittent failures, and tactical sacrifice decisions
-          </p>
+      </div>
+
+      <!-- How the Mesh Works -->
+      <div class="mb-16">
+        <h2 class="text-3xl font-bold mb-8 text-center">How the Mesh Works</h2>
+        <div class="max-w-2xl mx-auto bg-slate-800/50 rounded-lg p-8 border border-slate-700">
+          <div class="font-mono text-sm text-slate-300 space-y-1 mb-6">
+            <div class="flex items-center">
+              <span class="text-rescue-400 font-bold">Base Station</span>
+            </div>
+            <div class="flex items-center pl-4">
+              <span class="text-slate-500">↓</span>
+            </div>
+            <div class="flex items-center pl-4">
+              <span class="text-rescue-400 font-bold">Relay Node</span>
+              <span class="text-slate-500 ml-2 text-xs">(extends range)</span>
+            </div>
+            <div class="flex items-center pl-8">
+              <span class="text-slate-500">↓</span>
+            </div>
+            <div class="flex items-center pl-8">
+              <span class="text-rescue-400 font-bold">Scout Drone</span>
+              <span class="text-slate-500 ml-2 text-xs">(maps terrain)</span>
+            </div>
+            <div class="flex items-center pl-12">
+              <span class="text-slate-500">↓</span>
+            </div>
+            <div class="flex items-center pl-12">
+              <span class="text-rescue-400 font-bold">Micro Mapper / Sensor</span>
+              <span class="text-slate-500 ml-2 text-xs">(deep exploration)</span>
+            </div>
+          </div>
+          <div class="space-y-2 text-sm text-slate-400">
+            <p><strong class="text-white">RescueMesh tracks:</strong></p>
+            <ul class="list-disc list-inside space-y-1 pl-2">
+              <li>Who is connected to whom</li>
+              <li>Which agents are still active, degraded, or failed</li>
+              <li>Where relays have been left</li>
+              <li>Which sectors were mapped by which agents</li>
+              <li>Where communication is degraded or lost</li>
+              <li>Which data is delayed, lost, or last-known-good</li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -65,14 +247,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </div>
 
       <!-- CTA Section -->
-      <div class="text-center bg-gradient-to-r from-rescue-800 to-rescue-900 rounded-lg p-12 border border-rescue-700">
-        <h2 class="text-3xl font-bold mb-4">Try the Demo</h2>
-        <p class="text-slate-300 mb-6 max-w-2xl mx-auto">
-          Experience a simulated collapsed building search mission with multiple agents, sensor feeds, and AI analysis
+      <div class="bg-gradient-to-r from-rescue-800 to-rescue-900 rounded-lg p-12 border border-rescue-700">
+        <h2 class="text-3xl font-bold mb-4 text-center">Explore RescueMesh</h2>
+        <p class="text-slate-300 mb-8 max-w-3xl mx-auto text-center">
+          Experience simulated missions with multiple agents, mesh relay communications, sensor feeds, terrain reconstruction, and AI-assisted analysis
         </p>
-        <a href="/demo" class="inline-block bg-rescue-500 hover:bg-rescue-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors">
-          View All Demos
-        </a>
+        <div class="flex flex-wrap justify-center gap-4">
+          <a href="/demo/live/collapsed-building-search" class="inline-block bg-rescue-500 hover:bg-rescue-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors">
+            Run Live Simulation
+          </a>
+          <a href="/demo" class="inline-block bg-slate-700 hover:bg-slate-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors">
+            View All Demos
+          </a>
+          <a href="/hardware" class="inline-block bg-slate-700 hover:bg-slate-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors">
+            Explore Hardware
+          </a>
+        </div>
       </div>
     </div>
   </div>

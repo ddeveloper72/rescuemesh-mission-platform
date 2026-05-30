@@ -3,6 +3,9 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SimulationControls from '../../../components/demo/SimulationControls.astro';
 import TacticalMap from '../../../components/demo/TacticalMap.astro';
 import DataSourceBadge from '../../../components/demo/DataSourceBadge.astro';
+import EscalationBanner from '../../../components/demo/EscalationBanner.astro';
+import RecommendedActions from '../../../components/demo/RecommendedActions.astro';
+import MediaFeedsPanel from '../../../components/islands/MediaFeedsPanel';
 
 const MISSION_PK = '063218cf-7662-4675-8337-edabd204b793';
 const USE_CASE = 'cave-rescue';
@@ -63,6 +66,12 @@ const initialClock = {
         <SimulationControls clock={initialClock} missionPk={MISSION_PK} />
       </div>
 
+      <!-- Mission Escalation Banner (dynamically populated) -->
+      <div id="escalation-banner-container"></div>
+
+      <!-- Recommended Actions Panel (dynamically populated) -->
+      <div id="recommended-actions-container" class="mb-8"></div>
+
       <!-- Tactical Map -->
       <div class="mb-8">
         <TacticalMap useCase={USE_CASE} />
@@ -89,6 +98,10 @@ const initialClock = {
             <div class="flex justify-between">
               <span class="text-slate-400">Packet Loss:</span>
               <span id="packet-loss" class="font-semibold">--</span>
+            </div>
+            <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-700">
+              <span class="text-slate-400">Contact Continuity:</span>
+              <span id="contact-continuity-risk" class="font-semibold px-2 py-1 rounded text-sm">--</span>
             </div>
           </div>
         </div>
@@ -131,7 +144,15 @@ const initialClock = {
             </div>
           </div>
         </div>
+      </div>
 
+      <!-- Media Feeds Panel -->
+      <div class="mt-6">
+        <MediaFeedsPanel mediaFeeds={[]} client:load />
+      </div>
+
+      <!-- Lower Dashboard Grid -->
+      <div class="grid lg:grid-cols-1 gap-6 mt-6">
         <!-- AI Analysis Panel -->
         <div class="bg-slate-800 rounded-lg p-6 border border-slate-700 lg:col-span-2">
           <h2 class="text-2xl font-bold mb-4">AI Analysis</h2>
@@ -220,7 +241,7 @@ const initialClock = {
                 <span class="text-slate-400">Location:</span>
                 <span class="text-xs">${agent.location_label}</span>
               </div>
-              ${agent.nfc_recovery_available ? '<div class="text-xs text-yellow-400 mt-2">⚠ NFC recovery available</div>' : ''}
+              ${agent.nfc_recovery_available ? '<div class="text-xs text-yellow-400 mt-2 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> NFC recovery available</div>' : ''}
             </div>
             <div class="mt-2 h-2 bg-slate-900 rounded-full overflow-hidden">
               <div 
@@ -283,6 +304,133 @@ const initialClock = {
       
       // Update tactical map
       updateTacticalMap(state, mapConfig);
+      
+      // Update media feeds - dispatch custom event for React component
+      if (state.media_feeds) {
+        window.dispatchEvent(new CustomEvent('media-feeds-update', {
+          detail: { mediaFeeds: state.media_feeds }
+        }));
+      }
+      
+      // Update Mission Escalation Banner and Recommended Actions
+      if (state.mission_escalation) {
+        const escalation = state.mission_escalation;
+        
+        // Update Contact Continuity Risk in Network Status
+        const contactRiskEl = document.getElementById('contact-continuity-risk');
+        if (contactRiskEl) {
+          const riskClasses = {
+            'stable': 'bg-green-900/40 text-green-300 border border-green-700',
+            'watch': 'bg-yellow-900/40 text-yellow-300 border border-yellow-700',
+            'high': 'bg-orange-900/40 text-orange-300 border border-orange-700',
+            'critical': 'bg-red-900/40 text-red-300 border border-red-700'
+          };
+          contactRiskEl.className = `font-semibold px-2 py-1 rounded text-sm ${riskClasses[escalation.contact_continuity_risk] || riskClasses.stable}`;
+          contactRiskEl.textContent = escalation.contact_continuity_risk.toUpperCase();
+        }
+        
+        // Render Escalation Banner
+        const bannerContainer = document.getElementById('escalation-banner-container');
+        if (bannerContainer && escalation.active) {
+          const severityClasses = {
+            'critical': { container: 'bg-red-900/40 border-red-500', icon: 'text-red-400', title: 'text-red-200', text: 'text-red-100' },
+            'urgent': { container: 'bg-orange-900/40 border-orange-500', icon: 'text-orange-400', title: 'text-orange-200', text: 'text-orange-100' },
+            'warning': { container: 'bg-yellow-900/40 border-yellow-500', icon: 'text-yellow-400', title: 'text-yellow-200', text: 'text-yellow-100' },
+            'advisory': { container: 'bg-blue-900/40 border-blue-500', icon: 'text-blue-400', title: 'text-blue-200', text: 'text-blue-100' }
+          };
+          const classes = severityClasses[escalation.severity] || severityClasses.advisory;
+          const shouldPulse = escalation.severity === 'critical' || escalation.severity === 'urgent';
+          
+          const riskBadgeClasses = {
+            'critical': 'bg-red-900/60 border-red-600 text-red-200',
+            'high': 'bg-orange-900/60 border-orange-600 text-orange-200',
+            'watch': 'bg-yellow-900/60 border-yellow-600 text-yellow-200'
+          };
+          
+          bannerContainer.innerHTML = `
+            <div class="rounded-lg border-2 p-4 mb-6 ${classes.container} ${shouldPulse ? 'animate-pulse' : ''}" role="alert" aria-live="assertive">
+              <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 ${classes.icon}">
+                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                  </svg>
+                </div>
+                <div class="flex-grow">
+                  <div class="flex items-center gap-2 mb-2">
+                    <h3 class="text-lg font-bold ${classes.title}">
+                      ${escalation.severity.toUpperCase()}: Mission Escalation
+                    </h3>
+                    ${escalation.contact_continuity_risk && escalation.contact_continuity_risk !== 'stable' 
+                      ? `<span class="text-xs px-2 py-1 rounded border ${riskBadgeClasses[escalation.contact_continuity_risk]}">
+                           Contact Risk: ${escalation.contact_continuity_risk.toUpperCase()}
+                         </span>`
+                      : ''}
+                  </div>
+                  ${escalation.reason ? `<p class="text-base ${classes.text} leading-relaxed">${escalation.reason}</p>` : ''}
+                  ${escalation.area_of_interest 
+                    ? `<div class="mt-2 text-sm opacity-90">
+                         <span class="font-semibold">Area of Interest:</span> 
+                         <span class="font-mono ml-1">${escalation.area_of_interest}</span>
+                       </div>`
+                    : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        } else if (bannerContainer) {
+          bannerContainer.innerHTML = '';
+        }
+        
+        // Render Recommended Actions
+        const actionsContainer = document.getElementById('recommended-actions-container');
+        if (actionsContainer && escalation.active && escalation.recommended_actions && escalation.recommended_actions.length > 0) {
+          const actionClasses = {
+            'critical': { container: 'bg-red-900/20 border-red-700', header: 'bg-red-900/40 border-red-700', title: 'text-red-200', icon: 'text-red-400', item: 'border-red-700/50 hover:bg-red-900/20' },
+            'urgent': { container: 'bg-orange-900/20 border-orange-700', header: 'bg-orange-900/40 border-orange-700', title: 'text-orange-200', icon: 'text-orange-400', item: 'border-orange-700/50 hover:bg-orange-900/20' },
+            'warning': { container: 'bg-yellow-900/20 border-yellow-700', header: 'bg-yellow-900/40 border-yellow-700', title: 'text-yellow-200', icon: 'text-yellow-400', item: 'border-yellow-700/50 hover:bg-yellow-900/20' },
+            'advisory': { container: 'bg-slate-800/50 border-slate-700', header: 'bg-slate-800 border-slate-700', title: 'text-slate-200', icon: 'text-slate-400', item: 'border-slate-700/50 hover:bg-slate-700/30' }
+          };
+          const aClasses = actionClasses[escalation.severity] || actionClasses.advisory;
+          
+          actionsContainer.innerHTML = `
+            <div class="rounded-lg border ${aClasses.container}">
+              <div class="px-4 py-3 border-b ${aClasses.header}">
+                <h3 class="font-semibold flex items-center gap-2 ${aClasses.title}">
+                  <svg class="w-5 h-5 ${aClasses.icon}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                  </svg>
+                  Recommended Actions
+                </h3>
+              </div>
+              <div class="p-4">
+                <ul class="space-y-2">
+                  ${escalation.recommended_actions.map((action, index) => `
+                    <li class="flex items-start gap-3 p-3 rounded border ${aClasses.item} transition-colors">
+                      <div class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                        escalation.severity === 'critical' || escalation.severity === 'urgent' 
+                          ? 'bg-red-700 text-red-100' 
+                          : escalation.severity === 'warning'
+                          ? 'bg-yellow-700 text-yellow-100'
+                          : 'bg-slate-700 text-slate-200'
+                      }">
+                        ${index + 1}
+                      </div>
+                      <div class="flex-grow text-sm text-slate-200 leading-relaxed pt-0.5">
+                        ${action}
+                      </div>
+                      ${index === 0 && (escalation.severity === 'critical' || escalation.severity === 'urgent') 
+                        ? '<div class="flex-shrink-0"><span class="text-xs px-2 py-1 rounded bg-red-700 text-red-100 font-semibold">PRIORITY</span></div>'
+                        : ''}
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            </div>
+          `;
+        } else if (actionsContainer) {
+          actionsContainer.innerHTML = '';
+        }
+      }
       
       // Update debug panel
       const debugEl = document.getElementById('debug-json');

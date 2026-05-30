@@ -3,6 +3,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SimulationControls from '../../../components/demo/SimulationControls.astro';
 import TacticalMap from '../../../components/demo/TacticalMap.astro';
 import DataSourceBadge from '../../../components/demo/DataSourceBadge.astro';
+import MediaFeedsPanel from '../../../components/islands/MediaFeedsPanel';
 
 const MISSION_PK = '7d9f9ad9-2144-4c89-8ef5-08bcf7c41916';
 const USE_CASE = 'industrial-inspection';
@@ -142,7 +143,15 @@ const initialClock = {
             </div>
           </div>
         </div>
+      </div>
 
+      <!-- Media Feeds Panel -->
+      <div class="mt-6">
+        <MediaFeedsPanel mediaFeeds={[]} client:load />
+      </div>
+
+      <!-- Lower Dashboard Grid -->
+      <div class="grid lg:grid-cols-1 gap-6 mt-6">
         <!-- AI Analysis Panel -->
         <div class="bg-slate-800 rounded-lg p-6 border border-slate-700 lg:col-span-2">
           <h2 class="text-2xl font-bold mb-4">AI Analysis</h2>
@@ -376,6 +385,13 @@ const initialClock = {
       
       // Update tactical map
       updateTacticalMap(state, mapConfig);
+      
+      // Update media feeds - dispatch custom event for React component
+      if (state.media_feeds) {
+        window.dispatchEvent(new CustomEvent('media-feeds-update', {
+          detail: { mediaFeeds: state.media_feeds }
+        }));
+      }
       
       // Update debug panel
       const debugEl = document.getElementById('debug-json');

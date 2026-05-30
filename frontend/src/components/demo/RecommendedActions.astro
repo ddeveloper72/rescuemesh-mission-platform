@@ -1,0 +1,103 @@
+---
+// Recommended Actions Panel Component
+// Displays mission recommendations based on escalation state
+
+export interface Props {
+  actions: string[];
+  severity?: 'none' | 'advisory' | 'warning' | 'urgent' | 'critical';
+  title?: string;
+}
+
+const { actions, severity = 'advisory', title = 'Recommended Actions' } = Astro.props;
+
+// Don't render if no actions
+if (!actions || actions.length === 0) {
+  return null;
+}
+
+// Map severity to visual styling
+const getSeverityClasses = (sev: string) => {
+  switch (sev) {
+    case 'critical':
+      return {
+        container: 'bg-red-900/20 border-red-700',
+        header: 'bg-red-900/40 border-red-700',
+        title: 'text-red-200',
+        icon: 'text-red-400',
+        item: 'border-red-700/50 hover:bg-red-900/20'
+      };
+    case 'urgent':
+      return {
+        container: 'bg-orange-900/20 border-orange-700',
+        header: 'bg-orange-900/40 border-orange-700',
+        title: 'text-orange-200',
+        icon: 'text-orange-400',
+        item: 'border-orange-700/50 hover:bg-orange-900/20'
+      };
+    case 'warning':
+      return {
+        container: 'bg-yellow-900/20 border-yellow-700',
+        header: 'bg-yellow-900/40 border-yellow-700',
+        title: 'text-yellow-200',
+        icon: 'text-yellow-400',
+        item: 'border-yellow-700/50 hover:bg-yellow-900/20'
+      };
+    default:
+      return {
+        container: 'bg-slate-800/50 border-slate-700',
+        header: 'bg-slate-800 border-slate-700',
+        title: 'text-slate-200',
+        icon: 'text-slate-400',
+        item: 'border-slate-700/50 hover:bg-slate-700/30'
+      };
+  }
+};
+
+const classes = getSeverityClasses(severity);
+---
+
+<div class={`rounded-lg border ${classes.container}`}>
+  <!-- Panel Header -->
+  <div class={`px-4 py-3 border-b ${classes.header}`}>
+    <h3 class={`font-semibold flex items-center gap-2 ${classes.title}`}>
+      <svg class={`w-5 h-5 ${classes.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+      </svg>
+      {title}
+    </h3>
+  </div>
+
+  <!-- Actions List -->
+  <div class="p-4">
+    <ul class="space-y-2">
+      {actions.map((action, index) => (
+        <li class={`flex items-start gap-3 p-3 rounded border ${classes.item} transition-colors`}>
+          <!-- Number Badge -->
+          <div class={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+            severity === 'critical' || severity === 'urgent' 
+              ? 'bg-red-700 text-red-100' 
+              : severity === 'warning'
+              ? 'bg-yellow-700 text-yellow-100'
+              : 'bg-slate-700 text-slate-200'
+          }`}>
+            {index + 1}
+          </div>
+          
+          <!-- Action Text -->
+          <div class="flex-grow text-sm text-slate-200 leading-relaxed pt-0.5">
+            {action}
+          </div>
+
+          <!-- Priority indicator for first action in critical/urgent -->
+          {index === 0 && (severity === 'critical' || severity === 'urgent') && (
+            <div class="flex-shrink-0">
+              <span class="text-xs px-2 py-1 rounded bg-red-700 text-red-100 font-semibold">
+                PRIORITY
+              </span>
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  </div>
+</div>

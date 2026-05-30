@@ -128,10 +128,10 @@ export function getIndustrialInspectionMapConfig(): MapConfig {
   ];
 
   const detectionMarkers: DetectionMarker[] = [
-    { id: 'thermal-pipe-joint', type: 'thermal', x: 380, y: 240, appearsAt: 150, label: 'Pipe Joint A3', icon: '🔥' },
-    { id: 'gas-methane', type: 'gas', x: 320, y: 180, appearsAt: 180, label: 'Methane', icon: '☁' },
-    { id: 'pressure-leak', type: 'pressure', x: 520, y: 200, appearsAt: 390, label: 'Pressure leak', icon: '💨' },
-    { id: 'thermal-critical', type: 'thermal', x: 680, y: 190, appearsAt: 450, label: 'Control Cabinet C2', icon: '🔥' },
+    { id: 'thermal-pipe-joint', type: 'thermal', x: 380, y: 240, appearsAt: 150, label: 'Pipe Joint A3', icon: 'T' },
+    { id: 'gas-methane', type: 'gas', x: 320, y: 180, appearsAt: 180, label: 'Methane', icon: 'G' },
+    { id: 'pressure-leak', type: 'pressure', x: 520, y: 200, appearsAt: 390, label: 'Pressure leak', icon: 'P' },
+    { id: 'thermal-critical', type: 'thermal', x: 680, y: 190, appearsAt: 450, label: 'Control Cabinet C2', icon: 'T' },
   ];
 
   return {
@@ -203,8 +203,8 @@ export function getCollapsedBuildingMapConfig(): MapConfig {
   ];
 
   const detectionMarkers: DetectionMarker[] = [
-    { id: 'thermal-void', type: 'thermal', x: 450, y: 200, appearsAt: 180, label: 'Heat signature', icon: '🔥' },
-    { id: 'audio-voice', type: 'audio', x: 470, y: 220, appearsAt: 240, label: 'Voice-like audio', icon: '🔊' },
+    { id: 'thermal-void', type: 'thermal', x: 450, y: 200, appearsAt: 180, label: 'Heat signature', icon: 'T' },
+    { id: 'audio-voice', type: 'audio', x: 470, y: 220, appearsAt: 240, label: 'Voice-like audio', icon: 'A' },
   ];
 
   return {
@@ -276,8 +276,8 @@ export function getCaveRescueMapConfig(): MapConfig {
   ];
 
   const detectionMarkers: DetectionMarker[] = [
-    { id: 'audio-tap', type: 'audio', x: 720, y: 250, appearsAt: 420, label: 'Tapping sounds', icon: '🔊' },
-    { id: 'audio-voice', type: 'audio', x: 720, y: 220, appearsAt: 480, label: 'Voice-like audio', icon: '🗣' },
+    { id: 'audio-tap', type: 'audio', x: 720, y: 250, appearsAt: 420, label: 'Tapping sounds', icon: 'A' },
+    { id: 'audio-voice', type: 'audio', x: 720, y: 220, appearsAt: 480, label: 'Voice-like audio', icon: 'A' },
   ];
 
   return {
@@ -314,8 +314,8 @@ export function getFloodedStructureMapConfig(): MapConfig {
   ];
 
   const detectionMarkers: DetectionMarker[] = [
-    { id: 'electrical-hazard', type: 'electrical', x: 280, y: 150, appearsAt: 120, label: 'Electrical hazard', icon: '⚡' },
-    { id: 'thermal-above-water', type: 'thermal', x: 480, y: 80, appearsAt: 210, label: 'Thermal anomaly', icon: '🔥' },
+    { id: 'electrical-hazard', type: 'electrical', x: 280, y: 150, appearsAt: 120, label: 'Electrical hazard', icon: 'E' },
+    { id: 'thermal-above-water', type: 'thermal', x: 480, y: 80, appearsAt: 210, label: 'Thermal anomaly', icon: 'T' },
   ];
 
   return {
@@ -472,14 +472,14 @@ export function renderSectors(
       } else if (status === 'hazardous') {
         opacity = 1.0;
         labelOpacity = 1.0;
-        label = `⚠️ ${sector.label}`;
+        label = `[!] ${sector.label}`;
         fillColor = 'rgba(133, 77, 14, 0.4)';
         strokeColor = 'rgba(252, 211, 77, 0.8)';
         strokeWidth = 3;
       } else if (status === 'blocked') {
         opacity = 1.0;
         labelOpacity = 1.0;
-        label = `🚫 ${sector.label}`;
+        label = `[X] ${sector.label}`;
         fillColor = 'rgba(153, 27, 27, 0.4)';
         strokeColor = 'rgba(252, 165, 165, 0.8)';
         strokeWidth = 3;

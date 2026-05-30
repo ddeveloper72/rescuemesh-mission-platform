@@ -223,91 +223,7 @@ def simulate_collapsed_building(
     # Agent states evolve over time
     agents = []
     
-    # Drone A - Scout/Mapper
-    drone_a_battery = max(5, 100 - (elapsed_seconds / 20))  # Drains slowly
-    drone_a_signal = 72 + math.sin(elapsed_seconds / 30) * 8  # Fluctuates
-    drone_a_state = 'healthy' if elapsed_seconds < 420 else 'degraded'
-    
-    agents.append({
-        'agent_id': 'drone-a',
-        'name': 'Scout Drone A',
-        'role': 'Primary mapper',
-        'state': drone_a_state,
-        'battery_percent': int(drone_a_battery),
-        'signal_strength': int(drone_a_signal),
-        'location_label': 'Corridor A' if elapsed_seconds < 180 else 'Void 1',
-        'position': {
-            'x': 24 + (elapsed_seconds / 10),
-            'y': 12 + (elapsed_seconds / 15),
-            'z': 3
-        },
-        'sensors': ['LiDAR', 'Thermal', 'RGB'],
-        'nfc_recovery_available': False
-    })
-    
-    # Drone B - Detection drone
-    drone_b_battery = max(3, 100 - (elapsed_seconds / 15))  # Drains faster
-    drone_b_signal = 68 - (elapsed_seconds / 20) if elapsed_seconds < 360 else 45
-    
-    if elapsed_seconds < 300:
-        drone_b_state = 'healthy'
-        drone_b_location = 'Entrance void'
-    elif elapsed_seconds < 360:
-        drone_b_state = 'degraded'
-        drone_b_location = 'Corridor B'
-    else:
-        drone_b_state = 'landed_relay'
-        drone_b_location = 'Corridor B (relay)'
-    
-    agents.append({
-        'agent_id': 'drone-b',
-        'name': 'Thermal/Audio Drone',
-        'role': 'Detection',
-        'state': drone_b_state,
-        'battery_percent': int(drone_b_battery),
-        'signal_strength': int(drone_b_signal),
-        'location_label': drone_b_location,
-        'position': {
-            'x': 18 + (elapsed_seconds / 12),
-            'y': 7 + (elapsed_seconds / 18),
-            'z': 1.5
-        },
-        'sensors': ['Thermal', 'Microphone Array', 'WiFi Scanner'],
-        'nfc_recovery_available': drone_b_state == 'landed_relay'
-    })
-    
-    # Drone C - Relay (eventually sacrificed)
-    drone_c_battery = max(0, 100 - (elapsed_seconds / 18))
-    drone_c_signal = 88 if elapsed_seconds < 240 else 78
-    
-    if elapsed_seconds < 240:
-        drone_c_state = 'healthy'
-        drone_c_location = 'Entry point'
-    elif elapsed_seconds < 420:
-        drone_c_state = 'healthy'
-        drone_c_location = 'Relay position'
-    else:
-        drone_c_state = 'sacrificed'
-        drone_c_location = 'Relay position (sacrificed)'
-    
-    agents.append({
-        'agent_id': 'drone-c',
-        'name': 'Relay Drone',
-        'role': 'Communications relay',
-        'state': drone_c_state,
-        'battery_percent': int(drone_c_battery),
-        'signal_strength': int(drone_c_signal),
-        'location_label': drone_c_location,
-        'position': {
-            'x': 8,
-            'y': 4,
-            'z': 2
-        },
-        'sensors': [],
-        'nfc_recovery_available': drone_c_state == 'sacrificed'
-    })
-    
-    # Static relay node
+    # Static relay node (always present at entry)
     agents.append({
         'agent_id': 'relay-1',
         'name': 'Static Relay Node',
@@ -315,23 +231,124 @@ def simulate_collapsed_building(
         'state': 'active',
         'battery_percent': 100,  # Powered
         'signal_strength': 95,
-        'location_label': 'Base station',
-        'position': {'x': 0, 'y': 0, 'z': 0},
+        'location_label': 'Entry',
+        'position': {'x': 100, 'y': 240, 'z': 0},  # Entry sector position
         'sensors': [],
         'nfc_recovery_available': False
     })
+    
+    # Drone A - Scout/Mapper (deploys at 30s)
+    if elapsed_seconds >= 30:
+        drone_a_battery = max(5, 100 - ((elapsed_seconds - 30) / 20))  # Start counting from deployment
+        drone_a_signal = 72 + math.sin(elapsed_seconds / 30) * 8  # Fluctuates
+        drone_a_state = 'healthy' if elapsed_seconds < 420 else 'degraded'
+        
+        # Position based on time since deployment
+        if elapsed_seconds < 90:
+            drone_a_loc = 'Entry'
+        elif elapsed_seconds < 180:
+            drone_a_loc = 'Corridor A'
+        else:
+            drone_a_loc = 'Void 1'
+        
+        agents.append({
+            'agent_id': 'drone-a',
+            'name': 'Scout Drone A',
+            'role': 'Primary mapper',
+            'state': drone_a_state,
+            'battery_percent': int(drone_a_battery),
+            'signal_strength': int(drone_a_signal),
+            'location_label': drone_a_loc,
+            'position': {
+                'x': 100 + ((elapsed_seconds - 30) / 10),
+                'y': 240,
+                'z': 3
+            },
+            'sensors': ['LiDAR', 'Thermal', 'RGB'],
+            'nfc_recovery_available': False
+        })
+    
+    # Drone B - Detection drone (deploys at 60s)
+    if elapsed_seconds >= 60:
+        drone_b_battery = max(3, 100 - ((elapsed_seconds - 60) / 15))  # Start counting from deployment
+        drone_b_signal = 68 - ((elapsed_seconds - 60) / 20) if elapsed_seconds < 360 else 45
+        
+        if elapsed_seconds < 300:
+            drone_b_state = 'healthy'
+            drone_b_location = 'Corridor A'
+        elif elapsed_seconds < 360:
+            drone_b_state = 'degraded'
+            drone_b_location = 'Corridor B'
+        else:
+            drone_b_state = 'landed_relay'
+            drone_b_location = 'Corridor B (relay)'
+        
+        agents.append({
+            'agent_id': 'drone-b',
+            'name': 'Thermal/Audio Drone',
+            'role': 'Detection',
+            'state': drone_b_state,
+            'battery_percent': int(drone_b_battery),
+            'signal_strength': int(drone_b_signal),
+            'location_label': drone_b_location,
+            'position': {
+                'x': 100 + ((elapsed_seconds - 60) / 12),
+                'y': 240,
+                'z': 1.5
+            },
+            'sensors': ['Thermal', 'Microphone Array', 'WiFi Scanner'],
+            'nfc_recovery_available': drone_b_state == 'landed_relay'
+        })
+    
+    # Drone C - Relay (deploys at 90s, eventually sacrificed)
+    if elapsed_seconds >= 90:
+        drone_c_battery = max(0, 100 - ((elapsed_seconds - 90) / 18))
+        drone_c_signal = 88 if elapsed_seconds < 240 else 78
+        
+        if elapsed_seconds < 240:
+            drone_c_state = 'healthy'
+            drone_c_location = 'Corridor A'
+        elif elapsed_seconds < 420:
+            drone_c_state = 'healthy'
+            drone_c_location = 'Relay position'
+        else:
+            drone_c_state = 'sacrificed'
+            drone_c_location = 'Relay position (sacrificed)'
+        
+        agents.append({
+            'agent_id': 'drone-c',
+            'name': 'Relay Drone',
+            'role': 'Communications relay',
+            'state': drone_c_state,
+            'battery_percent': int(drone_c_battery),
+            'signal_strength': int(drone_c_signal),
+            'location_label': drone_c_location,
+            'position': {
+                'x': 200,
+                'y': 240,
+                'z': 2
+            },
+            'sensors': [],
+            'nfc_recovery_available': drone_c_state == 'sacrificed'
+        })
     
     # Network state
     base_signal = 88 - (elapsed_seconds / 60)
     packet_loss = min(15, 2 + (elapsed_seconds / 45))
     mesh_health = max(50, 90 - (elapsed_seconds / 20))
     
-    relay_chain = ['base-station', 'relay-node-1']
-    if drone_c_state != 'sacrificed':
-        relay_chain.append('drone-c')
-    if drone_b_state == 'landed_relay':
-        relay_chain.append('drone-b')
-    relay_chain.append('drone-a')
+    relay_chain = ['relay-1']  # Static relay node always present
+    # Only add drones to relay chain if they're deployed
+    if elapsed_seconds >= 90:
+        drone_c_agent = next((a for a in agents if a['agent_id'] == 'drone-c'), None)
+        if drone_c_agent and drone_c_agent['state'] != 'sacrificed':
+            relay_chain.append('drone-c')
+    if elapsed_seconds >= 60:
+        drone_b_agent = next((a for a in agents if a['agent_id'] == 'drone-b'), None)
+        if drone_b_agent and drone_b_agent['state'] == 'landed_relay':
+            relay_chain.append('drone-b')
+    if elapsed_seconds >= 30:
+        relay_chain.append('drone-a')
     
     network = {
         'base_signal_strength': int(base_signal),
@@ -618,6 +635,100 @@ def simulate_collapsed_building(
             'timestamp': format_time(elapsed_seconds)
         })
     
+    # Media feeds - simulated camera/sensor returns
+    media_feeds = []
+    
+    # Scout Drone A: Low-light RGB stills of rubble and voids
+    if elapsed_seconds >= 45:
+        scout_signal = next((a for a in agents if a['agent_id'] == 'drone-a'), None)
+        if scout_signal:
+            frame_status = 'live' if scout_signal['signal_strength'] > 70 else 'degraded' if scout_signal['signal_strength'] > 50 else 'delayed'
+            frame_conf = min(95, 60 + scout_signal['signal_strength'] / 3)
+            
+            media_feeds.append({
+                'frame_id': f'scout-rgb-{int(elapsed_seconds)}',
+                'agent_id': 'drone-a',
+                'agent_name': 'Scout Drone A',
+                'sensor_type': 'low_light_camera',
+                'frame_type': 'still',
+                'status': frame_status,
+                'mission_time': format_time(elapsed_seconds),
+                'signal_quality': scout_signal['signal_strength'],
+                'confidence': int(frame_conf),
+                'location_label': scout_signal['location_label'],
+                'annotations': ['structural debris', 'mapping active'] if frame_status == 'live' else ['signal degraded', 'frame delayed'],
+                'description': f'Low-light structural imaging from {scout_signal["location_label"]}.'
+            })
+    
+    # Thermal/Audio Drone: Thermal frames
+    if elapsed_seconds >= 75:
+        thermal_agent = next((a for a in agents if a['agent_id'] == 'drone-b'), None)
+        if thermal_agent:
+            # After thermal anomaly detected at 180s, flag frame for human review
+            if elapsed_seconds >= 180:
+                frame_status = 'thermal_detection' if elapsed_seconds < 300 else 'ai_flagged'
+                annotations = ['thermal anomaly detected', 'possible survivor', 'human review required']
+                description = 'Thermal frame indicates warm object in Void Space 1. Human review required.'
+                conf = 78
+            else:
+                frame_status = 'live'
+                annotations = ['thermal scan active', 'baseline mapping']
+                description = f'Thermal imaging of {thermal_agent["location_label"]}.'
+                conf = 82
+            
+            media_feeds.append({
+                'frame_id': f'thermal-{int(elapsed_seconds)}',
+                'agent_id': 'drone-b',
+                'agent_name': 'Thermal/Audio Drone',
+                'sensor_type': 'thermal_camera',
+                'frame_type': 'thermal',
+                'status': frame_status,
+                'mission_time': format_time(elapsed_seconds),
+                'signal_quality': thermal_agent['signal_strength'],
+                'confidence': conf,
+                'location_label': thermal_agent['location_label'],
+                'annotations': annotations,
+                'description': description
+            })
+    
+    # Dust occlusion degrades image quality after 120s
+    if elapsed_seconds >= 120:
+        scout_agent = next((a for a in agents if a['agent_id'] == 'drone-a'), None)
+        if scout_agent and scout_agent['state'] == 'degraded':
+            media_feeds.append({
+                'frame_id': f'scout-degraded-{int(elapsed_seconds)}',
+                'agent_id': 'drone-a',
+                'agent_name': 'Scout Drone A',
+                'sensor_type': 'low_light_camera',
+                'frame_type': 'still',
+                'status': 'degraded',
+                'mission_time': format_time(elapsed_seconds),
+                'signal_quality': scout_agent['signal_strength'],
+                'confidence': 42,
+                'location_label': scout_agent['location_label'],
+                'annotations': ['dust occlusion', 'reduced visibility', 'sensor degraded'],
+                'description': 'Image quality degraded due to particulate interference.'
+            })
+    
+    # If thermal/audio drone becomes relay, show last good frame
+    if elapsed_seconds >= 360:
+        relay_agent = next((a for a in agents if a['agent_id'] == 'drone-b' and a['state'] == 'landed_relay'), None)
+        if relay_agent:
+            media_feeds.append({
+                'frame_id': 'thermal-last-good',
+                'agent_id': 'drone-b',
+                'agent_name': 'Thermal/Audio Drone',
+                'sensor_type': 'thermal_camera',
+                'frame_type': 'last_good_frame',
+                'status': 'last_good_frame',
+                'mission_time': format_time(360),
+                'signal_quality': 45,
+                'confidence': 65,
+                'location_label': 'Corridor B (relay)',
+                'annotations': ['last good frame', 'drone now relay mode'],
+                'description': 'Last thermal frame before drone entered relay mode.'
+            })
+    
     # Build complete state
     return {
         'mission': {
@@ -638,7 +749,107 @@ def simulate_collapsed_building(
         'sensors': sensors,
         'events': events,
         'ai_analysis': ai_analysis,
-        'terrain_reconstruction': terrain_reconstruction
+        'terrain_reconstruction': terrain_reconstruction,
+        'media_feeds': media_feeds
+    }
+
+
+def calculate_mission_escalation_cave_rescue(
+    elapsed_seconds: float,
+    mesh_health: float,
+    packet_loss: float,
+    audio_events: list
+) -> Dict[str, Any]:
+    """
+    Calculate mission escalation state for cave rescue.
+    
+    Escalates when:
+    - High-priority detection exists (voice-like audio, tapping)
+    - Communications chain is degrading
+    """
+    # No escalation before any detections
+    if elapsed_seconds < 420:
+        return {
+            'active': False,
+            'severity': 'none',
+            'reason': None,
+            'area_of_interest': None,
+            'contact_continuity_risk': 'stable',
+            'recommended_actions': []
+        }
+    
+    # Determine detection priority
+    has_voice_detection = elapsed_seconds >= 480
+    has_tapping_detection = elapsed_seconds >= 420
+    
+    # Determine comms health
+    comms_degraded = mesh_health < 70 or packet_loss > 15
+    comms_critical = mesh_health < 60 or packet_loss > 20
+    
+    # Calculate contact continuity risk
+    if comms_critical:
+        contact_risk = 'critical'
+    elif comms_degraded:
+        contact_risk = 'high'
+    elif mesh_health < 80:
+        contact_risk = 'watch'
+    else:
+        contact_risk = 'stable'
+    
+    # Escalation logic
+    if has_voice_detection and comms_degraded:
+        severity = 'critical' if comms_critical else 'urgent'
+        reason = 'Voice-like audio detected in Deep Squeeze with degrading communications.'
+        area_of_interest = 'deep-squeeze'
+        
+        recommended_actions = [
+            'Deploy additional relay drone to Junction Chamber',
+            'Preserve comms path from Main Tunnel to Junction Chamber',
+            'Hold wider exploration until signal is stabilized',
+            'Prepare ground team for physical approach if contact is lost'
+        ]
+        
+        if comms_critical:
+            recommended_actions.insert(0, 'IMMEDIATE: Reinforce relay chain before contact is lost')
+        
+        return {
+            'active': True,
+            'severity': severity,
+            'reason': reason,
+            'area_of_interest': area_of_interest,
+            'contact_continuity_risk': contact_risk,
+            'recommended_actions': recommended_actions
+        }
+    
+    elif has_tapping_detection and comms_degraded:
+        severity = 'urgent' if comms_critical else 'warning'
+        reason = 'Tapping sounds detected in Deep Squeeze. Communications to the area of interest are degrading.'
+        area_of_interest = 'deep-squeeze'
+        
+        recommended_actions = [
+            'Deploy additional relay-capable asset to Junction Chamber',
+            'Monitor signal strength to Deep Squeeze',
+            'Maintain comms corridor before advancing further',
+            'Consider static relay placement at stable junction point'
+        ]
+        
+        return {
+            'active': True,
+            'severity': severity,
+            'reason': reason,
+            'area_of_interest': area_of_interest,
+            'contact_continuity_risk': contact_risk,
+            'recommended_actions': recommended_actions
+        }
+    
+    # No escalation if detections exist but comms are stable
+    return {
+        'active': False,
+        'severity': 'none',
+        'reason': None,
+        'area_of_interest': None,
+        'contact_continuity_risk': contact_risk,
+        'recommended_actions': []
     }
 
 
@@ -666,39 +877,54 @@ def simulate_cave_rescue(
     # Agent states
     agents = []
     
-    # Drone A: Scout with LiDAR/SLAM
-    drone_a_battery = max(5, 100 - (elapsed_seconds / 22))  # Slower drain
-    drone_a_signal = max(35, 95 - (elapsed_seconds / 8))  # Degrades with depth
-    
-    if elapsed_seconds < 60:
-        drone_a_state = 'healthy'
-        drone_a_loc = 'Entrance Chamber'
-        drone_a_pos = {'x': 15 + (elapsed_seconds * 0.3), 'y': 8, 'z': 2}
-    elif elapsed_seconds < 180:
-        drone_a_state = 'healthy'
-        drone_a_loc = 'Main Tunnel'
-        drone_a_pos = {'x': 35 + ((elapsed_seconds - 60) * 0.2), 'y': 12 + ((elapsed_seconds - 60) * 0.1), 'z': 1}
-    elif elapsed_seconds < 300:
-        drone_a_state = 'healthy' if drone_a_signal > 50 else 'degraded'
-        drone_a_loc = 'Junction Chamber'
-        drone_a_pos = {'x': 58, 'y': 25, 'z': 0}
-    else:
-        drone_a_state = 'degraded'
-        drone_a_loc = 'Deep Squeeze'
-        drone_a_pos = {'x': 62 + ((elapsed_seconds - 300) * 0.1), 'y': 28, 'z': -2}
-    
+    # Base station relay (always present at entrance)
     agents.append({
-        'agent_id': 'drone-a',
-        'name': 'Cave Scout Drone',
-        'role': 'SLAM mapper',
-        'state': drone_a_state,
-        'battery_percent': int(drone_a_battery),
-        'signal_strength': int(drone_a_signal),
-        'location_label': drone_a_loc,
-        'position': drone_a_pos,
-        'sensors': ['LiDAR', 'IMU', 'RGB Camera'],
+        'agent_id': 'base-station',
+        'name': 'Cave Entrance Relay',
+        'role': 'Base station relay',
+        'state': 'active',
+        'battery_percent': 100,
+        'signal_strength': 95,
+        'location_label': 'Entrance',
+        'position': {'x': 120, 'y': 240, 'z': 0},  # Entrance Chamber position
+        'sensors': [],
         'nfc_recovery_available': False
     })
+    
+    # Drone A: Scout with LiDAR/SLAM (deploys at 30s)
+    if elapsed_seconds >= 30:
+        drone_a_battery = max(5, 100 - ((elapsed_seconds - 30) / 22))  # Start from deployment
+        drone_a_signal = max(35, 95 - ((elapsed_seconds - 30) / 8))  # Degrades with depth
+        
+        if elapsed_seconds < 60:
+            drone_a_state = 'healthy'
+            drone_a_loc = 'Entrance Chamber'
+            drone_a_pos = {'x': 120 + ((elapsed_seconds - 30) * 0.3), 'y': 240, 'z': 2}
+        elif elapsed_seconds < 180:
+            drone_a_state = 'healthy'
+            drone_a_loc = 'Main Tunnel'
+            drone_a_pos = {'x': 200 + ((elapsed_seconds - 60) * 0.8), 'y': 240, 'z': 1}
+        elif elapsed_seconds < 300:
+            drone_a_state = 'healthy' if drone_a_signal > 50 else 'degraded'
+            drone_a_loc = 'Junction Chamber'
+            drone_a_pos = {'x': 600, 'y': 230, 'z': 0}
+        else:
+            drone_a_state = 'degraded'
+            drone_a_loc = 'Deep Squeeze'
+            drone_a_pos = {'x': 720, 'y': 240, 'z': -2}
+        
+        agents.append({
+            'agent_id': 'drone-a',
+            'name': 'Cave Scout Drone',
+            'role': 'SLAM mapper',
+            'state': drone_a_state,
+            'battery_percent': int(drone_a_battery),
+            'signal_strength': int(drone_a_signal),
+            'location_label': drone_a_loc,
+            'position': drone_a_pos,
+            'sensors': ['LiDAR', 'IMU', 'RGB Camera'],
+            'nfc_recovery_available': False
+        })
     
     # Drone B: Micro mapper (may fail in narrow passage)
     if elapsed_seconds >= 90:
@@ -753,32 +979,18 @@ def simulate_cave_rescue(
             'nfc_recovery_available': False
         })
     
-    # Static base relay
-    agents.append({
-        'agent_id': 'base-relay',
-        'name': 'Cave Entrance Relay',
-        'role': 'Base station relay',
-        'state': 'active',
-        'battery_percent': 100,
-        'signal_strength': 95,
-        'location_label': 'Entrance',
-        'position': {'x': 0, 'y': 0, 'z': 0},
-        'sensors': [],
-        'nfc_recovery_available': False
-    })
-    
     # Network state
     if elapsed_seconds < 180:
         mesh_health = max(75, 95 - (elapsed_seconds / 15))
-        relay_chain = ['base-relay', 'drone-a']
+        relay_chain = ['base-station', 'drone-a']
         packet_loss = min(10, elapsed_seconds / 20)
     elif elapsed_seconds < 300:
         mesh_health = max(65, 85 - ((elapsed_seconds - 180) / 12))
-        relay_chain = ['base-relay', 'relay-1', 'drone-a']
+        relay_chain = ['base-station', 'relay-1', 'drone-a']
         packet_loss = min(15, 5 + ((elapsed_seconds - 180) / 15))
     else:
         mesh_health = max(55, 70 - ((elapsed_seconds - 300) / 10))
-        relay_chain = ['base-relay', 'relay-1', 'drone-a']
+        relay_chain = ['base-station', 'relay-1', 'drone-a']
         packet_loss = min(25, 10 + ((elapsed_seconds - 300) / 12))
     
     network = {
@@ -825,13 +1037,20 @@ def simulate_cave_rescue(
     device_signals = []
     environmental_readings = []
     
+    # Determine current location for sensors (use drone_a location if deployed, otherwise entrance)
+    if elapsed_seconds >= 30:
+        current_sensor_location = next((a for a in agents if a['agent_id'] == 'drone-a'), None)
+        sensor_loc = current_sensor_location['location_label'] if current_sensor_location else 'Entrance Chamber'
+    else:
+        sensor_loc = 'Entrance Chamber'
+    
     # Humidity readings increase with depth
     base_humidity = 65 + (elapsed_seconds / 15)
     environmental_readings.append({
         'sensor_type': 'humidity',
         'value': min(95, base_humidity),
         'unit': '%',
-        'location': drone_a_loc,
+        'location': sensor_loc,
         'timestamp': format_time(elapsed_seconds)
     })
     
@@ -841,7 +1060,7 @@ def simulate_cave_rescue(
         'sensor_type': 'temperature',
         'value': max(12, base_temp),
         'unit': '°C',
-        'location': drone_a_loc,
+        'location': sensor_loc,
         'timestamp': format_time(elapsed_seconds)
     })
     
@@ -1090,6 +1309,108 @@ def simulate_cave_rescue(
         'confidence': ai_confidence
     }
     
+    # Media feeds - simulated camera returns from cave exploration
+    media_feeds = []
+    
+    # Cave Scout Drone: Low-light cave passage frames
+    if elapsed_seconds >= 45:
+        scout_agent = next((a for a in agents if a['agent_id'] == 'drone-a'), None)
+        if scout_agent:
+            frame_status = 'live' if scout_agent['signal_strength'] > 60 else 'degraded' if scout_agent['signal_strength'] > 40 else 'delayed'
+            frame_conf = min(88, 55 + scout_agent['signal_strength'] / 2.5)
+            
+            # Moisture/humidity may degrade visibility
+            if elapsed_seconds >= 180:
+                annotations = ['low-light imaging', 'high humidity', 'moisture on lens']
+                description = f'Cave passage imaging affected by moisture. Location: {scout_agent["location_label"]}.'
+                frame_conf = max(45, frame_conf - 20)
+            else:
+                annotations = ['low-light imaging', 'passage mapping']
+                description = f'Low-light cave passage imaging from {scout_agent["location_label"]}.'
+            
+            media_feeds.append({
+                'frame_id': f'cave-scout-{int(elapsed_seconds)}',
+                'agent_id': 'drone-a',
+                'agent_name': 'Cave Scout Drone',
+                'sensor_type': 'low_light_camera',
+                'frame_type': 'still',
+                'status': frame_status,
+                'mission_time': format_time(elapsed_seconds),
+                'signal_quality': scout_agent['signal_strength'],
+                'confidence': int(frame_conf),
+                'location_label': scout_agent['location_label'],
+                'annotations': annotations,
+                'description': description
+            })
+    
+    # Micro Mapper: Close-up stills from Narrow Passage
+    if elapsed_seconds >= 105 and elapsed_seconds < 240:
+        micro_agent = next((a for a in agents if a['agent_id'] == 'drone-b'), None)
+        if micro_agent:
+            media_feeds.append({
+                'frame_id': f'micro-mapper-{int(elapsed_seconds)}',
+                'agent_id': 'drone-b',
+                'agent_name': 'Micro Mapper',
+                'sensor_type': 'inspection_camera',
+                'frame_type': 'still',
+                'status': 'live',
+                'mission_time': format_time(elapsed_seconds),
+                'signal_quality': micro_agent['signal_strength'],
+                'confidence': 76,
+                'location_label': micro_agent['location_label'],
+                'annotations': ['narrow passage', 'close-up imaging', 'tight squeeze navigation'],
+                'description': f'Close-up imaging from narrow passage. Agent: {micro_agent["name"]}.'
+            })
+    
+    # Micro Mapper: Last good frame before failure
+    if elapsed_seconds >= 240:
+        # Micro mapper lost - show last good frame
+        media_feeds.append({
+            'frame_id': 'micro-mapper-last-good',
+            'agent_id': 'drone-b',
+            'agent_name': 'Micro Mapper',
+            'sensor_type': 'inspection_camera',
+            'frame_type': 'last_good_frame',
+            'status': 'last_good_frame',
+            'mission_time': format_time(240),
+            'signal_quality': 0,
+            'confidence': 68,
+            'location_label': 'Narrow Passage (last known)',
+            'annotations': ['last good frame', 'agent lost', 'NFC recovery available'],
+            'description': 'Last frame before signal loss in narrow passage. NFC recovery tag available.'
+        })
+    
+    # Audio event paired with scout frame
+    if elapsed_seconds >= 420:
+        scout_agent = next((a for a in agents if a['agent_id'] == 'drone-a'), None)
+        if scout_agent:
+            frame_status = 'ai_flagged' if elapsed_seconds >= 480 else 'human_review_required'
+            annotations_base = ['audio event detected', 'deep squeeze location']
+            
+            if elapsed_seconds >= 480:
+                annotations = annotations_base + ['voice-like signature', 'priority review']
+                description = 'Frame captured during voice-like audio event. Human review required.'
+                conf = 64
+            else:
+                annotations = annotations_base + ['tapping sound detected']
+                description = 'Frame captured during tapping audio event. Investigating.'
+                conf = 71
+            
+            media_feeds.append({
+                'frame_id': f'audio-event-frame-{int(elapsed_seconds)}',
+                'agent_id': 'drone-a',
+                'agent_name': 'Cave Scout Drone',
+                'sensor_type': 'low_light_camera',
+                'frame_type': 'still',
+                'status': frame_status,
+                'mission_time': format_time(elapsed_seconds),
+                'signal_quality': scout_agent['signal_strength'],
+                'confidence': conf,
+                'location_label': 'Deep Squeeze',
+                'annotations': annotations,
+                'description': description
+            })
+    
     return {
         'mission': {
             'mission_id': mission_id,
@@ -1109,7 +1430,11 @@ def simulate_cave_rescue(
         'sensors': sensors,
         'events': events,
         'ai_analysis': ai_analysis,
-        'terrain_reconstruction': terrain_reconstruction
+        'terrain_reconstruction': terrain_reconstruction,
+        'media_feeds': media_feeds,
+        'mission_escalation': calculate_mission_escalation_cave_rescue(
+            elapsed_seconds, mesh_health, packet_loss, audio_events
+        )
     }
 
 
@@ -1137,43 +1462,58 @@ def simulate_flooded_structure(
     # Agent states
     agents = []
     
-    # Amphibious Unit A: Main explorer
-    amp_a_battery = max(8, 100 - (elapsed_seconds / 20))  # Faster drain underwater
-    amp_a_signal = max(25, 85 - (elapsed_seconds / 6))  # Water + concrete attenuation
-    
-    if elapsed_seconds < 60:
-        amp_a_state = 'healthy'
-        amp_a_loc = 'Entry Pool (surface)'
-        amp_a_depth = 0.5
-        amp_a_pos = {'x': 12, 'y': 8, 'z': -0.5}
-    elif elapsed_seconds < 180:
-        amp_a_state = 'healthy'
-        amp_a_loc = 'Submerged Corridor'
-        amp_a_depth = 2.8
-        amp_a_pos = {'x': 25 + ((elapsed_seconds - 60) * 0.15), 'y': 15, 'z': -2.8}
-    elif elapsed_seconds < 300:
-        amp_a_state = 'degraded'  # Mobility issues
-        amp_a_loc = 'Deep Chamber'
-        amp_a_depth = 4.2
-        amp_a_pos = {'x': 42, 'y': 22, 'z': -4.2}
-    else:
-        amp_a_state = 'degraded'
-        amp_a_loc = 'Deep Chamber'
-        amp_a_depth = 4.5
-        amp_a_pos = {'x': 45, 'y': 25, 'z': -4.5}
-    
+    # Surface relay node (always present at entry)
     agents.append({
-        'agent_id': 'amp-unit-a',
-        'name': 'Amphibious Explorer',
-        'role': 'Underwater mapping',
-        'state': amp_a_state,
-        'battery_percent': int(amp_a_battery),
-        'signal_strength': int(amp_a_signal),
-        'location_label': f'{amp_a_loc} (depth: {amp_a_depth}m)',
-        'position': amp_a_pos,
-        'sensors': ['Sonar', 'Pressure', 'Water Quality', 'Camera'],
+        'agent_id': 'surface-relay',
+        'name': 'Surface Relay Station',
+        'role': 'Water-to-air relay',
+        'state': 'active',
+        'battery_percent': 100,
+        'signal_strength': 90,
+        'location_label': 'Entry platform',
+        'position': {'x': 125, 'y': 90, 'z': 0},  # Entry Pool position
+        'sensors': [],
         'nfc_recovery_available': False
     })
+    
+    # Amphibious Unit A: Main explorer (deploys at 30s)
+    if elapsed_seconds >= 30:
+        amp_a_battery = max(8, 100 - ((elapsed_seconds - 30) / 20))  # Start from deployment
+        amp_a_signal = max(25, 85 - ((elapsed_seconds - 30) / 6))  # Water + concrete attenuation
+        
+        if elapsed_seconds < 60:
+            amp_a_state = 'healthy'
+            amp_a_loc = 'Entry Pool (surface)'
+            amp_a_depth = 0.5
+            amp_a_pos = {'x': 125, 'y': 90, 'z': -0.5}
+        elif elapsed_seconds < 180:
+            amp_a_state = 'healthy'
+            amp_a_loc = 'Flooded Corridor'
+            amp_a_depth = 2.8
+            amp_a_pos = {'x': 320, 'y': 125, 'z': -2.8}
+        elif elapsed_seconds < 300:
+            amp_a_state = 'degraded'  # Mobility issues
+            amp_a_loc = 'Plant Room'
+            amp_a_depth = 3.5
+            amp_a_pos = {'x': 515, 'y': 125, 'z': -3.5}
+        else:
+            amp_a_state = 'degraded'
+            amp_a_loc = 'Submerged Zone'
+            amp_a_depth = 4.5
+            amp_a_pos = {'x': 405, 'y': 310, 'z': -4.5}
+        
+        agents.append({
+            'agent_id': 'amp-unit-a',
+            'name': 'Amphibious Explorer',
+            'role': 'Underwater mapping',
+            'state': amp_a_state,
+            'battery_percent': int(amp_a_battery),
+            'signal_strength': int(amp_a_signal),
+            'location_label': f'{amp_a_loc} (depth: {amp_a_depth}m)',
+            'position': amp_a_pos,
+            'sensors': ['Sonar', 'Pressure', 'Water Quality', 'Camera'],
+            'nfc_recovery_available': False
+        })
     
     # Drone B: Above-waterline thermal scout
     if elapsed_seconds >= 120:
@@ -1213,20 +1553,6 @@ def simulate_flooded_structure(
             'sensors': ['pH', 'Conductivity', 'Temperature', 'Pressure'],
             'nfc_recovery_available': False
         })
-    
-    # Surface relay node
-    agents.append({
-        'agent_id': 'surface-relay',
-        'name': 'Surface Relay Station',
-        'role': 'Water-to-air relay',
-        'state': 'active',
-        'battery_percent': 100,
-        'signal_strength': 90,
-        'location_label': 'Entry platform',
-        'position': {'x': 0, 'y': 0, 'z': 0},
-        'sensors': [],
-        'nfc_recovery_available': False
-    })
     
     # Network state - heavily degraded by water and concrete
     if elapsed_seconds < 180:
@@ -1293,13 +1619,24 @@ def simulate_flooded_structure(
     device_signals = []
     environmental_readings = []
     
+    # Determine current location for sensors (use amp unit location if deployed, otherwise entry)
+    if elapsed_seconds >= 30:
+        amp_unit = next((a for a in agents if a['agent_id'] == 'amp-unit-a'), None)
+        if amp_unit:
+            # Extract location without depth suffix
+            amp_loc = amp_unit['location_label'].split(' (depth:')[0] if '(depth:' in amp_unit['location_label'] else amp_unit['location_label']
+        else:
+            amp_loc = 'Entry Pool (surface)'
+    else:
+        amp_loc = 'Entry Pool (surface)'
+    
     # Water depth/pressure readings
     current_depth = min(4.5, elapsed_seconds / 80)
     environmental_readings.append({
         'sensor_type': 'water_depth',
         'value': round(current_depth, 1),
         'unit': 'm',
-        'location': amp_a_loc,
+        'location': amp_loc,
         'timestamp': format_time(elapsed_seconds)
     })
     
@@ -1309,7 +1646,7 @@ def simulate_flooded_structure(
         'sensor_type': 'water_temperature',
         'value': round(water_temp, 1),
         'unit': '°C',
-        'location': amp_a_loc,
+        'location': amp_loc,
         'timestamp': format_time(elapsed_seconds)
     })
     
@@ -1525,6 +1862,115 @@ def simulate_flooded_structure(
         'confidence': ai_confidence
     }
     
+    # Media feeds - simulated underwater/amphibious imaging
+    media_feeds = []
+    
+    # Amphibious Unit: Underwater/waterline camera
+    if elapsed_seconds >= 45:
+        amp_agent = next((a for a in agents if a['agent_id'] == 'amp-unit-a'), None)
+        if amp_agent:
+            # Water turbidity degrades frame confidence
+            depth = amp_agent['location_label'].split('(depth:')[1].split('m)')[0].strip() if '(depth:' in amp_agent['location_label'] else '0.5'
+            depth_val = float(depth)
+            
+            if depth_val > 2.5:
+                frame_status = 'degraded'
+                annotations = ['underwater imaging', 'high turbidity', 'low visibility']
+                description = f'Underwater imaging severely degraded by turbidity at {depth_val}m depth.'
+                conf = max(35, 75 - int(depth_val * 8))
+            elif depth_val > 1.0:
+                frame_status = 'degraded'
+                annotations = ['underwater imaging', 'moderate turbidity']
+                description = f'Underwater imaging at {depth_val}m depth. Moderate turbidity.'
+                conf = max(50, 80 - int(depth_val * 5))
+            else:
+                frame_status = 'live'
+                annotations = ['waterline imaging', 'surface conditions']
+                description = f'Surface/waterline imaging. Depth: {depth_val}m.'
+                conf = 82
+            
+            media_feeds.append({
+                'frame_id': f'amp-underwater-{int(elapsed_seconds)}',
+                'agent_id': 'amp-unit-a',
+                'agent_name': 'Amphibious Explorer',
+                'sensor_type': 'underwater_camera',
+                'frame_type': 'still',
+                'status': frame_status,
+                'mission_time': format_time(elapsed_seconds),
+                'signal_quality': amp_agent['signal_strength'],
+                'confidence': conf,
+                'location_label': amp_agent['location_label'],
+                'annotations': annotations,
+                'description': description
+            })
+    
+    # Aerial Scout: Above-waterline thermal detection
+    if elapsed_seconds >= 135:
+        aerial_agent = next((a for a in agents if a['agent_id'] == 'drone-b'), None)
+        if aerial_agent:
+            # Thermal anomaly above waterline creates flagged frame
+            if elapsed_seconds >= 240:
+                frame_status = 'ai_flagged'
+                annotations = ['thermal anomaly', 'above waterline', 'electrical hazard possible']
+                description = 'Thermal anomaly detected above waterline. Possible electrical hazard.'
+                conf = 74
+            else:
+                frame_status = 'live'
+                annotations = ['above waterline', 'thermal scan']
+                description = 'Thermal imaging of elevated dry areas.'
+                conf = 81
+            
+            media_feeds.append({
+                'frame_id': f'aerial-thermal-{int(elapsed_seconds)}',
+                'agent_id': 'drone-b',
+                'agent_name': 'Aerial Thermal Scout',
+                'sensor_type': 'thermal_camera',
+                'frame_type': 'thermal' if elapsed_seconds >= 240 else 'still',
+                'status': frame_status,
+                'mission_time': format_time(elapsed_seconds),
+                'signal_quality': aerial_agent['signal_strength'],
+                'confidence': conf,
+                'location_label': aerial_agent['location_label'],
+                'annotations': annotations,
+                'description': description
+            })
+    
+    # Submerged obstruction AI-annotated frame
+    if elapsed_seconds >= 180:
+        amp_agent = next((a for a in agents if a['agent_id'] == 'amp-unit-a'), None)
+        if amp_agent:
+            media_feeds.append({
+                'frame_id': f'obstruction-detected-{int(elapsed_seconds)}',
+                'agent_id': 'amp-unit-a',
+                'agent_name': 'Amphibious Explorer',
+                'sensor_type': 'underwater_camera',
+                'frame_type': 'still',
+                'status': 'ai_flagged',
+                'mission_time': format_time(elapsed_seconds),
+                'signal_quality': amp_agent['signal_strength'],
+                'confidence': 68,
+                'location_label': 'Flooded Corridor',
+                'annotations': ['submerged obstruction', 'AI detected', 'navigation hazard'],
+                'description': 'AI-detected submerged obstruction blocking corridor passage.'
+            })
+    
+    # Environmental sensor at 195s (already in timeline)
+    if elapsed_seconds >= 195:
+        media_feeds.append({
+            'frame_id': 'env-sensor-frame',
+            'agent_id': 'env-sensor-1',
+            'agent_name': 'Water Quality Sensor',
+            'sensor_type': 'hazard_camera',
+            'frame_type': 'still',
+            'status': 'live',
+            'mission_time': format_time(elapsed_seconds),
+            'signal_quality': 60,
+            'confidence': 85,
+            'location_label': 'Flooded Corridor',
+            'annotations': ['water quality monitoring', 'pH sensor active'],
+            'description': 'Environmental sensor package monitoring water conditions.'
+        })
+    
     return {
         'mission': {
             'mission_id': mission_id,
@@ -1544,7 +1990,8 @@ def simulate_flooded_structure(
         'sensors': sensors,
         'events': events,
         'ai_analysis': ai_analysis,
-        'terrain_reconstruction': terrain_reconstruction
+        'terrain_reconstruction': terrain_reconstruction,
+        'media_feeds': media_feeds
     }
 
 
@@ -1572,39 +2019,58 @@ def simulate_industrial_inspection(
     # Agent states
     agents = []
     
-    # Inspection Drone A: Primary inspector
-    drone_a_battery = max(10, 100 - (elapsed_seconds / 23))
-    drone_a_signal = max(50, 90 - (elapsed_seconds / 12))  # EMI interference
-    
-    if elapsed_seconds < 60:
-        drone_a_state = 'healthy'
-        drone_a_loc = 'Plant Room'
-        drone_a_pos = {'x': 15, 'y': 10, 'z': 2.5}
-    elif elapsed_seconds < 180:
-        drone_a_state = 'healthy'
-        drone_a_loc = 'Pipe Gallery'
-        drone_a_pos = {'x': 32 + ((elapsed_seconds - 60) * 0.2), 'y': 18, 'z': 4}
-    elif elapsed_seconds < 300:
-        drone_a_state = 'degraded'  # Reflective surfaces affecting sensors
-        drone_a_loc = 'Tank Interior'
-        drone_a_pos = {'x': 55, 'y': 25, 'z': 6}
-    else:
-        drone_a_state = 'degraded'  # EMI interference
-        drone_a_loc = 'Duct Section'
-        drone_a_pos = {'x': 68 + ((elapsed_seconds - 300) * 0.15), 'y': 30, 'z': 8}
-    
+    # Base station (always present at entry)
     agents.append({
-        'agent_id': 'inspection-drone-a',
-        'name': 'Industrial Inspector',
-        'role': 'Asset inspection',
-        'state': drone_a_state,
-        'battery_percent': int(drone_a_battery),
-        'signal_strength': int(drone_a_signal),
-        'location_label': drone_a_loc,
-        'position': drone_a_pos,
-        'sensors': ['Thermal', 'RGB Camera', 'Vibration', 'Gas Sensor'],
+        'agent_id': 'base-station',
+        'name': 'Industrial Base Station',
+        'role': 'Command and relay',
+        'state': 'active',
+        'battery_percent': 100,
+        'signal_strength': 95,
+        'location_label': 'Entry point',
+        'position': {'x': 110, 'y': 90, 'z': 0},  # Entry Point sector position
+        'sensors': [],
         'nfc_recovery_available': False
     })
+    
+    # Inspection Drone A: Primary inspector (deploys at 30s)
+    if elapsed_seconds >= 30:
+        drone_a_battery = max(10, 100 - ((elapsed_seconds - 30) / 23))
+        drone_a_signal = max(50, 90 - ((elapsed_seconds - 30) / 12))  # EMI interference
+        
+        if elapsed_seconds < 60:
+            drone_a_state = 'healthy'
+            drone_a_loc = 'Entry Point'
+            drone_a_pos = {'x': 110, 'y': 90, 'z': 2.5}
+        elif elapsed_seconds < 120:
+            drone_a_state = 'healthy'
+            drone_a_loc = 'Plant Room'
+            drone_a_pos = {'x': 140, 'y': 210, 'z': 2.5}
+        elif elapsed_seconds < 180:
+            drone_a_state = 'healthy'
+            drone_a_loc = 'Pipe Gallery'
+            drone_a_pos = {'x': 350, 'y': 210, 'z': 4}
+        elif elapsed_seconds < 300:
+            drone_a_state = 'degraded'  # Reflective surfaces affecting sensors
+            drone_a_loc = 'Tank Interior'
+            drone_a_pos = {'x': 350, 'y': 345, 'z': 6}
+        else:
+            drone_a_state = 'degraded'  # EMI interference
+            drone_a_loc = 'Duct Section'
+            drone_a_pos = {'x': 545, 'y': 210, 'z': 8}
+        
+        agents.append({
+            'agent_id': 'inspection-drone-a',
+            'name': 'Industrial Inspector',
+            'role': 'Asset inspection',
+            'state': drone_a_state,
+            'battery_percent': int(drone_a_battery),
+            'signal_strength': int(drone_a_signal),
+            'location_label': drone_a_loc,
+            'position': drone_a_pos,
+            'sensors': ['Thermal', 'RGB Camera', 'Vibration', 'Gas Sensor'],
+            'nfc_recovery_available': False
+        })
     
     # Static monitoring node
     if elapsed_seconds >= 120:
@@ -1621,7 +2087,7 @@ def simulate_industrial_inspection(
             'nfc_recovery_available': False
         })
     
-    # Thermal specialist drone
+    # Thermal specialist drone (deploys at 240s)
     if elapsed_seconds >= 240:
         drone_b_battery = max(20, 100 - ((elapsed_seconds - 240) / 20))
         agents.append({
@@ -1632,24 +2098,10 @@ def simulate_industrial_inspection(
             'battery_percent': int(drone_b_battery),
             'signal_strength': 78,
             'location_label': 'Control Cabinet area',
-            'position': {'x': 75, 'y': 35, 'z': 2},
+            'position': {'x': 695, 'y': 210, 'z': 2},
             'sensors': ['High-res Thermal', 'Infrared'],
             'nfc_recovery_available': False
         })
-    
-    # Base station
-    agents.append({
-        'agent_id': 'base-station',
-        'name': 'Industrial Base Station',
-        'role': 'Command and relay',
-        'state': 'active',
-        'battery_percent': 100,
-        'signal_strength': 95,
-        'location_label': 'Entry point',
-        'position': {'x': 0, 'y': 0, 'z': 0},
-        'sensors': [],
-        'nfc_recovery_available': False
-    })
     
     # Network state - EMI and metal structures cause interference
     if elapsed_seconds < 180:
@@ -2091,6 +2543,115 @@ def simulate_industrial_inspection(
         terrain_sectors, agents, elapsed_seconds
     )
     
+    # Media feeds - simulated inspection camera returns
+    media_feeds = []
+    
+    # Inspector Drone: Close-up inspection frames
+    if elapsed_seconds >= 45:
+        inspector_agent = next((a for a in agents if a['agent_id'] == 'inspection-drone-a'), None)
+        if inspector_agent:
+            # Reflective surfaces degrade confidence after 360s
+            if elapsed_seconds >= 360:
+                frame_status = 'degraded'
+                annotations = ['inspection imaging', 'reflective surface', 'confidence reduced']
+                description = 'Inspection frame degraded by reflective surface interference.'
+                conf = 56
+            else:
+                frame_status = 'live'
+                annotations = ['close-up inspection', 'structural assessment']
+                description = f'Close-up inspection of {inspector_agent["location_label"]}.'
+                conf = 88
+            
+            media_feeds.append({
+                'frame_id': f'inspector-rgb-{int(elapsed_seconds)}',
+                'agent_id': 'inspection-drone-a',
+                'agent_name': 'Inspector Drone',
+                'sensor_type': 'inspection_camera',
+                'frame_type': 'still',
+                'status': frame_status,
+                'mission_time': format_time(elapsed_seconds),
+                'signal_quality': inspector_agent['signal_strength'],
+                'confidence': conf,
+                'location_label': inspector_agent['location_label'],
+                'annotations': annotations,
+                'description': description
+            })
+    
+    # Thermal Specialist: Thermal hotspot frames
+    if elapsed_seconds >= 165:
+        thermal_agent = next((a for a in agents if a['agent_id'] == 'thermal-specialist'), None)
+        if thermal_agent:
+            # Pipe Joint A3 thermal anomaly detected at 165s
+            if elapsed_seconds >= 165 and elapsed_seconds < 480:
+                frame_status = 'ai_flagged'
+                annotations = ['thermal anomaly', 'Pipe Joint A3', '+22.5°C above baseline']
+                description = 'Thermal anomaly detected at Pipe Joint A3. Elevated temperature.'
+                conf = 79
+            # Control Cabinet C2 critical hotspot at 480s
+            elif elapsed_seconds >= 480:
+                frame_status = 'human_review_required'
+                annotations = ['CRITICAL thermal hotspot', 'Control Cabinet C2', '+38.2°C', 'immediate review']
+                description = 'CRITICAL: Severe thermal hotspot in Control Cabinet C2. Immediate action required.'
+                conf = 81
+            else:
+                frame_status = 'live'
+                annotations = ['thermal scan', 'baseline monitoring']
+                description = 'Thermal imaging of industrial equipment.'
+                conf = 84
+            
+            media_feeds.append({
+                'frame_id': f'thermal-{int(elapsed_seconds)}',
+                'agent_id': 'thermal-specialist',
+                'agent_name': 'Thermal Specialist',
+                'sensor_type': 'thermal_camera',
+                'frame_type': 'thermal',
+                'status': frame_status,
+                'mission_time': format_time(elapsed_seconds),
+                'signal_quality': thermal_agent['signal_strength'],
+                'confidence': conf,
+                'location_label': thermal_agent['location_label'],
+                'annotations': annotations,
+                'description': description
+            })
+    
+    # Pressure leak annotated frame (Duct Section at 390s)
+    if elapsed_seconds >= 390:
+        inspector_agent = next((a for a in agents if a['agent_id'] == 'inspection-drone-a'), None)
+        if inspector_agent:
+            media_feeds.append({
+                'frame_id': 'pressure-leak-frame',
+                'agent_id': 'inspection-drone-a',
+                'agent_name': 'Inspector Drone',
+                'sensor_type': 'inspection_camera',
+                'frame_type': 'still',
+                'status': 'ai_flagged',
+                'mission_time': format_time(390),
+                'signal_quality': inspector_agent['signal_strength'],
+                'confidence': 82,
+                'location_label': 'Duct Section',
+                'annotations': ['pressure leak detected', 'AI annotated', 'structural concern'],
+                'description': 'AI-detected pressure leak in duct section. Close-up inspection frame.'
+            })
+    
+    # Corrosion defect frame (if present in timeline)
+    if elapsed_seconds >= 270:
+        inspector_agent = next((a for a in agents if a['agent_id'] == 'inspection-drone-a'), None)
+        if inspector_agent and 'Pipe Gallery' in inspector_agent['location_label']:
+            media_feeds.append({
+                'frame_id': 'corrosion-frame',
+                'agent_id': 'inspection-drone-a',
+                'agent_name': 'Inspector Drone',
+                'sensor_type': 'inspection_camera',
+                'frame_type': 'still',
+                'status': 'ai_flagged',
+                'mission_time': format_time(270),
+                'signal_quality': inspector_agent['signal_strength'],
+                'confidence': 76,
+                'location_label': 'Pipe Gallery',
+                'annotations': ['surface corrosion', 'maintenance required', 'AI detected'],
+                'description': 'Surface corrosion detected on pipe surface. Maintenance attention required.'
+            })
+    
     return {
         'mission': {
             'mission_id': mission_id,
@@ -2110,7 +2671,8 @@ def simulate_industrial_inspection(
         'sensors': sensors,
         'events': events,
         'ai_analysis': ai_analysis,
-        'terrain_reconstruction': terrain_reconstruction
+        'terrain_reconstruction': terrain_reconstruction,
+        'media_feeds': media_feeds
     }
 
 

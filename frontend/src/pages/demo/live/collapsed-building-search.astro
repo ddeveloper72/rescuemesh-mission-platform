@@ -3,6 +3,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SimulationControls from '../../../components/demo/SimulationControls.astro';
 import TacticalMap from '../../../components/demo/TacticalMap.astro';
 import DataSourceBadge from '../../../components/demo/DataSourceBadge.astro';
+import MediaFeedsPanel from '../../../components/islands/MediaFeedsPanel';
 
 const MISSION_PK = 'c5d0ffd4-2fc8-4b45-841d-88ec93f27e8e';
 const USE_CASE = 'collapsed-building-search';
@@ -142,6 +143,15 @@ const initialClock = {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Media Feeds Panel -->
+      <div class="mt-6">
+        <MediaFeedsPanel mediaFeeds={[]} client:load />
+      </div>
+
+      <!-- Lower Dashboard Grid -->
+      <div class="grid lg:grid-cols-1 gap-6 mt-6"
 
         <!-- AI Analysis Panel -->
         <div class="bg-slate-800 rounded-lg p-6 border border-slate-700 lg:col-span-2">
@@ -298,6 +308,13 @@ const initialClock = {
           co2El.className = `font-semibold ${getStatusClass(co2Reading.status)}`;
           co2El.textContent = `${co2Reading.value}${co2Reading.unit}`;
         }
+      }
+      
+      // Update media feeds - dispatch custom event for React component
+      if (state.media_feeds) {
+        window.dispatchEvent(new CustomEvent('media-feeds-update', {
+          detail: { mediaFeeds: state.media_feeds }
+        }));
       }
       
       // Update debug panel

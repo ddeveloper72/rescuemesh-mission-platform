@@ -15,6 +15,8 @@ export interface MissionSimulationState {
   events: MissionEvent[];
   ai_analysis: AIAnalysis;
   terrain_reconstruction?: TerrainReconstruction;
+  media_feeds?: MediaFrame[];
+  mission_escalation?: MissionEscalation;
 }
 
 export interface MissionInfo {
@@ -175,6 +177,15 @@ export interface AIAnalysis {
   confidence: number;
 }
 
+export interface MissionEscalation {
+  active: boolean;
+  severity: 'none' | 'advisory' | 'warning' | 'urgent' | 'critical';
+  reason: string | null;
+  area_of_interest: string | null;
+  contact_continuity_risk: 'stable' | 'watch' | 'high' | 'critical';
+  recommended_actions: string[];
+}
+
 /**
  * Terrain reconstruction types for progressive map reveal
  */
@@ -222,4 +233,37 @@ export interface SimulationControlResponse {
   status: string;
   message: string;
   elapsed_seconds: number;
+}
+
+/**
+ * Media feed types for simulated image/video returns
+ */
+
+export interface MediaFrame {
+  frame_id: string;
+  agent_id: string;
+  agent_name: string;
+  sensor_type:
+    | 'rgb_camera'
+    | 'low_light_camera'
+    | 'thermal_camera'
+    | 'inspection_camera'
+    | 'underwater_camera'
+    | 'hazard_camera';
+  frame_type: 'still' | 'video_placeholder' | 'thermal' | 'last_good_frame';
+  status:
+    | 'live'
+    | 'delayed'
+    | 'degraded'
+    | 'lost'
+    | 'last_good_frame'
+    | 'thermal_detection'
+    | 'ai_flagged'
+    | 'human_review_required';
+  mission_time: string;
+  signal_quality: number;
+  confidence: number;
+  location_label: string;
+  annotations: string[];
+  description: string;
 }

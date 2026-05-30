@@ -3,6 +3,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SimulationControls from '../../../components/demo/SimulationControls.astro';
 import TacticalMap from '../../../components/demo/TacticalMap.astro';
 import DataSourceBadge from '../../../components/demo/DataSourceBadge.astro';
+import MediaFeedsPanel from '../../../components/islands/MediaFeedsPanel';
 
 const MISSION_PK = '2c6ccd68-85f6-49ac-b28d-6f5358bc6a68';
 const USE_CASE = 'flooded-structure';
@@ -122,7 +123,15 @@ const initialClock = {
             </div>
           </div>
         </div>
+      </div>
 
+      <!-- Media Feeds Panel -->
+      <div class="mt-6">
+        <MediaFeedsPanel mediaFeeds={[]} client:load />
+      </div>
+
+      <!-- Lower Dashboard Grid -->
+      <div class="grid lg:grid-cols-1 gap-6 mt-6">
         <!-- AI Analysis Panel -->
         <div class="bg-slate-800 rounded-lg p-6 border border-slate-700 lg:col-span-2">
           <h2 class="text-2xl font-bold mb-4">AI Analysis</h2>
@@ -210,7 +219,7 @@ const initialClock = {
                 <span class="text-slate-400">Location:</span>
                 <span class="text-xs">${agent.location_label}</span>
               </div>
-              ${agent.nfc_recovery_available ? '<div class="text-xs text-yellow-400 mt-2">⚠ NFC recovery available</div>' : ''}
+              ${agent.nfc_recovery_available ? '<div class="text-xs text-yellow-400 mt-2 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> NFC recovery available</div>' : ''}
             </div>
             <div class="mt-2 h-2 bg-slate-900 rounded-full overflow-hidden">
               <div 
@@ -243,6 +252,13 @@ const initialClock = {
       
       // Update tactical map
       updateTacticalMap(state, mapConfig);
+      
+      // Update media feeds - dispatch custom event for React component
+      if (state.media_feeds) {
+        window.dispatchEvent(new CustomEvent('media-feeds-update', {
+          detail: { mediaFeeds: state.media_feeds }
+        }));
+      }
       
       // Update debug panel
       const debugEl = document.getElementById('debug-json');
