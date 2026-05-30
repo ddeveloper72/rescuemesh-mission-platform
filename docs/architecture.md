@@ -101,58 +101,94 @@ This flexibility allows future integration with diverse robotics platforms.
 - Records reason, location, metadata
 - Enables timeline replay
 
-**TelemetryFrame** (future)
-- Real-time sensor readings
-- Position, battery, signal strength
-- Sensor-specific payloads
+**TelemetryFrame** ✅ **IMPLEMENTED**
+- Live agent telemetry data
+- Battery percentage, signal strength
+- Position tracking (x, y, z coordinates)
+- Sensor health indicators
 
-**DetectionEvent** (future)
-- Thermal signatures
-- Audio patterns
-- WiFi/Bluetooth signals
-- AI-generated confidence
+**DetectionEvent** ✅ **IMPLEMENTED**
+- Thermal anomaly signatures
+- Audio patterns (tapping, voice-like, knocking)
+- WiFi/Bluetooth device signals
+- Environmental sensor readings (O₂, CO₂, pressure, temperature)
+- AI-generated confidence scores
+- Human review required flags
 
-**AIAnalysisRun** (future)
-- Structured prompt generation
-- AI recommendations
-- Human review required flag
+**AIAnalysisRun** ✅ **IMPLEMENTED**
+- Structured AI summaries of mission state
+- Priority findings with confidence scores
+- Human review requirement flagging
+- Mission escalation recommendations
 
 ## Data Flow
 
 ### Mission Lifecycle
 
 1. **Mission Setup**
-   - Select use case template
-   - Define terrain and hazards
-   - Configure agents and sensors
-   - Set failure scenarios
+   - Select use case template (collapsed building, cave, flooded, industrial)
+   - Terrain and hazards auto-configured from use case
+   - Agents and sensors defined in simulation scenario
+   - Failure scenarios embedded in simulation logic
 
-2. **Simulation Start**
-   - Deploy agents
-   - Begin event generation
-   - Stream telemetry
+2. **Simulation Start** ✅ **IMPLEMENTED**
+   - Deploy agents with initial positions
+   - Begin deterministic event generation
+   - Initialize simulation clock with speed multiplier (1x-10x)
+   - Stream telemetry via HTTP polling
 
-3. **Runtime Events**
-   - Agent state changes
-   - Detections
-   - Failures
-   - AI analyses
-   - Operator decisions
+3. **Runtime Events** ✅ **IMPLEMENTED**
+   - Agent state changes (healthy → degraded → failed → relay)
+   - Detection events (thermal, audio, gas, electrical)
+   - Hardware failures (battery drain, sensor degradation)
+   - AI analysis summaries with confidence scoring
+   - Mission escalation and relay reinforcement
+   - Operator-visible timeline updates
 
 4. **Mission Completion**
-   - Timeline export
-   - Report generation
-   - Black-box recovery log
+   - Timeline export capability
+   - Mission report generation (planned)
+   - Black-box recovery log (NFC recovery indicators present)
 
-### API Flow
+### Live Simulation API Flow ✅ **IMPLEMENTED**
 
 ```
-Frontend Request → Django View → Serializer → Model
-                                    ↓
-                               Database
-                                    ↓
-Model → Serializer → JSON Response → Frontend
+Frontend → HTTP GET /api/v1/missions/{id}/state/
+                ↓
+Django simulation.py service layer
+                ↓
+Calculate state based on elapsed time
+                ↓
+Generate navigation model, telemetry, detections, events, AI analysis
+                ↓
+JSON response → Frontend tactical map, panels, timeline
 ```
+
+The simulation uses **deterministic state calculation** - each mission progresses identically for a given elapsed time, making scenarios reproducible without database state storage (MVP approach).
+
+### Mission State Response Structure ✅ **IMPLEMENTED**
+
+The `/api/v1/missions/{id}/state/` endpoint returns comprehensive mission state:
+
+```json
+{
+  "mission": { mission metadata },
+  "simulation_clock": { time, speed, status },
+  "navigation_model": { coordinate system, compass reliability },
+  "agents": [ array of agents with telemetry and 3D positioning ],
+  "network": { mesh health, relay chains, packet loss },
+  "map": { coverage, confidence, mapped sectors },
+  "sensors": { thermal, audio, environmental readings },
+  "events": [ chronological mission event timeline ],
+  "ai_analysis": { summary, priority findings, confidence },
+  "terrain_reconstruction": { sector reveal, scan tracking },
+  "media_feeds": [ generated media links ],
+  "mission_escalation": { escalation level, relay reinforcement },
+  "audio_detections": [ audio event cards ]
+}
+```
+
+See [API Documentation](../README.md#api-documentation) for complete field descriptions.
 
 ## State Management
 
@@ -205,7 +241,7 @@ The platform simulates realistic failures:
 
 RescueMesh uses **local 3D mission coordinates** for GPS-denied environments, providing operators with critical navigation intelligence for complex terrain where GPS is unavailable or unreliable.
 
-### 3D Coordinate System
+### 3D Coordinate System ✅ **IMPLEMENTED**
 
 The platform uses a **local mission origin** (typically the entry point or base station) as the reference point for all measurements:
 
@@ -223,7 +259,7 @@ The platform uses a **local mission origin** (typically the entry point or base 
 - **route_distance_m**: Actual path distance through terrain (sum of segments)
 - **straight_line_distance_m**: Direct Euclidean distance ignoring obstacles
 
-### Compass Bearing System
+### Compass Bearing System ✅ **IMPLEMENTED**
 
 The platform calculates **compass bearings** for direction-finding in GPS-denied spaces:
 
@@ -247,100 +283,182 @@ Compass confidence degrades based on:
 - Submerged metal in flooded structures
 - Electromagnetic interference in industrial sites
 
-### Navigation Data Model
-
-**For Each Sector:**
-- 3D centroid position (x, y, z)
-- Distance from origin (2D and 3D)
-- Bearing from origin with cardinal direction
-- Elevation or depth label ("4 m below entry", "+3 m above entry")
-- Vertical profile description
-
-**For Each Path Segment:**
-- Horizontal distance
-- Vertical change (gain or loss)
-- 3D segment distance  
-- Slope percentage and incline classification
-- Traversal risk based on slope
-- Bearing along segment
+### Navigation Data Model ✅ **IMPLEMENTED**
 
 **For Each Agent:**
-- Current 3D position
-- Distance from origin
-- Bearing from origin
+- Current 3D position (absolute x, y, z)
+- Distance from origin (2D horizontal and 3D straight-line)
+- Bearing from origin (degrees and cardinal direction)
 - Current heading (if moving)
-- Depth or elevation
+- Depth or elevation relative to origin
 - Route distance travelled
-- Estimated return distance and time
-- Nearest relay (distance and bearing)
-- Contact path length through relay mesh
-- Communications risk
+- Estimated return distance and time (planned)
+- Vertical profile label ("↓4m", "↑3m")
 
-**For Each Detection:**
-- 3D position
-- Distance from origin (route distance and straight-line)
-- Bearing from origin
-- Depth or elevation context
-- Contact path length to base through relays
-- Communications risk assessment
+**Implementation:**
+All agent navigation data calculated in `backend/apps/missions/services/simulation.py` using utilities from `backend/apps/missions/services/navigation_utils.py`.
 
-### Use Case Examples
-
-**Collapsed Building Search:**
-- Model floors, stairwells, basement voids
-- Upper/lower floor detection
-- "Void Space 2: 63 m route, 074° ENE, ↓ 4 m below entry"
-
-**Cave Rescue:**
-- Descending tunnels and chambers
-- Depth below entrance critical for planning
-- "Deep Squeeze: 112 m route, 078° ENE, ↓ 11 m below entrance"
-
-**Flooded Structure:**
-- Water depth and submerged elevation
-- Surface relay vs. underwater drone positions
-- "Submerged zone: 3.5 m depth, contact path 45 m"
-
-**Industrial Inspection:**
-- Elevated platforms, ducts, basements
-- "Pipe Gallery: 28 m route, +6 m above plant floor"
-
-### Frontend Visualization
+### Frontend Visualization ✅ **IMPLEMENTED**
 
 **Tactical Map:**
 - Compass rose indicator (top-right corner)
 - Color-coded by bearing reliability
 - Depth/elevation chips on agent markers (↓ 4 m, ↑ 3 m)
-- Tooltips with full 3D position data
+- Clickable agents with full positioning modal
+- SVG-based rendering with route-based interpolation
 
 **Distance & Link Budget Panel:**
-- Agent distance, bearing, and elevation
-- Nearest relay with bearing
-- Return route distance and estimated time
-- Contact path length through mesh
+- Agent distance, bearing, and elevation display
+- Nearest relay with bearing (planned)
+- Contact path length through mesh (planned)
 - Communications risk indicators
 
-**Vertical Profile Display:**
-- Simple SVG elevation chart (future feature)
-- Shows route distance vs. depth/elevation
-- Marks relays, hazards, detections
+**Agent Detail Modal:**
+- Operational Status section (battery, signal)
+- 3D Positioning section with absolute and relative coordinates
+- Payload and Sensors listing
+- Survey Data Export (JSON format for external mapping tools)
 
-### Future Compatibility
+## Terrain Reconstruction ✅ **IMPLEMENTED**
 
-This local 3D coordinate system is designed for future integration with:
-- **GeoJSON-style 3D positions** - Altitude as third coordinate
-- **PostGIS spatial queries** - For database-backed spatial analysis
-- **ROS path/pose data** - Standard robotics coordinate frames
-- **Bathymetric/depth mapping** - For underwater and flooded missions
+The platform models **progressive terrain discovery** as agents explore unknown environments.
 
-The system remains **deterministic and simulation-first**, with no external dependencies on GPS, cloud services, or mapping APIs in the MVP.
+### Sector-Based Terrain Model
+
+Each use case defines a set of **terrain sectors** that represent physical spaces:
+
+**Collapsed Building:**
+- Entry, Corridor A/B, Void Space 1/2/3, Basement Sector, etc.
+
+**Cave System:**
+- Entrance Chamber, Main Passage, Junction, Squeeze, Deep Chamber, etc.
+
+**Flooded Structure:**
+- Entry Pool, Submerged Corridor, Underwater Junction, Deep Zone, etc.
+
+**Industrial Facility:**
+- Entry Gate, Main Floor, Elevated Walkway, Pipe Gallery, Basement, etc.
+
+### Progressive Reveal Mechanism
+
+Sectors are initially hidden and **revealed as agents scan them**:
+
+```python
+# Backend logic (simplified)
+if elapsed_seconds >= sector_reveal_time:
+    sector["revealed"] = True
+    sector["scanned_by"] = agent_id
+    sector["scan_timestamp"] = current_time
+```
+
+**Multi-Agent Scans:**
+When multiple agents scan the same sector:
+- Sector confidence increases
+- Map quality improves
+- Overlap count tracked for terrain_reconstruction
+
+**Implementation Location:**
+- `backend/apps/missions/services/simulation.py` - sector reveal logic
+- `frontend/src/lib/tactical-map-manager.ts` - SVG sector rendering
+
+### Scan Coverage Calculation
+
+```python
+scan_coverage_percent = (revealed_sectors / total_sectors) * 100
+```
+
+Displayed in the Mission Overview panel and map metadata.
+
+## Mission Escalation & Relay Reinforcement ✅ **IMPLEMENTED**
+
+The platform models **tactical mission escalation** when challenges intensify.
+
+### Escalation Levels
+
+**Normal:**
+- All agents healthy or degraded
+- Communications stable
+- No critical detections
+
+**Elevated:**
+- Agent failures occurring
+- Network mesh weakening
+- Medium-confidence detections require investigation
+
+**Critical:**
+- Multiple agent failures
+- Communications at risk
+- High-confidence survivor detection
+- Immediate human review required
+
+### Relay Reinforcement
+
+When network mesh health drops below threshold:
+
+```python
+if network_mesh_health < 60 and not relay_reinforcement_deployed:
+    mission_escalation["escalation_level"] = "elevated"
+    mission_escalation["relay_reinforcement"] = {
+        "deployed_at": current_time,
+        "reason": "Network mesh health dropped to {health}%",
+        "action": "Additional relay node deployed",
+        "recommended_actions": [
+            "Monitor relay network stability",
+            "Consider agent recall if mesh continues to degrade"
+        ]
+    }
+```
+
+**Implementation:**
+- `backend/apps/missions/services/simulation.py` - escalation logic
+- Frontend AI Analysis Panel displays escalation status and recommendations
+
+## MeshCore vs MeshStatic ✅ **IMPLEMENTED DISTINCTION**
+
+The platform distinguishes between **real-time mesh networking (MeshCore)** and **static mesh visualization (MeshStatic)**.
+
+### MeshStatic (Current MVP Implementation)
+
+**Static mesh visualization** for demonstration and training:
+- **Predefined relay chains** calculated in simulation
+- **Deterministic network health** based on elapsed time
+- **No runtime topology changes** (chains predetermined)
+- **Visualization only** - no actual network protocols
+- **HTTP polling** for state updates (not real mesh packets)
+
+**Purpose:**
+- Algorithm demonstration
+- Operator training
+- Failure scenario exploration
+- AI model development
+
+**Implementation:**
+Frontend displays relay chains from backend JSON without runtime mesh protocols.
+
+### MeshCore (Future Real-Time Extension)
+
+**Real mesh networking** for physical hardware integration:
+- **Dynamic topology** with runtime route discovery
+- **Actual mesh protocols** (e.g., Batman-adv, 802.11s, LoRa mesh)
+- **Real packet routing** through agent radios
+- **Link quality monitoring** from physical signal strength
+- **Automatic rerouting** on agent failure
+- **WebSocket streaming** of live telemetry
+
+**Future Integration:**
+- ROS 2 bridge for real robotics
+- MAVLink or similar protocols
+- Physical radio hardware
+- Safety-approved control systems
+
+**Current Status:** MeshCore features are **planned for 2028+** pending robotics integration and safety validation.
 
 ## Communication Modes
 
 The platform models diverse communication strategies for different mission types:
 
 ### Emergency Response Scenarios
-- Real-time mesh relay networks
+- Real-time mesh relay networks (MeshStatic simulation)
 - Dynamic relay node deployment
 - Critical telemetry streaming
 - Low-latency command links

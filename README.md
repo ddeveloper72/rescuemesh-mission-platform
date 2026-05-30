@@ -281,8 +281,10 @@ cd backend
 python -m venv .venv
 
 # Activate virtual environment
-# Windows:
-.venv\Scripts\activate
+# Windows (Command Prompt):
+.venv\Scripts\activate.bat
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
 # Linux/Mac:
 source .venv/bin/activate
 
@@ -337,15 +339,189 @@ The frontend will be available at `http://localhost:4321`
 - URLs: Register routes in app `urls.py` and main `config/urls.py`
 - Migrations: Run `python manage.py makemigrations` after model changes
 
+## API Documentation
+
+### Live Simulation API
+
+The live simulation API provides real-time mission state via HTTP polling (future: WebSockets).
+
+#### Get Mission State
+
+```http
+GET /api/v1/missions/{mission_id}/state/
+```
+
+Returns complete mission state including agents, network, map, sensors, events, AI analysis, and terrain reconstruction.
+
+**Response Structure:**
+
+```json
+{
+  "mission": {
+    "mission_id": "uuid",
+    "name": "Mission Name",
+    "use_case": "collapsed-building-search",
+    "status": "running"
+  },
+  "simulation_clock": {
+    "started_at": "2026-05-30T14:23:45Z",
+    "elapsed_seconds": 245.0,
+    "speed_multiplier": 10.0,
+    "is_running": true
+  },
+  "navigation_model": {
+    "coordinate_system": "local_mission_3d_grid",
+    "origin_sector_id": "entry",
+    "origin_label": "Entry Point",
+    "origin_position": { "x": 100, "y": 240, "z": 0 },
+    "units": "metres",
+    "bearing_reference": "magnetic_simulated",
+    "bearing_confidence": 0.75,
+    "bearing_reliability": "acceptable",
+    "bearing_reliability_reason": "Metal reinforcement causes moderate interference"
+  },
+  "agents": [
+    {
+      "agent_id": "drone-a",
+      "name": "Scout Drone A",
+      "role": "Primary mapper",
+      "state": "healthy",
+      "battery_percent": 85,
+      "signal_strength": 72,
+      "location_label": "Void Space 1",
+      "position": { "x": 115.5, "y": 240, "z": 3.0 },
+      "sensors": ["LiDAR", "Low-light Camera", "IMU"],
+      "nfc_recovery_available": false,
+      "navigation": {
+        "distance_from_origin_m": 15.6,
+        "straight_line_3d_distance_from_origin_m": 15.8,
+        "bearing_from_origin_deg": 90.0,
+        "bearing_from_origin_cardinal": "E",
+        "elevation_m": 3.0,
+        "depth_m": 0.0,
+        "vertical_profile_label": "+3.0 m above entry (upper floor/void)",
+        "depth_elevation_label": "↑3.0m"
+      }
+    }
+  ],
+  "network": {
+    "base_signal_strength": 85,
+    "mesh_health": 78,
+    "relay_chain": ["base-station", "drone-a", "drone-b"],
+    "packet_loss_percent": 5
+  },
+  "map": {
+    "map_type": "collapsed-building-map",
+    "coverage_percent": 45,
+    "confidence": 0.88,
+    "total_points": 125000,
+    "new_points_generated": 8500,
+    "mapped_sectors": ["Entry", "Corridor A", "Void Space 1"],
+    "blocked_sectors": ["Collapsed Corridor B"],
+    "accessible_areas": [...]
+  },
+  "sensors": {
+    "thermal_anomalies": [...],
+    "audio_events": [...],
+    "device_signals": [...],
+    "environmental_readings": [...]
+  },
+  "events": [
+    {
+      "type": "deployment",
+      "time": "00:00:30",
+      "title": "Scout Drone A deployed",
+      "description": "Primary mapper initiated SLAM",
+      "agent": "drone-a"
+    }
+  ],
+  "ai_analysis": {
+    "summary": "Mission progressing normally...",
+    "priority_findings": ["Thermal anomaly detected..."],
+    "human_review_required": true,
+    "confidence": 0.78
+  },
+  "terrain_reconstruction": {
+    "sectors": [...],
+    "scan_coverage_percent": 45,
+    "multi_agent_overlaps": 3
+  },
+  "media_feeds": [...],
+  "mission_escalation": {
+    "escalation_level": "normal",
+    "relay_reinforcement": null
+  },
+  "audio_detections": [...]
+}
+```
+
+#### Start/Pause/Reset Mission
+
+```http
+POST /api/v1/missions/{mission_id}/start/
+POST /api/v1/missions/{mission_id}/pause/
+POST /api/v1/missions/{mission_id}/reset/
+```
+
+#### Generated Media API
+
+```http
+GET /api/v1/missions/{mission_id}/generated-media/
+GET /api/v1/generated-media/{media_id}/preview/
+GET /api/v1/generated-media/{media_id}/audio/
+GET /api/v1/generated-media/{media_id}/spectrogram/
+```
+
+### Mission State Fields
+
+#### Navigation Model
+Provides GPS-denied 3D positioning reference:
+- **coordinate_system**: Local mission 3D grid
+- **origin_position**: Entry point coordinates
+- **bearing_reference**: Magnetic or mission north
+- **bearing_confidence**: 0-1 scale
+- **bearing_reliability**: good/acceptable/degraded/unreliable
+
+#### Agent Navigation Data
+Each agent includes positioning data:
+- **position**: Absolute x, y, z coordinates
+- **distance_from_origin_m**: 2D horizontal distance
+- **straight_line_3d_distance_from_origin_m**: True 3D distance
+- **bearing_from_origin_deg**: Compass bearing (0-360°)
+- **bearing_from_origin_cardinal**: N, NE, E, SE, S, SW, W, NW
+- **elevation_m**: Vertical offset from origin
+- **depth_m**: Depth below origin (positive value)
+- **depth_elevation_label**: Display label (e.g., "↓2.5m", "↑3.0m")
+
+#### Terrain Reconstruction
+Progressive sector reveal based on agent scanning:
+- **sectors**: List of terrain sectors with reveal timestamps
+- **scan_rules**: Which agents scanned which sectors and when
+- **multi_agent_overlaps**: Count of sectors scanned by multiple agents
+
+#### Mission Escalation
+Tracks mission criticality and relay reinforcement:
+- **escalation_level**: normal/elevated/critical
+- **relay_reinforcement**: Details if additional relays deployed
+- **trigger_reason**: Why escalation occurred
+- **recommended_actions**: Operator guidance
+
 ### API Endpoints
 
 - `GET /api/v1/missions/` - List all missions
 - `POST /api/v1/missions/` - Create new mission
 - `GET /api/v1/missions/{id}/` - Mission details
+- `GET /api/v1/missions/{id}/state/` - **Live simulation state**
 - `POST /api/v1/missions/{id}/start/` - Start mission
+- `POST /api/v1/missions/{id}/pause/` - Pause mission
+- `POST /api/v1/missions/{id}/reset/` - Reset mission
 - `GET /api/v1/missions/{id}/events/` - Mission events
+- `GET /api/v1/missions/{id}/generated-media/` - Media metadata
 - `GET /api/v1/agents/` - List all agents
 - `POST /api/v1/agents/` - Register new agent
+- `GET /api/v1/generated-media/{id}/preview/` - Image preview
+- `GET /api/v1/generated-media/{id}/audio/` - Audio file
+- `GET /api/v1/generated-media/{id}/spectrogram/` - Spectrogram
 
 ## Documentation
 
@@ -394,25 +570,111 @@ Contributions are welcome! Please:
 
 ## Roadmap
 
-### MVP (Current)
-- [x] Astro frontend with Tailwind
+See [ROADMAP.md](ROADMAP.md) for the complete development roadmap.
+
+### Currently Implemented ✅
+
+**Core Platform:**
+- [x] Astro frontend with Tailwind CSS and TypeScript
 - [x] Django backend with REST API
-- [x] Mission and agent models
-- [x] Sample use cases and fixtures
-- [x] Demo mission dashboard
-- [ ] Interactive islands (maps, telemetry, timeline)
+- [x] Mission and agent domain models
+- [x] Live simulation state calculation
+- [x] HTTP polling for real-time updates
 
-### Phase 2
-- [ ] WebSocket telemetry streaming
-- [ ] 3D visualization (Three.js)
-- [ ] AI prompt generation API
-- [ ] Mission report export
+**Mission Features:**
+- [x] Four use case scenarios (collapsed building, cave, flooded structure, industrial)
+- [x] Interactive tactical maps with SVG rendering
+- [x] Agent markers with click-to-view details
+- [x] Progressive sector reveal
+- [x] Route-based agent positioning
+- [x] Detection markers (thermal, audio, gas)
 
-### Phase 3
-- [ ] PostgreSQL + PostGIS
-- [ ] ROS 2 integration
-- [ ] MCAP log replay
-- [ ] Real hardware bridging
+**Agent Intelligence:**
+- [x] 3D positioning data (x, y, z coordinates)
+- [x] Distance and bearing calculations
+- [x] Compass rose with environment-specific reliability
+- [x] Depth/elevation labels
+- [x] Per-agent navigation intelligence
+- [x] Clickable agents with survey data modal
+
+**Telemetry & Monitoring:**
+- [x] Battery and signal strength tracking
+- [x] Agent state management (17+ states)
+- [x] Network mesh health monitoring
+- [x] Relay chain visualization
+- [x] Hardware failure modeling
+
+**Detection & Analysis:**
+- [x] Thermal anomaly detection
+- [x] Audio event detection (tapping, voice-like)
+- [x] Environmental sensor readings
+- [x] WiFi/Bluetooth device scanning
+- [x] AI analysis summaries with confidence scores
+- [x] Mission event timeline
+
+**Media & Data:**
+- [x] Generated media system (images, audio, spectrograms)
+- [x] Media feed panels
+- [x] Audio detections panel with clickable cards
+- [x] Distance & Link Budget panel
+- [x] Terrain reconstruction display
+
+**Mission Management:**
+- [x] Simulation controls (start, pause, reset, speed control)
+- [x] Mission escalation modeling
+- [x] Relay reinforcement logic
+- [x] Time formatting (ISO 8601 HH:MM:SS)
+
+### Next: Simulation Improvements 🚧
+
+**Enhanced Visualization:**
+- [ ] 3D terrain visualization (Three.js/CesiumJS)
+- [ ] Point cloud rendering for LiDAR data
+- [ ] Path trail animation
+- [ ] Vertical profile charts
+- [ ] Heat map overlays
+
+**Advanced Simulation:**
+- [ ] Configurable failure scenarios
+- [ ] Custom mission builder UI
+- [ ] Multi-mission coordination
+- [ ] Historical mission replay
+- [ ] Export mission reports (PDF/JSON)
+
+**Data Management:**
+- [ ] PostgreSQL migration for production
+- [ ] PostGIS spatial queries
+- [ ] Mission data persistence
+- [ ] Agent telemetry history logging
+- [ ] Search and filter missions
+
+### Future: Real-Time & Robotics Extensions 🔮
+
+**Real-Time Infrastructure:**
+- [ ] Django Channels for WebSocket streaming
+- [ ] Live telemetry push notifications
+- [ ] Real-time map updates
+- [ ] Operator collaboration features
+
+**Physical Integration:**
+- [ ] ROS 2 bridge for real robotics
+- [ ] MCAP log import and replay
+- [ ] PX4/ArduPilot autopilot simulation
+- [ ] Gazebo physics simulation bridge
+- [ ] Real drone control interfaces (research/safety-approved contexts only)
+
+**Advanced Features:**
+- [ ] Machine learning model integration
+- [ ] Autonomous path planning
+- [ ] SLAM algorithm testing
+- [ ] Multi-agent coordination algorithms
+- [ ] Cloud deployment (AWS/Azure/GCP)
+
+**Storage & Media:**
+- [ ] S3/Object storage for real mission media
+- [ ] Video stream integration
+- [ ] Large-scale point cloud storage
+- [ ] Distributed mission data archives
 
 ## License
 
