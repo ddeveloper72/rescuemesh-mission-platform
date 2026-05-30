@@ -60,7 +60,7 @@ Discrete region within a terrain map (chamber, passage, junction, etc.).
 **Key Fields:**
 - `sector_id`: Identifier (e.g., "C1", "passage-alpha")
 - `label`: Human-readable name
-- `sector_type`: `chamber`, `passage`, `junction`, `entrance`, `shaft`, `sump`, `room`, `corridor`, `void`, `hazard`
+- `sector_type`: `chamber`, `passage`, `junction`, `entrance`, `shaft`, `sump`, `room`, `corridor`, `void`, `hazard`, `cargo_hold`, `engine_room`, `bridge`, `crew_quarters`, `bilge`, `hull_breach`
 - `x_m`, `y_m`, `z_m`: 3D position in meters
 - `width_m`, `height_m`, `depth_m`: Approximate dimensions
 - `elevation_m`: Elevation relative to reference
@@ -76,7 +76,7 @@ Connection between two sectors with distance, bearing, and risk assessment.
 - `distance_m`: Path distance
 - `bearing_deg`: Compass bearing (0-360)
 - `vertical_change_m`: Elevation change (positive=up, negative=down)
-- `path_type`: `passage`, `climb`, `descent`, `crawl`, `squeeze`, `swim`, `dive`, `traverse`, `ladder`, `open`
+- `path_type`: `passage`, `climb`, `descent`, `crawl`, `squeeze`, `swim`, `dive`, `traverse`, `ladder`, `open`, `wade`, `sealed_passage`, `emergency_hatch`
 - `traversal_risk`: `low`, `moderate`, `high`, `extreme`, `impassable`
 - `confidence`: Data confidence
 - `capabilities_required`: JSON array (e.g., ["waterproof", "vertical_mobility"])
@@ -172,6 +172,69 @@ Reference to external map artifacts (survey files, point clouds, images).
 - CyArk
 - Historic Environment Scotland
 - University of South Florida Libraries
+
+### 4. Maritime/Vessel Datasets (Flooded Structure Use Case)
+**For:** Flooded ship, submarine, and underwater vessel digital twins
+
+#### NOAA Wrecks and Obstructions Database
+**URL:** https://nauticalcharts.noaa.gov/data/wrecks-and-obstructions.html  
+**License:** Public domain (US Government)  
+**Data Type:** Shipwreck locations and vessel data  
+**Coverage:** US coastal waters and territories
+
+**Suitable For:**
+- Wreck site layouts
+- Vessel dimensions
+- Underwater structure mapping
+
+#### Integrated Marine Observing System (IMOS)
+**URL:** https://imos.aodn.org.au/  
+**License:** Open access (verify specifics)  
+**Data Type:** ~30TB ocean measurements including underwater vehicle data  
+**Coverage:** Australian marine environment
+
+**Suitable For:**
+- Underwater environmental conditions
+- AUV operation parameters
+- Water quality sensor simulation
+
+#### BODC - British Oceanographic Data Centre
+**URL:** https://www.bodc.ac.uk/data/  
+**License:** Check BODC data policy  
+**Data Type:** ~22K marine data variables  
+**Coverage:** UK and international waters
+
+**Suitable For:**
+- Marine environment parameters
+- Underwater sensor calibration
+- Flooded compartment conditions
+
+#### Oil and Gas Authority Open Data (UK)
+**URL:** https://data-ogauthority.opendata.arcgis.com/  
+**License:** Open Government License  
+**Data Type:** 12,500 offshore wellbores, 5,000 seismic surveys  
+**Coverage:** UK offshore infrastructure
+
+**Suitable For:**
+- Underwater industrial structures
+- Offshore platform layouts
+- Flooded industrial compartments
+
+**Note on Vessel Digital Twins:**
+Modern naval and commercial vessel schematics are generally not publicly available due to security and proprietary concerns. The flooded vessel sample (`flooded_vessel_sample.json`) uses a synthetic digital twin inspired by publicly available Liberty ship general specifications (WWII-era cargo vessel class, public domain as historical naval architecture). This approach provides realistic flooded structure scenarios without exposing operational vessel layouts.
+
+**Vessel-Specific Sector Types:**
+- `cargo_hold`: Cargo hold compartment
+- `engine_room`: Engine/machinery compartment
+- `bridge`: Bridge/command center
+- `crew_quarters`: Crew berthing area
+- `bilge`: Bilge/lowest compartment
+- `hull_breach`: Hull damage entry point
+
+**Vessel-Specific Path Types:**
+- `wade`: Shallow water passage
+- `sealed_passage`: Watertight door
+- `emergency_hatch`: Emergency access hatch
 
 ---
 

@@ -1,0 +1,531 @@
+{
+  "site": {
+    "slug": "liberty-cargo-vessel-demo",
+    "name": "Liberty-class Cargo Vessel - Flooded Structure Demo",
+    "site_type": "synthetic",
+    "country": "Synthetic",
+    "description": "Synthetic digital twin of a WWII-era cargo vessel partially flooded after grounding. Inspired by Liberty ship general arrangement and compartment layout. This demonstration shows amphibious robot navigation through flooded and sealed compartments, representing realistic flooded structure inspection and survivor search scenarios.",
+    "source_name": "Liberty ship class general specifications",
+    "source_url": "https://en.wikipedia.org/wiki/Liberty_ship",
+    "source_license": "Public domain (historical vessel class)",
+    "attribution": "Compartment layout inspired by WWII-era Liberty-class cargo vessel general specifications (441 ft length, 57 ft beam). This is a synthetic digital twin for simulation purposes only, not based on a specific vessel. Liberty ship specifications are in the public domain as historical naval architecture.",
+    "sensitivity_level": "synthetic_only",
+    "notes": "Liberty ships were mass-produced cargo vessels (2,710 built 1941-1945) with well-documented general arrangements. This synthetic twin demonstrates flooded structure inspection without exposing any real wreck site coordinates or operational vessel layouts."
+  },
+  "terrain_map": {
+    "slug": "main-deck-holds",
+    "name": "Main Deck and Cargo Holds - Flooded Section",
+    "coordinate_system": "local_mission_3d_grid",
+    "origin_label": "Hull breach entry point at waterline (amidships, port side)",
+    "units": "meters",
+    "source_format": "synthetic"
+  },
+  "sectors": [
+    {
+      "sector_id": "hull-breach",
+      "label": "Hull Breach Entry Point",
+      "sector_type": "hull_breach",
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "width_m": 2.5,
+      "height_m": 1.8,
+      "depth_m": 0.8,
+      "elevation_m": 0.0,
+      "confidence": 0.95,
+      "source_ref": "Entry point for inspection mission",
+      "metadata": {
+        "water_depth_m": 0.5,
+        "current_speed_ms": 0.2,
+        "visibility_m": 1.5,
+        "entry_difficulty": "moderate",
+        "hull_integrity": "torn_metal_edges",
+        "hazards": ["sharp_edges", "unstable_structure"]
+      }
+    },
+    {
+      "sector_id": "passage-main-01",
+      "label": "Main Corridor - Port Side",
+      "sector_type": "corridor",
+      "x_m": 8.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "width_m": 2.0,
+      "height_m": 2.5,
+      "depth_m": 15.0,
+      "elevation_m": 0.0,
+      "confidence": 0.92,
+      "source_ref": "Main port-side corridor",
+      "metadata": {
+        "water_depth_m": 1.2,
+        "visibility_m": 2.0,
+        "temperature_c": 8.0,
+        "lighting": "none",
+        "structural_condition": "stable",
+        "debris_level": "light"
+      }
+    },
+    {
+      "sector_id": "cargo-hold-2",
+      "label": "Cargo Hold #2 - Partially Flooded",
+      "sector_type": "cargo_hold",
+      "x_m": 22.0,
+      "y_m": -6.0,
+      "z_m": -3.0,
+      "width_m": 12.0,
+      "height_m": 8.0,
+      "depth_m": 18.0,
+      "elevation_m": -3.0,
+      "confidence": 0.88,
+      "source_ref": "Forward cargo hold",
+      "metadata": {
+        "water_depth_m": 4.5,
+        "air_pocket_height_m": 3.5,
+        "visibility_m": 1.0,
+        "cargo_contents": "machinery_parts",
+        "structural_condition": "compromised",
+        "acoustic_characteristics": "high_echo",
+        "survivor_probability": 0.35
+      }
+    },
+    {
+      "sector_id": "engine-room",
+      "label": "Engine Room - Flooded",
+      "sector_type": "engine_room",
+      "x_m": 45.0,
+      "y_m": 0.0,
+      "z_m": -4.5,
+      "width_m": 10.0,
+      "height_m": 6.0,
+      "depth_m": 12.0,
+      "elevation_m": -4.5,
+      "confidence": 0.85,
+      "source_ref": "Main engine compartment",
+      "metadata": {
+        "water_depth_m": 6.0,
+        "visibility_m": 0.5,
+        "temperature_c": 12.0,
+        "oil_contamination": true,
+        "hazards": ["submerged_machinery", "fuel_oil", "low_visibility"],
+        "machinery_state": "shut_down",
+        "structural_condition": "critical"
+      }
+    },
+    {
+      "sector_id": "crew-quarters-b",
+      "label": "Crew Quarters B - Air Pocket",
+      "sector_type": "crew_quarters",
+      "x_m": 58.0,
+      "y_m": 3.0,
+      "z_m": 2.0,
+      "width_m": 8.0,
+      "height_m": 2.8,
+      "depth_m": 10.0,
+      "elevation_m": 2.0,
+      "confidence": 0.90,
+      "source_ref": "Crew berthing compartment",
+      "metadata": {
+        "water_depth_m": 0.0,
+        "air_pocket": true,
+        "air_quality": "poor",
+        "oxygen_percent": 16.5,
+        "co2_ppm": 3200,
+        "temperature_c": 10.0,
+        "survivor_probability": 0.72,
+        "acoustic_analysis": "possible_human_presence"
+      }
+    },
+    {
+      "sector_id": "bridge",
+      "label": "Bridge - Above Waterline",
+      "sector_type": "bridge",
+      "x_m": 72.0,
+      "y_m": 0.0,
+      "z_m": 8.0,
+      "width_m": 6.0,
+      "height_m": 3.0,
+      "depth_m": 8.0,
+      "elevation_m": 8.0,
+      "confidence": 0.95,
+      "source_ref": "Vessel bridge",
+      "metadata": {
+        "water_depth_m": 0.0,
+        "dry_compartment": true,
+        "structural_condition": "stable",
+        "communications_equipment": "accessible",
+        "navigation_equipment": "accessible",
+        "visibility_external": "good"
+      }
+    },
+    {
+      "sector_id": "cargo-hold-3",
+      "label": "Cargo Hold #3 - Fully Flooded",
+      "sector_type": "cargo_hold",
+      "x_m": 88.0,
+      "y_m": -6.0,
+      "z_m": -3.5,
+      "width_m": 12.0,
+      "height_m": 8.0,
+      "depth_m": 18.0,
+      "elevation_m": -3.5,
+      "confidence": 0.80,
+      "source_ref": "Aft cargo hold",
+      "metadata": {
+        "water_depth_m": 8.0,
+        "visibility_m": 0.8,
+        "cargo_contents": "general_cargo",
+        "structural_condition": "compromised",
+        "flooding_progression": "stabilized",
+        "hazards": ["floating_debris", "entanglement_risk"]
+      }
+    },
+    {
+      "sector_id": "bilge-compartment",
+      "label": "Bilge - Deepest Point",
+      "sector_type": "bilge",
+      "x_m": 45.0,
+      "y_m": 0.0,
+      "z_m": -8.0,
+      "width_m": 3.0,
+      "height_m": 2.0,
+      "depth_m": 20.0,
+      "elevation_m": -8.0,
+      "confidence": 0.75,
+      "source_ref": "Bilge space below engine room",
+      "metadata": {
+        "water_depth_m": 2.0,
+        "visibility_m": 0.3,
+        "contamination": "fuel_oil_heavy",
+        "silt_depth_m": 0.5,
+        "hazards": ["toxic_water", "zero_visibility", "confined_space"],
+        "access_difficulty": "extreme"
+      }
+    },
+    {
+      "sector_id": "compartment-sealed-1",
+      "label": "Sealed Compartment - Forward",
+      "sector_type": "room",
+      "x_m": 15.0,
+      "y_m": 5.0,
+      "z_m": 1.5,
+      "width_m": 5.0,
+      "height_m": 2.5,
+      "depth_m": 6.0,
+      "elevation_m": 1.5,
+      "confidence": 0.88,
+      "source_ref": "Watertight storage compartment",
+      "metadata": {
+        "water_depth_m": 0.0,
+        "sealed": true,
+        "door_status": "sealed_watertight",
+        "air_quality": "stale",
+        "temperature_c": 9.0,
+        "contents": "emergency_supplies"
+      }
+    }
+  ],
+  "paths": [
+    {
+      "from_sector": "hull-breach",
+      "to_sector": "passage-main-01",
+      "distance_m": 9.2,
+      "bearing_deg": 90.0,
+      "vertical_change_m": 0.0,
+      "path_type": "wade",
+      "traversal_risk": "moderate",
+      "confidence": 0.92,
+      "capabilities_required": ["waterproof", "low_light_navigation", "current_resistance"],
+      "metadata": {
+        "water_depth_m": 1.0,
+        "current_speed_ms": 0.2,
+        "path_width_m": 2.0,
+        "obstacles": "minor_debris",
+        "recommended_tether": true
+      }
+    },
+    {
+      "from_sector": "passage-main-01",
+      "to_sector": "cargo-hold-2",
+      "distance_m": 16.8,
+      "bearing_deg": 115.0,
+      "vertical_change_m": -3.0,
+      "path_type": "swim",
+      "traversal_risk": "high",
+      "confidence": 0.85,
+      "capabilities_required": ["fully_waterproof", "depth_rating_5m", "neutral_buoyancy"],
+      "metadata": {
+        "entry_type": "hatch_descend",
+        "water_depth_m": 3.5,
+        "visibility_m": 1.5,
+        "acoustic_guidance": "recommended",
+        "return_capability": "required"
+      }
+    },
+    {
+      "from_sector": "cargo-hold-2",
+      "to_sector": "engine-room",
+      "distance_m": 24.5,
+      "bearing_deg": 100.0,
+      "vertical_change_m": -1.5,
+      "path_type": "dive",
+      "traversal_risk": "extreme",
+      "confidence": 0.75,
+      "capabilities_required": ["fully_waterproof", "depth_rating_8m", "sonar_navigation", "oil_contamination_resistance"],
+      "metadata": {
+        "path_type_detail": "submerged_passage",
+        "water_depth_m": 5.5,
+        "visibility_m": 0.5,
+        "hazards": ["submerged_machinery", "oil_contamination", "entanglement_risk"],
+        "abort_available": false,
+        "one_way_risk": true
+      }
+    },
+    {
+      "from_sector": "engine-room",
+      "to_sector": "bilge-compartment",
+      "distance_m": 4.5,
+      "bearing_deg": 180.0,
+      "vertical_change_m": -3.5,
+      "path_type": "descent",
+      "traversal_risk": "extreme",
+      "confidence": 0.70,
+      "capabilities_required": ["fully_waterproof", "depth_rating_10m", "toxic_environment_safe", "zero_visibility_navigation"],
+      "metadata": {
+        "access_type": "vertical_shaft",
+        "water_depth_m": 8.0,
+        "visibility_m": 0.1,
+        "toxic_contamination": "severe",
+        "recovery_difficult": true,
+        "mission_priority_only": true
+      }
+    },
+    {
+      "from_sector": "passage-main-01",
+      "to_sector": "crew-quarters-b",
+      "distance_m": 51.2,
+      "bearing_deg": 95.0,
+      "vertical_change_m": 2.0,
+      "path_type": "swim",
+      "traversal_risk": "high",
+      "confidence": 0.82,
+      "capabilities_required": ["waterproof", "depth_rating_3m", "audio_sensor"],
+      "metadata": {
+        "path_description": "Long corridor swim to air pocket compartment",
+        "water_depth_m": 1.5,
+        "visibility_m": 1.8,
+        "priority": "life_safety",
+        "survivor_search": true,
+        "audio_monitoring": "continuous"
+      }
+    },
+    {
+      "from_sector": "crew-quarters-b",
+      "to_sector": "bridge",
+      "distance_m": 16.5,
+      "bearing_deg": 85.0,
+      "vertical_change_m": 6.0,
+      "path_type": "ladder",
+      "traversal_risk": "low",
+      "confidence": 0.92,
+      "capabilities_required": ["vertical_mobility", "grip_capability"],
+      "metadata": {
+        "access_type": "vertical_ladder",
+        "dry_route": true,
+        "structural_condition": "stable",
+        "recommended_route": "evacuation_path"
+      }
+    },
+    {
+      "from_sector": "cargo-hold-2",
+      "to_sector": "cargo-hold-3",
+      "distance_m": 68.0,
+      "bearing_deg": 95.0,
+      "vertical_change_m": -0.5,
+      "path_type": "swim",
+      "traversal_risk": "high",
+      "confidence": 0.78,
+      "capabilities_required": ["fully_waterproof", "depth_rating_5m", "long_range_operation"],
+      "metadata": {
+        "path_description": "Long submerged passage between cargo holds",
+        "water_depth_m": 5.0,
+        "visibility_m": 1.0,
+        "battery_concern": true,
+        "tether_length_limit": "critical"
+      }
+    },
+    {
+      "from_sector": "passage-main-01",
+      "to_sector": "compartment-sealed-1",
+      "distance_m": 10.8,
+      "bearing_deg": 45.0,
+      "vertical_change_m": 1.5,
+      "path_type": "sealed_passage",
+      "traversal_risk": "impassable",
+      "confidence": 0.90,
+      "capabilities_required": ["door_breach_capability", "compartment_pressurization"],
+      "metadata": {
+        "door_type": "watertight_sealed",
+        "breach_required": true,
+        "pressure_differential": "high",
+        "flooding_risk": "compartment_will_flood",
+        "decision_required": "operator_approval_required"
+      }
+    },
+    {
+      "from_sector": "hull-breach",
+      "to_sector": "bridge",
+      "distance_m": 74.5,
+      "bearing_deg": 92.0,
+      "vertical_change_m": 8.0,
+      "path_type": "emergency_hatch",
+      "traversal_risk": "moderate",
+      "confidence": 0.88,
+      "capabilities_required": ["vertical_mobility", "external_climb"],
+      "metadata": {
+        "path_description": "External hull climb to bridge via emergency ladder",
+        "route_type": "external",
+        "weather_dependent": true,
+        "vessel_list_angle_deg": 15.0,
+        "alternative_route": true
+      }
+    }
+  ],
+  "waypoints": [
+    {
+      "waypoint_id": "wp-entry",
+      "label": "Mission Entry Point",
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "sequence": 1,
+      "route_group": "primary-inspection",
+      "metadata": {
+        "waypoint_type": "entry",
+        "tether_anchor": true,
+        "relay_node_recommended": true
+      }
+    },
+    {
+      "waypoint_id": "wp-corridor-01",
+      "label": "Main Corridor Waypoint",
+      "x_m": 8.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "sequence": 2,
+      "route_group": "primary-inspection",
+      "metadata": {
+        "waypoint_type": "navigation",
+        "relay_node_recommended": true,
+        "junction_point": true
+      }
+    },
+    {
+      "waypoint_id": "wp-hold2-survey",
+      "label": "Cargo Hold 2 Survey Point",
+      "x_m": 22.0,
+      "y_m": -6.0,
+      "z_m": -1.0,
+      "sequence": 3,
+      "route_group": "primary-inspection",
+      "metadata": {
+        "waypoint_type": "survey",
+        "sensor_focus": ["thermal", "audio", "lidar"],
+        "dwell_time_s": 120,
+        "survivor_search": true
+      }
+    },
+    {
+      "waypoint_id": "wp-crew-quarters",
+      "label": "Crew Quarters Air Pocket",
+      "x_m": 58.0,
+      "y_m": 3.0,
+      "z_m": 2.0,
+      "sequence": 4,
+      "route_group": "priority-survivor",
+      "metadata": {
+        "waypoint_type": "priority_target",
+        "sensor_focus": ["audio", "thermal", "gas_analysis"],
+        "dwell_time_s": 300,
+        "survivor_probability": 0.72,
+        "human_review_required": true,
+        "streaming_required": true
+      }
+    },
+    {
+      "waypoint_id": "wp-bridge-staging",
+      "label": "Bridge Staging Area",
+      "x_m": 72.0,
+      "y_m": 0.0,
+      "z_m": 8.0,
+      "sequence": 5,
+      "route_group": "evacuation-route",
+      "metadata": {
+        "waypoint_type": "staging",
+        "dry_compartment": true,
+        "comms_relay": true,
+        "evacuation_point": true
+      }
+    },
+    {
+      "waypoint_id": "wp-engine-assessment",
+      "label": "Engine Room Assessment",
+      "x_m": 45.0,
+      "y_m": 0.0,
+      "z_m": -2.5,
+      "sequence": 6,
+      "route_group": "secondary-inspection",
+      "metadata": {
+        "waypoint_type": "hazard_assessment",
+        "sensor_focus": ["chemical", "thermal"],
+        "dwell_time_s": 60,
+        "high_risk": true,
+        "abort_threshold": "battery_50_percent"
+      }
+    },
+    {
+      "waypoint_id": "wp-hold3-survey",
+      "label": "Cargo Hold 3 Survey Point",
+      "x_m": 88.0,
+      "y_m": -6.0,
+      "z_m": -1.5,
+      "sequence": 7,
+      "route_group": "secondary-inspection",
+      "metadata": {
+        "waypoint_type": "survey",
+        "sensor_focus": ["sonar", "lidar"],
+        "dwell_time_s": 90,
+        "mapping_priority": true
+      }
+    },
+    {
+      "waypoint_id": "wp-relay-forward",
+      "label": "Forward Relay Node Position",
+      "x_m": 22.0,
+      "y_m": 0.0,
+      "z_m": 0.5,
+      "sequence": 8,
+      "route_group": "comms-infrastructure",
+      "metadata": {
+        "waypoint_type": "relay_node",
+        "relay_purpose": "extend_comms_range",
+        "power_source": "battery_pack",
+        "deployment_recommended": true
+      }
+    },
+    {
+      "waypoint_id": "wp-relay-crew",
+      "label": "Crew Quarters Relay Position",
+      "x_m": 50.0,
+      "y_m": 2.0,
+      "z_m": 1.0,
+      "sequence": 9,
+      "route_group": "comms-infrastructure",
+      "metadata": {
+        "waypoint_type": "relay_node",
+        "relay_purpose": "survivor_comms",
+        "priority": "life_safety",
+        "deployment_required": true
+      }
+    }
+  ]
+}

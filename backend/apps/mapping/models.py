@@ -230,6 +230,13 @@ class TerrainSector(models.Model):
         ('corridor', 'Corridor'),
         ('void', 'Void Space'),
         ('hazard', 'Hazard Zone'),
+        # Vessel-specific sectors
+        ('cargo_hold', 'Cargo Hold'),
+        ('engine_room', 'Engine Room'),
+        ('bridge', 'Bridge'),
+        ('crew_quarters', 'Crew Quarters'),
+        ('bilge', 'Bilge'),
+        ('hull_breach', 'Hull Breach'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -318,6 +325,10 @@ class TerrainPath(models.Model):
         ('traverse', 'Traverse'),
         ('ladder', 'Ladder/Fixed Aid'),
         ('open', 'Open Path'),
+        # Vessel-specific paths
+        ('wade', 'Wade (Shallow Water)'),
+        ('sealed_passage', 'Sealed/Watertight Door'),
+        ('emergency_hatch', 'Emergency Hatch'),
     ]
     
     TRAVERSAL_RISK_CHOICES = [

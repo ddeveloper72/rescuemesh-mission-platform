@@ -22,7 +22,7 @@ urlpatterns = [
         path('usecases/', include('apps.usecases.urls')),
         path('sensors/', include('apps.sensors.urls')),
         path('failures/', include('apps.faults.urls')),
-        path('outputs/', include('apps.mapping.urls')),
+        path('mapping/', include('apps.mapping.urls')),
         path('prompts/', include('apps.ai_prompts.urls')),
         path('telemetry/', include('apps.telemetry.urls')),
         path('', include('apps.media_generation.urls')),

@@ -355,6 +355,18 @@ Demo data is inspired by:
    - https://openheritage3d.org/
    - Founded by CyArk, Historic Environment Scotland, USF Libraries
 
+4. **Maritime/Vessel Datasets** - For flooded structure scenarios
+   - **NOAA Wrecks and Obstructions Database** - Shipwreck locations and vessel data (Public domain)
+     - https://nauticalcharts.noaa.gov/data/wrecks-and-obstructions.html
+   - **Integrated Marine Observing System (IMOS)** - ~30TB ocean measurements (Open access)
+     - https://imos.aodn.org.au/
+   - **BODC - British Oceanographic Data Centre** - ~22K marine data variables
+     - https://www.bodc.ac.uk/data/
+   - **Oil and Gas Authority Open Data (UK)** - 12,500 offshore wellbores (Open Government License)
+     - https://data-ogauthority.opendata.arcgis.com/
+   - **Liberty Ship Specifications** - Historical WWII cargo vessel class (Public domain)
+     - https://en.wikipedia.org/wiki/Liberty_ship
+
 ### Running the Seed Command
 
 ```bash
@@ -375,7 +387,7 @@ docker exec -it rescuemesh-backend python manage.py seed_digital_twins
 
 ### Sample Data Included
 
-The platform includes two demonstration digital twins:
+The platform includes three demonstration digital twins:
 
 1. **`migovec_sample.json`** - Simplified cave system structure
    - 7 sectors (entrance, passages, chambers, shaft)
@@ -388,6 +400,12 @@ The platform includes two demonstration digital twins:
    - 7 paths with heritage conservation constraints
    - 7 waypoints for non-destructive documentation
    - Inspired by heritage 3D documentation best practices (synthetic demo)
+
+3. **`flooded_vessel_sample.json`** - Flooded cargo vessel structure
+   - 9 sectors (cargo holds, engine room, bridge, crew quarters, hull breach)
+   - 9 paths including wade, swim, dive, sealed passages
+   - 9 waypoints for amphibious robot navigation
+   - Inspired by Liberty ship general specifications (synthetic demo)
 
 ### Attribution and Sensitivity
 
