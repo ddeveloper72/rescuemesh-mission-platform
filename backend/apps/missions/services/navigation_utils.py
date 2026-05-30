@@ -294,6 +294,154 @@ def estimate_return_time(
     return base_time * safety_margin
 
 
+def calculate_elevation_depth(z: float) -> Tuple[float, float]:
+    """
+    Calculate elevation and depth from z coordinate.
+    
+    Args:
+        z: Vertical offset from origin in metres (positive = above, negative = below)
+        
+    Returns:
+        Tuple of (elevation_m, depth_m)
+        - elevation_m: Vertical offset (can be positive or negative)
+        - depth_m: Positive value for below origin, 0 for at or above origin
+    """
+    elevation_m = z
+    depth_m = abs(z) if z < 0 else 0
+    return elevation_m, depth_m
+
+
+def calculate_vertical_profile_label(z: float, context: str = 'generic') -> str:
+    """
+    Generate human-readable vertical position label.
+    
+    Args:
+        z: Vertical offset from origin in metres
+        context: Context type ('cave', 'building', 'flooded', 'industrial', 'generic')
+        
+    Returns:
+        Label string like "11 m below entrance" or "+4 m above entry"
+    """
+    if abs(z) < 0.5:
+        return "at entry level"
+    
+    if z > 0:
+        # Above origin
+        if context == 'building':
+            return f"+{z:.1f} m above entry (upper floor/void)"
+        elif context == 'industrial':
+            return f"+{z:.1f} m above plant floor"
+        else:
+            return f"+{z:.1f} m above entry"
+    else:
+        # Below origin
+        depth = abs(z)
+        if context == 'cave':
+            return f"{depth:.1f} m below entrance"
+        elif context == 'building':
+            return f"{depth:.1f} m below entry (basement/void)"
+        elif context == 'flooded':
+            return f"submerged: {depth:.1f} m"
+        elif context == 'industrial':
+            return f"{depth:.1f} m below entry level"
+        else:
+            return f"{depth:.1f} m below entry"
+
+
+def calculate_slope_and_incline(
+    horizontal_distance_m: float,
+    vertical_change_m: float
+) -> Tuple[float, str]:
+    """
+    Calculate slope percentage and incline label.
+    
+    Args:
+        horizontal_distance_m: Horizontal distance component
+        vertical_change_m: Vertical change (positive = ascending, negative = descending)
+        
+    Returns:
+        Tuple of (slope_percent, incline_label)
+    """
+    if horizontal_distance_m == 0:
+        if vertical_change_m > 0:
+            return 100.0, 'vertical_ascent'
+        elif vertical_change_m < 0:
+            return -100.0, 'vertical_drop'
+        else:
+            return 0.0, 'level'
+    
+    slope_percent = (vertical_change_m / horizontal_distance_m) * 100
+    
+    # Determine incline label
+    if abs(slope_percent) < 5:
+        incline_label = 'level'
+    elif slope_percent >= 50:
+        incline_label = 'steep_ascent'
+    elif slope_percent >= 15:
+        incline_label = 'ascending'
+    elif slope_percent <= -50:
+        incline_label = 'steep_descent'
+    elif slope_percent <= -15:
+        incline_label = 'descending'
+    else:
+        incline_label = 'level'
+    
+    return slope_percent, incline_label
+
+
+def calculate_cumulative_vertical_change(
+    waypoints: List[Dict[str, float]]
+) -> Tuple[float, float]:
+    """
+    Calculate cumulative vertical gain and loss along a route.
+    
+    Args:
+        waypoints: List of waypoints with 'z' coordinate
+        
+    Returns:
+        Tuple of (cumulative_gain_m, cumulative_loss_m)
+    """
+    if len(waypoints) < 2:
+        return 0.0, 0.0
+    
+    cumulative_gain = 0.0
+    cumulative_loss = 0.0
+    
+    for i in range(len(waypoints) - 1):
+        z1 = waypoints[i].get('z', 0)
+        z2 = waypoints[i + 1].get('z', 0)
+        vertical_change = z2 - z1
+        
+        if vertical_change > 0:
+            cumulative_gain += vertical_change
+        else:
+            cumulative_loss += abs(vertical_change)
+    
+    return cumulative_gain, cumulative_loss
+
+
+def format_depth_elevation_label(z: float, use_arrows: bool = True) -> str:
+    """
+    Format depth/elevation as compact label with optional arrows.
+    
+    Args:
+        z: Vertical offset from origin
+        use_arrows: Whether to include arrow symbols
+        
+    Returns:
+        Formatted label like "↓ 11 m" or "↑ 4 m" or "±0 m"
+    """
+    if abs(z) < 0.5:
+        return "±0 m"
+    
+    if z > 0:
+        arrow = "↑ " if use_arrows else "+"
+        return f"{arrow}{z:.1f} m"
+    else:
+        arrow = "↓ " if use_arrows else "-"
+        return f"{arrow}{abs(z):.1f} m"
+
+
 def calculate_compass_confidence(
     environment_type: str,
     distance_from_origin_m: float,

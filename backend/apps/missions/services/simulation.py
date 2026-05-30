@@ -21,6 +21,20 @@ from datetime import datetime
 import math
 import random
 
+from .navigation_utils import (
+    calculate_distance_2d,
+    calculate_distance_3d,
+    calculate_bearing_degrees,
+    bearing_to_cardinal,
+    calculate_elevation_depth,
+    calculate_vertical_profile_label,
+    find_nearest_relay,
+    calculate_contact_path_length,
+    estimate_return_time,
+    calculate_slope_and_incline,
+    format_depth_elevation_label,
+)
+
 
 def format_time(seconds: float) -> str:
     """
@@ -778,6 +792,300 @@ def simulate_collapsed_building(
                 'spectrogram_url': f'/api/v1/generated-media/{mission_id}-voice-audio-001/spectrogram/'
             })
     
+    # === MISSION DISTANCE INTELLIGENCE: 3D NAVIGATION MODEL ===
+    # Define mission origin (entry point / base station)
+    origin_position = {'x': 100, 'y': 240, 'z': 0}
+    
+    # Navigation model for GPS-denied environments
+    # Uses local 3D coordinate system with mission north reference
+    compass_confidence, compass_reliability, compass_reason = calculate_compass_confidence(
+        environment_type='collapsed_building',
+        distance_from_origin_m=0,  # Will be calculated per agent
+        has_metal_nearby=True,  # Steel reinforcement in building
+        has_electrical_interference=False
+    )
+    
+    navigation_model = {
+        'coordinate_system': 'local_mission_3d_grid',
+        'origin_sector_id': 'entry',
+        'origin_label': 'Entry / Base Station',
+        'origin_position': origin_position,
+        'units': 'metres',
+        'horizontal_units': 'metres',
+        'vertical_units': 'metres',
+        'svg_unit_to_metres': 0.25,  # 1 SVG unit = 0.25 metres
+        'grid_square_metres': 5,
+        'z_reference': 'origin_relative',
+        'z_positive_direction': 'up',
+        'depth_positive_direction': 'down',
+        'north_reference': 'mission_north',
+        'bearing_reference': 'magnetic_simulated',
+        'magnetic_declination_deg': 0,
+        'bearing_confidence': round(compass_confidence, 2),
+        'bearing_reliability': compass_reliability,
+        'bearing_reliability_reason': compass_reason
+    }
+    
+    # Define detailed sector positions with 3D coordinates
+    # Collapsed building structure with basement void and upper floor voids
+    sectors_detailed = [
+        {
+            'sector_id': 'entry',
+            'label': 'Entry Point',
+            'centroid': {'x': 100, 'y': 240, 'z': 0},
+            'type': 'accessible'
+        },
+        {
+            'sector_id': 'corridor-a',
+            'label': 'Corridor A',
+            'centroid': {'x': 130, 'y': 240, 'z': 0},
+            'type': 'accessible'
+        },
+        {
+            'sector_id': 'void-1',
+            'label': 'Void Space 1',
+            'centroid': {'x': 160, 'y': 230, 'z': -2},  # 2m below entry
+            'type': 'void'
+        },
+        {
+            'sector_id': 'corridor-b',
+            'label': 'Corridor B',
+            'centroid': {'x': 180, 'y': 240, 'z': 0},
+            'type': 'accessible'
+        },
+        {
+            'sector_id': 'void-2',
+            'label': 'Void Space 2',
+            'centroid': {'x': 200, 'y': 220, 'z': -4},  # 4m below entry
+            'type': 'void'
+        },
+        {
+            'sector_id': 'collapsed-stairwell',
+            'label': 'Collapsed Stairwell',
+            'centroid': {'x': 220, 'y': 250, 'z': -3},
+            'type': 'blocked'
+        },
+        {
+            'sector_id': 'upper-void',
+            'label': 'Upper Void',
+            'centroid': {'x': 150, 'y': 220, 'z': 3},  # 3m above entry
+            'type': 'void'
+        }
+    ]
+    
+    # Calculate distance, bearing, and elevation for each sector
+    for sector in sectors_detailed:
+        centroid = sector['centroid']
+        
+        # 2D and 3D distances from origin
+        distance_2d = calculate_distance_2d(origin_position, centroid)
+        distance_3d = calculate_distance_3d(origin_position, centroid)
+        
+        # Bearing from origin
+        bearing_deg = calculate_bearing_degrees(origin_position, centroid)
+        bearing_cardinal = bearing_to_cardinal(bearing_deg, points=16)
+        
+        # Elevation and depth
+        elevation_m, depth_m = calculate_elevation_depth(centroid['z'])
+        vertical_label = calculate_vertical_profile_label(centroid['z'], context='building')
+        depth_elevation_label = format_depth_elevation_label(centroid['z'], use_arrows=True)
+        
+        # Add calculated fields to sector
+        sector.update({
+            'elevation_m': round(elevation_m, 1),
+            'depth_m': round(depth_m, 1),
+            'vertical_offset_from_origin_m': round(elevation_m, 1),
+            'straight_line_2d_distance_from_origin_m': round(distance_2d, 1),
+            'straight_line_3d_distance_from_origin_m': round(distance_3d, 1),
+            'bearing_from_origin_deg': round(bearing_deg, 1),
+            'bearing_from_origin_cardinal': bearing_cardinal,
+            'vertical_profile_label': vertical_label,
+            'depth_elevation_label': depth_elevation_label
+        })
+    
+    # Define path segments with 3D distance and slope
+    # These represent traversable routes between sectors
+    path_segments = [
+        {
+            'from_sector_id': 'entry',
+            'to_sector_id': 'corridor-a',
+            'from_position': {'x': 100, 'y': 240, 'z': 0},
+            'to_position': {'x': 130, 'y': 240, 'z': 0}
+        },
+        {
+            'from_sector_id': 'corridor-a',
+            'to_sector_id': 'void-1',
+            'from_position': {'x': 130, 'y': 240, 'z': 0},
+            'to_position': {'x': 160, 'y': 230, 'z': -2}
+        },
+        {
+            'from_sector_id': 'void-1',
+            'to_sector_id': 'corridor-b',
+            'from_position': {'x': 160, 'y': 230, 'z': -2},
+            'to_position': {'x': 180, 'y': 240, 'z': 0}
+        },
+        {
+            'from_sector_id': 'corridor-b',
+            'to_sector_id': 'void-2',
+            'from_position': {'x': 180, 'y': 240, 'z': 0},
+            'to_position': {'x': 200, 'y': 220, 'z': -4}
+        }
+    ]
+    
+    # Calculate 3D path metrics
+    for path in path_segments:
+        from_pos = path['from_position']
+        to_pos = path['to_position']
+        
+        # Horizontal and vertical components
+        horizontal_distance = calculate_distance_2d(from_pos, to_pos)
+        vertical_change = to_pos['z'] - from_pos['z']
+        
+        # 3D segment distance
+        segment_3d_distance = calculate_distance_3d(from_pos, to_pos)
+        
+        # Slope and incline
+        slope_percent, incline_label = calculate_slope_and_incline(horizontal_distance, vertical_change)
+        
+        # Bearing
+        bearing_deg = calculate_bearing_degrees(from_pos, to_pos)
+        bearing_cardinal = bearing_to_cardinal(bearing_deg, points=16)
+        
+        # Traversal risk based on slope
+        if abs(slope_percent) > 40:
+            traversal_risk = 'high'
+        elif abs(slope_percent) > 20:
+            traversal_risk = 'medium'
+        else:
+            traversal_risk = 'low'
+        
+        # Add calculated fields
+        path.update({
+            'horizontal_distance_m': round(horizontal_distance, 1),
+            'vertical_change_m': round(vertical_change, 1),
+            'segment_3d_distance_m': round(segment_3d_distance, 1),
+            'segment_bearing_deg': round(bearing_deg, 1),
+            'segment_bearing_cardinal': bearing_cardinal,
+            'slope_percent': round(slope_percent, 1),
+            'incline_label': incline_label,
+            'traversal_risk': traversal_risk,
+            'status': 'traversable',
+            'traversable_by_capabilities': ['drone', 'small_robot']
+        })
+    
+    # Enhance agents with distance, bearing, and elevation data
+    relay_agents = [a for a in agents if 'relay' in a['state'].lower() or a['agent_id'] == 'relay-1']
+    
+    for agent in agents:
+        agent_pos = agent.get('position', origin_position)
+        
+        # Distance from origin
+        distance_2d = calculate_distance_2d(origin_position, agent_pos)
+        distance_3d = calculate_distance_3d(origin_position, agent_pos)
+        
+        # Bearing from origin
+        if distance_2d > 1:  # Only meaningful if agent has moved
+            bearing_deg = calculate_bearing_degrees(origin_position, agent_pos)
+            bearing_cardinal = bearing_to_cardinal(bearing_deg, points=16)
+        else:
+            bearing_deg = 0
+            bearing_cardinal = 'N'
+        
+        # Elevation and depth
+        elevation_m, depth_m = calculate_elevation_depth(agent_pos.get('z', 0))
+        vertical_label = calculate_vertical_profile_label(agent_pos.get('z', 0), context='building')
+        depth_elevation_label = format_depth_elevation_label(agent_pos.get('z', 0), use_arrows=True)
+        
+        # Heading (simulated - in real system would come from IMU/compass)
+        # For now, assume heading matches bearing if agent is moving
+        heading_deg = bearing_deg if agent['state'] in ['healthy', 'degraded'] else None
+        
+        # Nearest relay
+        nearest_relay_info = find_nearest_relay(agent_pos, relay_agents, use_3d=True)
+        
+        # Contact path length through mesh
+        contact_path_length = calculate_contact_path_length(
+            agent_pos,
+            relay_agents[1:] if len(relay_agents) > 1 else [],  # Exclude base relay from chain
+            origin_position,
+            use_3d=True
+        )
+        
+        # Estimated return time (assume 2 m/s average speed)
+        return_route_distance = distance_3d  # Simplified - would use actual route in real system
+        estimated_return_time = estimate_return_time(return_route_distance, average_speed_m_per_s=2.0)
+        
+        # Add navigation intelligence fields
+        agent['navigation'] = {
+            'distance_from_origin_m': round(distance_2d, 1),
+            'straight_line_3d_distance_from_origin_m': round(distance_3d, 1),
+            'bearing_from_origin_deg': round(bearing_deg, 1) if distance_2d > 1 else None,
+            'bearing_from_origin_cardinal': bearing_cardinal if distance_2d > 1 else None,
+            'heading_deg': round(heading_deg, 1) if heading_deg is not None else None,
+            'elevation_m': round(elevation_m, 1),
+            'depth_m': round(depth_m, 1),
+            'vertical_offset_from_origin_m': round(elevation_m, 1),
+            'vertical_profile_label': vertical_label,
+            'depth_elevation_label': depth_elevation_label,
+            'estimated_return_route_distance_m': round(return_route_distance, 1),
+            'estimated_return_time_seconds': round(estimated_return_time, 0),
+            'nearest_relay': nearest_relay_info,
+            'contact_path_length_m': round(contact_path_length, 1)
+        }
+    
+    # Enhance audio detections with 3D position data
+    for detection in audio_detections:
+        # Get position based on location label
+        # In real system, this would come from agent position at detection time
+        if 'Void Space 2' in detection['location_label']:
+            detection_pos = {'x': 200, 'y': 220, 'z': -4}
+        elif 'Void Space 1' in detection['location_label']:
+            detection_pos = {'x': 160, 'y': 230, 'z': -2}
+        else:
+            detection_pos = {'x': 180, 'y': 240, 'z': 0}
+        
+        # Calculate distance and bearing
+        distance_2d = calculate_distance_2d(origin_position, detection_pos)
+        distance_3d = calculate_distance_3d(origin_position, detection_pos)
+        bearing_deg = calculate_bearing_degrees(origin_position, detection_pos)
+        bearing_cardinal = bearing_to_cardinal(bearing_deg, points=16)
+        
+        # Elevation and depth
+        elevation_m, depth_m = calculate_elevation_depth(detection_pos['z'])
+        vertical_label = calculate_vertical_profile_label(detection_pos['z'], context='building')
+        depth_elevation_label = format_depth_elevation_label(detection_pos['z'], use_arrows=True)
+        
+        # Contact path length (how far signal travels through mesh)
+        contact_path_length = calculate_contact_path_length(
+            detection_pos,
+            relay_agents[1:] if len(relay_agents) > 1 else [],
+            origin_position,
+            use_3d=True
+        )
+        
+        # Comms risk based on contact path length and depth
+        if contact_path_length > 80 or depth_m > 5:
+            comms_risk = 'high'
+        elif contact_path_length > 50 or depth_m > 3:
+            comms_risk = 'medium'
+        else:
+            comms_risk = 'low'
+        
+        # Add navigation fields
+        detection['position'] = detection_pos
+        detection['navigation'] = {
+            'route_distance_from_origin_m': round(distance_2d, 1),  # Simplified - would use route in real system
+            'straight_line_3d_distance_from_origin_m': round(distance_3d, 1),
+            'bearing_from_origin_deg': round(bearing_deg, 1),
+            'bearing_from_origin_cardinal': bearing_cardinal,
+            'elevation_m': round(elevation_m, 1),
+            'depth_m': round(depth_m, 1),
+            'vertical_context_label': vertical_label,
+            'depth_elevation_label': depth_elevation_label,
+            'contact_path_length_m': round(contact_path_length, 1),
+            'comms_risk': comms_risk
+        }
+    
     # Build complete state
     return {
         'mission': {
@@ -792,6 +1100,9 @@ def simulate_collapsed_building(
             'speed_multiplier': speed_multiplier,
             'is_running': status == 'running'
         },
+        'navigation_model': navigation_model,
+        'sectors': sectors_detailed,
+        'paths': path_segments,
         'agents': agents,
         'network': network,
         'map': map_data,
