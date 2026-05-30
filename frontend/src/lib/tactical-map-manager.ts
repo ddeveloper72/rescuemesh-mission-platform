@@ -720,6 +720,10 @@ export function updateAgents(agents: Agent[], config: MapConfig, currentTime: nu
     const showPulse = !pos.stopped && 
       (agent.state === 'healthy' || agent.state === 'active' || agent.state === 'degraded');
 
+    // Get depth/elevation label if navigation data available
+    const depthElevationLabel = (agent as any).navigation?.depth_elevation_label;
+    const hasDepthElevation = depthElevationLabel && depthElevationLabel !== '±0 m';
+
     elements.push(`
       <g id="agent-${agent.agent_id}" class="agent-marker">
         ${showPulse ? `
@@ -756,7 +760,28 @@ export function updateAgents(agents: Agent[], config: MapConfig, currentTime: nu
           stroke="#1e293b"
           stroke-width="2"
         />
-        <title>${agent.name} - ${agent.state} (Battery: ${agent.battery_percent}%)</title>
+        ${hasDepthElevation ? `
+          <rect
+            x="${pos.x - 18}"
+            y="${pos.y + 12}"
+            width="36"
+            height="14"
+            rx="2"
+            fill="#1e293b"
+            fill-opacity="0.9"
+            stroke="${color}"
+            stroke-width="1"
+          />
+          <text
+            x="${pos.x}"
+            y="${pos.y + 22}"
+            text-anchor="middle"
+            font-size="9"
+            font-weight="bold"
+            fill="${color}"
+          >${depthElevationLabel}</text>
+        ` : ''}
+        <title>${agent.name} - ${agent.state} (Battery: ${agent.battery_percent}%)${hasDepthElevation ? '\n' + depthElevationLabel : ''}</title>
       </g>
     `);
   });
@@ -844,10 +869,79 @@ let lastConfig: MapConfig | null = null;
 /**
  * Initialize tactical map
  */
+/**
+ * Render compass rose indicator for mission north reference
+ */
+export function renderCompassRose(navigationModel?: {
+  north_reference: string;
+  bearing_reference: string;
+  bearing_reliability?: string;
+  bearing_confidence?: number;
+}) {
+  const compassGroup = document.getElementById('map-compass');
+  if (!compassGroup) return;
+
+  if (!navigationModel) {
+    compassGroup.innerHTML = '';
+    return;
+  }
+
+  const compassX = 750; // Top right corner
+  const compassY = 40;
+  const compassRadius = 25;
+
+  // Reliability color
+  const reliability = navigationModel.bearing_reliability || 'good';
+  let strokeColor = '#10b981'; // green-500
+  let fillColor = 'rgba(16, 185, 129, 0.1)';
+  
+  if (reliability === 'degraded') {
+    strokeColor = '#f59e0b'; // amber-500
+    fillColor = 'rgba(245, 158, 11, 0.1)';
+  } else if (reliability === 'unreliable') {
+    strokeColor = '#ef4444'; // red-500
+    fillColor = 'rgba(239, 68, 68, 0.1)';
+  }
+
+  // Label based on reference
+  const label = navigationModel.bearing_reference === 'magnetic_simulated'
+    ? 'Mag N (sim)'
+    : 'Mission N';
+
+  compassGroup.innerHTML = `
+    <!-- Compass background -->
+    <circle cx="${compassX}" cy="${compassY}" r="${compassRadius}" 
+      fill="${fillColor}" stroke="${strokeColor}" stroke-width="2" />
+    
+    <!-- North indicator (triangle pointing up) -->
+    <path d="M ${compassX} ${compassY - compassRadius + 8} 
+             L ${compassX - 6} ${compassY - compassRadius + 18} 
+             L ${compassX + 6} ${compassY - compassRadius + 18} Z"
+      fill="${strokeColor}" />
+    
+    <!-- North label -->
+    <text x="${compassX}" y="${compassY + 3}" 
+      text-anchor="middle" font-size="14" font-weight="bold" fill="${strokeColor}">N</text>
+    
+    <!-- Reference label below compass -->
+    <text x="${compassX}" y="${compassY + compassRadius + 12}" 
+      text-anchor="middle" font-size="9" fill="#94a3b8">${label}</text>
+    
+    <!-- Confidence indicator (if reliability is not good) -->
+    ${reliability !== 'good' ? `
+      <circle cx="${compassX + compassRadius - 5}" cy="${compassY - compassRadius + 5}" r="4" 
+        fill="#f59e0b" stroke="#1e293b" stroke-width="1" />
+      <text x="${compassX + compassRadius - 5}" y="${compassY - compassRadius + 8}" 
+        text-anchor="middle" font-size="8" font-weight="bold" fill="#1e293b">!</text>
+    ` : ''}
+  `;
+}
+
 export function initializeTacticalMap(useCase: string) {
   const config = getMapConfig(useCase);
   lastConfig = config;
   renderSectors(config, 0);
+  renderCompassRose(); // Will be updated with navigation_model when state arrives
   
   return config;
 }
@@ -867,4 +961,9 @@ export function updateTacticalMap(state: MissionSimulationState, config: MapConf
   
   // Update detection markers
   renderDetectionMarkers(config, currentTime);
+  
+  // Update compass rose with navigation model
+  if (state.navigation_model) {
+    renderCompassRose(state.navigation_model);
+  }
 }

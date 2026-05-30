@@ -6,6 +6,7 @@ import DataSourceBadge from '../../../components/demo/DataSourceBadge.astro';
 import MediaFeedsPanel from '../../../components/islands/MediaFeedsPanel';
 import AudioDetectionsPanel from '../../../components/islands/AudioDetectionsPanel';
 import DetectionDetailModal from '../../../components/islands/DetectionDetailModal';
+import DistanceLinkBudgetPanel from '../../../components/islands/DistanceLinkBudgetPanel';
 
 const MISSION_PK = 'c5d0ffd4-2fc8-4b45-841d-88ec93f27e8e';
 const USE_CASE = 'collapsed-building-search';
@@ -155,6 +156,11 @@ const initialClock = {
       <!-- Audio Detections Panel -->
       <div class="mt-6">
         <AudioDetectionsPanel missionId={MISSION_PK} client:load />
+      </div>
+
+      <!-- Distance & Link Budget Panel -->
+      <div class="mt-6">
+        <DistanceLinkBudgetPanel client:load />
       </div>
 
       <!-- Detection Detail Modal -->
