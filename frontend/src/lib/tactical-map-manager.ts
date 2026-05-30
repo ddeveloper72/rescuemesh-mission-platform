@@ -586,6 +586,7 @@ export function renderSectors(
         text-anchor="middle"
         dominant-baseline="middle"
         class="text-xs"
+        fill="#e2e8f0"
         opacity="${labelOpacity}"
       >${label}</text>
     `;
@@ -796,6 +797,7 @@ export function renderDetectionMarkers(config: MapConfig, currentTime: number) {
               y="${marker.y + 22}" 
               text-anchor="middle" 
               class="text-xs"
+              fill="#e2e8f0"
               style="font-size: 16px;"
             >${marker.icon}</text>
             <title>${marker.label}</title>
