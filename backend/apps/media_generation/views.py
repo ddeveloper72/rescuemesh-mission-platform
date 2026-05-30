@@ -13,9 +13,9 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from pathlib import Path
 
-from ..generators.image_generator import generate_and_save_image, get_image_path
-from ..generators.audio_generator import generate_and_save_audio, get_audio_path
-from ..generators.spectrogram_generator import generate_and_save_spectrogram, get_spectrogram_path
+from .generators.image_generator import generate_and_save_image, get_image_path
+from .generators.audio_generator import generate_and_save_audio, get_audio_path
+from .generators.spectrogram_generator import generate_and_save_spectrogram, get_spectrogram_path
 
 
 def get_mission_generated_media_metadata(mission_id, use_case):
