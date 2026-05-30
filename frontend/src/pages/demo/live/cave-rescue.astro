@@ -6,6 +6,9 @@ import DataSourceBadge from '../../../components/demo/DataSourceBadge.astro';
 import EscalationBanner from '../../../components/demo/EscalationBanner.astro';
 import RecommendedActions from '../../../components/demo/RecommendedActions.astro';
 import MediaFeedsPanel from '../../../components/islands/MediaFeedsPanel';
+import AudioDetectionsPanel from '../../../components/islands/AudioDetectionsPanel';
+import DetectionDetailModal from '../../../components/islands/DetectionDetailModal';
+import DistanceLinkBudgetPanel from '../../../components/islands/DistanceLinkBudgetPanel';
 
 const MISSION_PK = '063218cf-7662-4675-8337-edabd204b793';
 const USE_CASE = 'cave-rescue';
@@ -172,6 +175,19 @@ const initialClock = {
         <MediaFeedsPanel mediaFeeds={[]} client:load />
       </div>
 
+      <!-- Audio Detections Panel -->
+      <div class="mt-6">
+        <AudioDetectionsPanel missionId={MISSION_PK} client:load />
+      </div>
+
+      <!-- Distance & Link Budget Panel -->
+      <div class="mt-6">
+        <DistanceLinkBudgetPanel client:load />
+      </div>
+
+      <!-- Detection Detail Modal -->
+      <DetectionDetailModal client:load />
+
       <!-- Lower Dashboard Grid -->
       <div class="grid lg:grid-cols-1 gap-6 mt-6">
         <!-- AI Analysis Panel -->
@@ -220,12 +236,16 @@ const initialClock = {
 <script>
   import { initializeSimulation } from '../../../lib/simulation-manager';
   import { initializeTacticalMap, updateTacticalMap } from '../../../lib/tactical-map-manager';
+  import { initDetectionModalManager } from '../../../lib/detection-modal-manager';
   
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
   const manager = initializeSimulation(MISSION_PK);
   
   // Initialize tactical map
   const mapConfig = initializeTacticalMap('cave-rescue');
+  
+  // Initialize detection modal manager
+  initDetectionModalManager();
   
   // Enhanced UI update for environmental readings count
   const originalPoll = (manager as any).poll;
