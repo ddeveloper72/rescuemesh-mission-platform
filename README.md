@@ -90,6 +90,96 @@ The platform models 17 conceptual resource types (Mission, Agent, Device, Sensor
 
 Learn more: [Interoperability Architecture](/architecture/interoperability)
 
+## Generated Media vs Real Mission Media
+
+RescueMesh uses a **simulation-first approach to mission media**. Instead of requiring S3/object storage during development and demos, the platform generates synthetic media on demand:
+
+### Demo Mode (Current)
+- **Generated locally** - Images, audio clips, and spectrograms created by Python code
+- **Lazy generation** - Media files generated only when requested and cached in `media/generated/`
+- **No external dependencies** - Uses Pillow for images and Python's wave module for audio
+- **Docker-friendly** - Self-contained with writable media directory
+- **Cheap and portable** - No cloud storage costs or configuration needed
+
+### Real Operational Mode (Future)
+- **S3/Object Storage** - Captured media from actual missions stored in scalable object storage
+- **Database metadata** - Mission database stores references and metadata for all media
+- **Same API shape** - Frontend continues to use the same endpoints regardless of source
+- **Seamless transition** - Switch from generated to real media by changing backend configuration
+
+### Supported Generated Media Types
+
+**Images:**
+- Low-light / night vision scenes
+- Thermal camera frames with hotspot detection
+- Underwater / murky water views
+- Industrial inspection images (pipes, corrosion)
+- Dusty rubble / collapsed structure scenes
+- Last-good-frame with signal degradation effects
+
+**Audio:**
+- Knocking sounds (SOS patterns, regular intervals)
+- Tapping audio (higher frequency, sharper)
+- Voice-like placeholder audio (modulated frequencies simulating speech)
+- Static / interference
+- Ambient environmental sounds (cave drips, underwater, industrial hum)
+
+**Spectrograms:**
+- Visual frequency analysis of audio clips
+- Time-domain representation
+- Confidence and signal quality overlays
+
+### API Endpoints
+
+```
+GET /api/v1/missions/{mission_id}/generated-media/
+    Returns metadata for all generated media associated with a mission
+
+GET /api/v1/generated-media/{media_id}/preview/
+    Serves generated image preview (PNG)
+
+GET /api/v1/generated-media/{media_id}/audio/
+    Serves generated audio file (WAV)
+
+GET /api/v1/generated-media/{media_id}/spectrogram/
+    Serves spectrogram visualization (PNG)
+```
+
+### Cache Management
+
+Generated media is cached in `media/generated/` directory:
+
+```
+media/generated/
+  images/          # Generated PNG images
+  audio/           # Generated WAV audio files
+  spectrograms/    # Audio visualization PNGs
+```
+
+**Clear cache:**
+```bash
+# Remove all generated media
+rm -rf media/generated/
+
+# Regenerate on next request (lazy generation)
+```
+
+**Docker volume:**
+- Mount `media/generated` as a writable volume
+- Persists generated media between container restarts
+- Clear volume to force regeneration
+
+### Why Generated Media?
+
+1. **Development speed** - No S3 setup required for demos
+2. **Reproducibility** - Same media generated for same mission scenarios
+3. **Cost efficiency** - No storage costs during development
+4. **Offline capability** - Works without internet or cloud dependencies
+5. **Testing** - Consistent test data for frontend development
+6. **Portability** - Easy to package and distribute
+
+Generated media keeps the simulation-first philosophy intact while providing realistic-looking mission artifacts for demonstrations and development.
+
 ## Demo Routes
 
 The platform provides two types of demo experiences:
