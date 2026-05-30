@@ -3,7 +3,7 @@ Audio generator for mission simulation media.
 
 Generates synthetic audio clips using Python's wave module:
 - Knocking/tapping sounds
-- Voice-like placeholder audio
+- Voice-like placeholder audio using TTS (pyttsx3) or waveforms
 - Static/noise
 - Ambient cave/water sounds
 """
@@ -12,7 +12,17 @@ import wave
 import struct
 import math
 import random
+import tempfile
+import shutil
 from pathlib import Path
+
+# Optional TTS support
+try:
+    import pyttsx3
+    TTS_AVAILABLE = True
+except ImportError:
+    TTS_AVAILABLE = False
+    pyttsx3 = None
 
 
 # Base directory for generated media
@@ -198,8 +208,85 @@ def generate_tapping_audio(media_id, num_taps=5, tempo='regular'):
     return samples
 
 
-def generate_voice_like_audio(media_id, duration=2.0):
-    """Generate voice-like placeholder audio (modulated noise and tones)."""
+def generate_voice_like_audio_tts(media_id, message_type='distress'):
+    """Generate voice-like audio using text-to-speech (robotic/synthetic)."""
+    if not TTS_AVAILABLE:
+        # Fallback to waveform-based generation
+        return generate_voice_like_audio_waveform(media_id, duration=3.0)
+    
+    try:
+        engine = pyttsx3.init()
+        
+        # Make the voice clearly artificial/robotic
+        engine.setProperty('rate', 140)  # Slightly slower, more deliberate
+        engine.setProperty('volume', 1.0)
+        
+        # Try to select a robotic or distinct voice
+        voices = engine.getProperty('voices')
+        for v in voices:
+            # Prefer distinct/robotic voices
+            if any(keyword in v.name.lower() for keyword in ['robot', 'zira', 'david', 'mark']):
+                engine.setProperty('voice', v.id)
+                break
+        
+        # Message variations for different scenarios
+        messages = {
+            'distress': [
+                "This is a synthetic test message. Assistance requested. Unit status compromised. Location beacon active.",
+                "Automated distress signal. Requesting immediate assistance. Systems failing. This is a test transmission.",
+                "Emergency protocol engaged. Unit requires support. Position marked. Synthetic audio for testing.",
+            ],
+            'alert': [
+                "Automated alert. Anomaly detected. Sensor readings abnormal. This is a simulation.",
+                "System notice. Environmental conditions degraded. Recommend review. Test message only.",
+            ],
+            'status': [
+                "Automated status update. Unit operational. All systems nominal. Simulation active.",
+                "Periodic check-in. Position stable. No issues detected. Test transmission.",
+            ],
+        }
+        
+        # Select message based on media_id or type
+        message_list = messages.get(message_type, messages['distress'])
+        # Use media_id hash to deterministically select message
+        message_index = hash(media_id) % len(message_list)
+        message = message_list[message_index]
+        
+        # Generate to temporary file first
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
+            tmp_path = tmp_file.name
+        
+        engine.save_to_file(message, tmp_path)
+        engine.runAndWait()
+        
+        # Read the generated WAV file
+        with wave.open(tmp_path, 'rb') as wav_file:
+            params = wav_file.getparams()
+            frames = wav_file.readframes(params.nframes)
+        
+        # Clean up temp file
+        Path(tmp_path).unlink(missing_ok=True)
+        
+        # Convert to our sample format
+        sample_rate = params.framerate
+        samples = []
+        for i in range(0, len(frames), params.sampwidth * params.nchannels):
+            # Read as 16-bit samples and normalize to [-1, 1]
+            if i + params.sampwidth <= len(frames):
+                sample_bytes = frames[i:i + params.sampwidth]
+                if len(sample_bytes) == params.sampwidth:
+                    sample_value = struct.unpack('<h', sample_bytes[:2])[0] / 32768.0
+                    samples.append(sample_value)
+        
+        return samples
+        
+    except Exception as e:
+        print(f"TTS generation failed: {e}. Falling back to waveform generation.")
+        return generate_voice_like_audio_waveform(media_id, duration=3.0)
+
+
+def generate_voice_like_audio_waveform(media_id, duration=2.0):
+    """Generate voice-like placeholder audio using waveforms (fallback method)."""
     sample_rate = 44100
     samples = []
     
@@ -238,6 +325,14 @@ def generate_voice_like_audio(media_id, duration=2.0):
             samples.extend([0.0] * int(0.1 * sample_rate))
     
     return samples
+
+
+def generate_voice_like_audio(media_id, duration=2.0):
+    """Generate voice-like audio (TTS if available, waveform otherwise)."""
+    if TTS_AVAILABLE:
+        return generate_voice_like_audio_tts(media_id, message_type='distress')
+    else:
+        return generate_voice_like_audio_waveform(media_id, duration)
 
 
 def generate_static_audio(media_id, duration=1.0, intensity='medium'):
