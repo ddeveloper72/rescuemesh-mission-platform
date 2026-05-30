@@ -210,11 +210,15 @@ def generate_tapping_audio(media_id, num_taps=5, tempo='regular'):
 
 def generate_voice_like_audio_tts(media_id, message_type='distress'):
     """Generate voice-like audio using text-to-speech (robotic/synthetic)."""
+    print(f"[TTS Generator] Starting TTS audio generation for {media_id}")
+    
     if not TTS_AVAILABLE:
         # Fallback to waveform-based generation
+        print(f"[TTS Generator] TTS not available, falling back to waveform")
         return generate_voice_like_audio_waveform(media_id, duration=3.0)
     
     try:
+        print(f"[TTS Generator] Initializing pyttsx3 engine")
         engine = pyttsx3.init()
         
         # Make the voice clearly artificial/robotic
@@ -252,12 +256,17 @@ def generate_voice_like_audio_tts(media_id, message_type='distress'):
         message_index = hash(media_id) % len(message_list)
         message = message_list[message_index]
         
+        print(f"[TTS Generator] Selected message type: {message_type}")
+        print(f"[TTS Generator] Message: {message[:50]}...")
+        
         # Generate to temporary file first
         with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
             tmp_path = tmp_file.name
         
+        print(f"[TTS Generator] Generating TTS to temp file: {tmp_path}")
         engine.save_to_file(message, tmp_path)
         engine.runAndWait()
+        print(f"[TTS Generator] TTS generation complete")
         
         # Read the generated WAV file
         with wave.open(tmp_path, 'rb') as wav_file:
@@ -278,10 +287,11 @@ def generate_voice_like_audio_tts(media_id, message_type='distress'):
                     sample_value = struct.unpack('<h', sample_bytes[:2])[0] / 32768.0
                     samples.append(sample_value)
         
+        print(f"[TTS Generator] Successfully generated {len(samples)} samples at {sample_rate}Hz")
         return samples
         
     except Exception as e:
-        print(f"TTS generation failed: {e}. Falling back to waveform generation.")
+        print(f"[TTS Generator] TTS generation failed: {e}. Falling back to waveform generation.")
         return generate_voice_like_audio_waveform(media_id, duration=3.0)
 
 
@@ -329,9 +339,14 @@ def generate_voice_like_audio_waveform(media_id, duration=2.0):
 
 def generate_voice_like_audio(media_id, duration=2.0):
     """Generate voice-like audio (TTS if available, waveform otherwise)."""
+    print(f"[Audio Generator] Generating voice audio for {media_id}")
+    print(f"[Audio Generator] TTS_AVAILABLE: {TTS_AVAILABLE}")
+    
     if TTS_AVAILABLE:
+        print(f"[Audio Generator] Using TTS generation")
         return generate_voice_like_audio_tts(media_id, message_type='distress')
     else:
+        print(f"[Audio Generator] Falling back to waveform generation")
         return generate_voice_like_audio_waveform(media_id, duration)
 
 
