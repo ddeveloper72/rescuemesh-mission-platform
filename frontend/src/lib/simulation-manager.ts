@@ -148,12 +148,14 @@ function querySelectorSafe<T extends Element>(selector: string): T | null {
 }
 
 /**
- * Format elapsed seconds into MM:SS display format.
+ * Format elapsed seconds into ISO 8601-compliant HH:MM:SS display format.
+ * Follows ISO 8601 time representation for mission elapsed time display.
  */
 function formatMissionTime(elapsedSeconds: number): string {
-  const minutes = Math.floor(elapsedSeconds / 60);
+  const hours = Math.floor(elapsedSeconds / 3600);
+  const minutes = Math.floor((elapsedSeconds % 3600) / 60);
   const seconds = Math.floor(elapsedSeconds % 60);
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
 /**

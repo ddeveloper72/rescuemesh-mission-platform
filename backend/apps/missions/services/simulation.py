@@ -39,17 +39,18 @@ from .navigation_utils import (
 
 def format_time(seconds: float) -> str:
     """
-    Format elapsed seconds as MM:SS for timeline events.
+    Format elapsed seconds as HH:MM:SS (ISO 8601 time format) for timeline events.
     
     Args:
         seconds: Elapsed seconds
         
     Returns:
-        Formatted time string (e.g., "02:30")
+        Formatted time string (e.g., "00:02:30", "01:15:42")
     """
-    minutes = int(seconds // 60)
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
     secs = int(seconds % 60)
-    return f"{minutes:02d}:{secs:02d}"
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
 
 def calculate_terrain_reconstruction(
