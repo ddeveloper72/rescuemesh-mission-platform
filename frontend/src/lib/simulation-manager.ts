@@ -102,6 +102,13 @@ export class SimulationManager {
     // Update AI analysis
     this.updateAI(state.ai_analysis);
     
+    // Dispatch audio detections event for AudioDetectionsPanel
+    if (state.audio_detections) {
+      window.dispatchEvent(new CustomEvent('audio-detections-update', {
+        detail: { audioDetections: state.audio_detections }
+      }));
+    }
+    
     // Update control button states
     this.updateControlButtons(state.simulation_clock.is_running);
   }

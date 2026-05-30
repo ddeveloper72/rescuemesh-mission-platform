@@ -734,6 +734,50 @@ def simulate_collapsed_building(
                 'description': 'Last thermal frame before drone entered relay mode.'
             })
     
+    # Audio detections - connect to generated media system
+    audio_detections = []
+    
+    # Audio detection at 240s - tapping pattern detected
+    if elapsed_seconds >= 240:
+        thermal_agent = next((a for a in agents if a['agent_id'] == 'drone-b'), None)
+        if thermal_agent:
+            detection_status = 'human_review_required' if elapsed_seconds < 300 else 'confirmed'
+            audio_detections.append({
+                'id': f'{mission_id}-tapping-audio-001',
+                'agent_id': 'drone-b',
+                'agent_name': 'Thermal/Audio Drone',
+                'sensor_type': 'microphone',
+                'audio_type': 'tapping',
+                'status': detection_status,
+                'mission_time': format_time(240),
+                'signal_quality': 58,
+                'confidence': 82,
+                'location_label': 'Void Space 2',
+                'annotations': ['rhythmic pattern', 'possible human signal', 'low bandwidth'],
+                'description': 'Rhythmic tapping detected. Pattern suggests intentional signal.',
+                'audio_url': f'/api/v1/generated-media/{mission_id}-tapping-audio-001/audio/',
+                'spectrogram_url': f'/api/v1/generated-media/{mission_id}-tapping-audio-001/spectrogram/'
+            })
+    
+    # Additional audio detection at 360s - possible voice
+    if elapsed_seconds >= 360:
+        audio_detections.append({
+            'id': f'{mission_id}-voice-audio-001',
+            'agent_id': 'drone-b',
+            'agent_name': 'Thermal/Audio Drone',
+            'sensor_type': 'microphone',
+            'audio_type': 'voice_like',
+            'status': 'analyzing',
+            'mission_time': format_time(360),
+            'signal_quality': 42,
+            'confidence': 68,
+            'location_label': 'Void Space 2',
+            'annotations': ['voice-like audio', 'possible human cue', 'comms degraded'],
+            'description': 'Voice-like audio pattern detected. Quality degraded due to signal loss.',
+                'audio_url': f'/api/v1/generated-media/{mission_id}-voice-audio-001/audio/',
+                'spectrogram_url': f'/api/v1/generated-media/{mission_id}-voice-audio-001/spectrogram/'
+            })
+    
     # Build complete state
     return {
         'mission': {
@@ -755,7 +799,8 @@ def simulate_collapsed_building(
         'events': events,
         'ai_analysis': ai_analysis,
         'terrain_reconstruction': terrain_reconstruction,
-        'media_feeds': media_feeds
+        'media_feeds': media_feeds,
+        'audio_detections': audio_detections
     }
 
 
