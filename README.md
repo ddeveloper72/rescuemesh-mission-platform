@@ -16,6 +16,18 @@ RescueMesh is a simulation-first mission platform that demonstrates how autonomo
 
 **This is a demonstration and training platform**, not a real-time drone control system. No physical drone hardware is required for the MVP.
 
+## Why Mesh Relay Communications?
+
+In dangerous GPS-denied environments such as caves, collapsed buildings, or flooded structures, autonomous agents often lose direct contact with mission control. RescueMesh models a **mesh relay network** where agents can:
+
+- **Relay data through nearby agents** when direct communication is blocked or degraded
+- **Extend the mission reach** by deploying static relay nodes at strategic positions
+- **Share mapped terrain** so one agent's discoveries help others navigate safely
+- **Land and become relay nodes** when battery reserves are low or signal strength is weak
+- **Continue as mission assets** even after primary failures (beacon mode, NFC-readable black box, last-known sensor data)
+
+The platform visualises the **communication chain, agent status, map confidence, and relay network health** throughout the mission. This mesh-based approach is critical for operations where line-of-sight radio links are impossible and agents must cooperate to maintain connectivity.
+
 ## Use Cases
 
 - 🏢 **Collapsed Building Search** - Life safety operations in unstable structures
