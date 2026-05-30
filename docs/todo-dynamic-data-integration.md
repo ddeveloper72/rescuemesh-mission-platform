@@ -8,7 +8,7 @@
 
 This document tracks the plan for integrating realistic, dynamic mission data from the Django API into the RescueMesh frontend. The goal is to replace static/demo data with live, changing data that simulates real mission conditions.
 
-## Completed Items ✅
+## Completed Items
 
 1. **API Client Infrastructure** (2026-05-29)
    - Created `frontend/src/lib/api.ts` with graceful error handling

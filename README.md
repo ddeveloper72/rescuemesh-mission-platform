@@ -30,10 +30,10 @@ The platform visualises the **communication chain, agent status, map confidence,
 
 ## Use Cases
 
-- 🏢 **Collapsed Building Search** - Life safety operations in unstable structures
-- 🕳️ **Cave Rescue** - Mapping and path discovery in underground systems
-- 🌊 **Flooded Structure** - Amphibious inspection and obstruction mapping
-- 🏭 **Industrial Inspection** - Confined space hazard assessment
+- **Collapsed Building Search** - Life safety operations in unstable structures
+- **Cave Rescue** - Mapping and path discovery in underground systems
+- **Flooded Structure** - Amphibious inspection and obstruction mapping
+- **Industrial Inspection** - Confined space hazard assessment
 
 ## Key Features
 
@@ -252,17 +252,17 @@ Sample data fixtures are available in the `data/` directory:
 **Important**: This is a **simulation and decision-support dashboard**, not a real-time control system.
 
 The platform:
-- ❌ Does NOT provide unsafe autonomous control
-- ❌ Does NOT bypass aviation regulations
-- ❌ Does NOT weaponize drones
-- ❌ Does NOT enable covert surveillance
+- Does NOT provide unsafe autonomous control
+- Does NOT bypass aviation regulations
+- Does NOT weaponize drones
+- Does NOT enable covert surveillance
 
 For real-world deployment:
-- ✅ Human operator review required
-- ✅ Aviation compliance mandatory
-- ✅ Emergency service governance
-- ✅ Privacy review required
-- ✅ Safety testing required
+- Human operator review required
+- Aviation compliance mandatory
+- Emergency service governance
+- Privacy review required
+- Safety testing required
 
 ## Contributing
 
@@ -278,24 +278,24 @@ Contributions are welcome! Please:
 ## Roadmap
 
 ### MVP (Current)
-- ✅ Astro frontend with Tailwind
-- ✅ Django backend with REST API
-- ✅ Mission and agent models
-- ✅ Sample use cases and fixtures
-- ✅ Demo mission dashboard
-- ⬜ Interactive islands (maps, telemetry, timeline)
+- [x] Astro frontend with Tailwind
+- [x] Django backend with REST API
+- [x] Mission and agent models
+- [x] Sample use cases and fixtures
+- [x] Demo mission dashboard
+- [ ] Interactive islands (maps, telemetry, timeline)
 
 ### Phase 2
-- ⬜ WebSocket telemetry streaming
-- ⬜ 3D visualization (Three.js)
-- ⬜ AI prompt generation API
-- ⬜ Mission report export
+- [ ] WebSocket telemetry streaming
+- [ ] 3D visualization (Three.js)
+- [ ] AI prompt generation API
+- [ ] Mission report export
 
 ### Phase 3
-- ⬜ PostgreSQL + PostGIS
-- ⬜ ROS 2 integration
-- ⬜ MCAP log replay
-- ⬜ Real hardware bridging
+- [ ] PostgreSQL + PostGIS
+- [ ] ROS 2 integration
+- [ ] MCAP log replay
+- [ ] Real hardware bridging
 
 ## License
 
