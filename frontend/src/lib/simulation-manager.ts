@@ -19,6 +19,7 @@ import {
   resetSimulation,
   setSimulationSpeed,
 } from './api';
+import { updateDetectionData } from './detection-modal-manager';
 
 export class SimulationManager {
   private missionPk: string;
@@ -81,6 +82,9 @@ export class SimulationManager {
    * TODO: Future: Use a reactive framework for cleaner updates.
    */
   private updateUI(state: MissionSimulationState) {
+    // Update detection data for modal manager
+    updateDetectionData(state);
+    
     // Update simulation clock
     this.updateClock(state.simulation_clock);
     

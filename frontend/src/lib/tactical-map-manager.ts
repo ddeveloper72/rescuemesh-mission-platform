@@ -783,7 +783,7 @@ export function renderDetectionMarkers(config: MapConfig, currentTime: number) {
         if (marker.type === 'pressure') color = '#06b6d4'; // cyan
 
         markers.push(`
-          <g class="detection-marker">
+          <g class="detection-marker cursor-pointer hover:opacity-80 transition-opacity" data-detection-id="${marker.id}" data-detection-type="${marker.type}">
             <circle 
               cx="${marker.x}" 
               cy="${marker.y}" 
@@ -796,11 +796,11 @@ export function renderDetectionMarkers(config: MapConfig, currentTime: number) {
               x="${marker.x}" 
               y="${marker.y + 22}" 
               text-anchor="middle" 
-              class="text-xs"
+              class="text-xs pointer-events-none"
               fill="#e2e8f0"
               style="font-size: 16px;"
             >${marker.icon}</text>
-            <title>${marker.label}</title>
+            <title>${marker.label} - Click for details</title>
           </g>
         `);
       }
@@ -808,6 +808,34 @@ export function renderDetectionMarkers(config: MapConfig, currentTime: number) {
   }
 
   markersGroup.innerHTML = markers.join('');
+  
+  // Add click handlers to detection markers
+  attachDetectionMarkerClickHandlers();
+}
+
+/**
+ * Attach click handlers to detection markers
+ */
+function attachDetectionMarkerClickHandlers() {
+  const markers = document.querySelectorAll('.detection-marker');
+  
+  markers.forEach(marker => {
+    marker.addEventListener('click', (event) => {
+      const target = event.currentTarget as SVGElement;
+      const detectionId = target.getAttribute('data-detection-id');
+      const detectionType = target.getAttribute('data-detection-type');
+      
+      if (detectionId) {
+        // Dispatch event to open detection detail modal
+        window.dispatchEvent(new CustomEvent('detection-marker-clicked', {
+          detail: {
+            detectionId,
+            detectionType,
+          }
+        }));
+      }
+    });
+  });
 }
 
 // Store the last config for use in updates

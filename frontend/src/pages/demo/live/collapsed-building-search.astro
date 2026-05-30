@@ -5,6 +5,7 @@ import TacticalMap from '../../../components/demo/TacticalMap.astro';
 import DataSourceBadge from '../../../components/demo/DataSourceBadge.astro';
 import MediaFeedsPanel from '../../../components/islands/MediaFeedsPanel';
 import AudioDetectionsPanel from '../../../components/islands/AudioDetectionsPanel';
+import DetectionDetailModal from '../../../components/islands/DetectionDetailModal';
 
 const MISSION_PK = 'c5d0ffd4-2fc8-4b45-841d-88ec93f27e8e';
 const USE_CASE = 'collapsed-building-search';
@@ -156,6 +157,9 @@ const initialClock = {
         <AudioDetectionsPanel missionId={MISSION_PK} client:load />
       </div>
 
+      <!-- Detection Detail Modal -->
+      <DetectionDetailModal client:load />
+
       <!-- Lower Dashboard Grid -->
       <div class="grid lg:grid-cols-1 gap-6 mt-6"
 
@@ -205,6 +209,7 @@ const initialClock = {
 <script>
   import { initializeSimulation } from '../../../lib/simulation-manager';
   import { initializeTacticalMap, updateTacticalMap } from '../../../lib/tactical-map-manager';
+  import { initDetectionModalManager } from '../../../lib/detection-modal-manager';
   
   // Mission PK from Astro props (passed via data attribute)
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
@@ -214,6 +219,9 @@ const initialClock = {
   
   // Initialize tactical map
   const mapConfig = initializeTacticalMap('collapsed-building-search');
+  
+  // Initialize detection modal manager
+  initDetectionModalManager();
   
   // Enhanced UI update function to show agents
   // This is a temporary extension until we refactor to a proper framework
