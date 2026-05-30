@@ -190,6 +190,90 @@ export class SimulationManager {
     if (packetLossEl) {
       packetLossEl.textContent = `${network.packet_loss_percent}%`;
     }
+
+    const baseSignalEl = document.getElementById('base-signal');
+    if (baseSignalEl) {
+      baseSignalEl.textContent = `${network.base_signal_strength}%`;
+    }
+
+    // Update network health indicator
+    this.updateNetworkHealthIndicator(network.mesh_health, network.packet_loss_percent);
+
+    // Update relay chain
+    this.updateRelayChain(network.relay_chain || []);
+  }
+
+  private updateNetworkHealthIndicator(meshHealth: number, packetLoss: number) {
+    const indicatorEl = document.getElementById('network-health-indicator');
+    const iconEl = document.getElementById('network-health-icon');
+    const labelEl = document.getElementById('network-health-label');
+
+    if (!indicatorEl || !iconEl || !labelEl) return;
+
+    // Determine health status
+    let status: 'healthy' | 'degraded' | 'critical';
+    let icon: string;
+    let label: string;
+    let bgClass: string;
+
+    if (meshHealth >= 80 && packetLoss <= 10) {
+      status = 'healthy';
+      icon = '🟢';
+      label = 'Network Healthy';
+      bgClass = 'bg-green-900/30';
+    } else if (meshHealth >= 60 && packetLoss <= 20) {
+      status = 'degraded';
+      icon = '🟡';
+      label = 'Network Degraded';
+      bgClass = 'bg-amber-900/30';
+    } else {
+      status = 'critical';
+      icon = '🔴';
+      label = 'Network Critical';
+      bgClass = 'bg-red-900/30';
+    }
+
+    iconEl.textContent = icon;
+    labelEl.textContent = label;
+    indicatorEl.className = `mb-4 p-3 rounded-lg ${bgClass}`;
+  }
+
+  private updateRelayChain(relayChain: string[]) {
+    const relayChainEl = document.getElementById('relay-chain');
+    if (!relayChainEl) return;
+
+    if (!relayChain || relayChain.length === 0) {
+      relayChainEl.innerHTML = '<p class="text-slate-500">No relays active</p>';
+      return;
+    }
+
+    // Build relay chain visualization
+    const relayItems = relayChain.map((agentId, index) => {
+      const agentName = this.getAgentName(agentId);
+      const isLast = index === relayChain.length - 1;
+      const arrow = isLast ? '' : '↓';
+      
+      return `
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400">→</span>
+          <span class="text-slate-100">${agentName}</span>
+          ${agentId === 'relay-1' ? '<span class="text-xs text-slate-500">(Base)</span>' : ''}
+        </div>
+        ${!isLast ? '<div class="text-slate-600 ml-3">↓</div>' : ''}
+      `;
+    }).join('');
+
+    relayChainEl.innerHTML = relayItems;
+  }
+
+  private getAgentName(agentId: string): string {
+    const agentNames: Record<string, string> = {
+      'relay-1': 'Static Relay',
+      'drone-a': 'Scout Drone A',
+      'drone-b': 'Thermal/Audio Drone',
+      'drone-c': 'Relay Drone',
+    };
+    return agentNames[agentId] || agentId;
   }
 
   private updateMap(map: MissionSimulationState['map']) {
