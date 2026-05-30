@@ -46,10 +46,11 @@ export function showAgentModal(agent: Agent): void {
   currentAgentData = agent;
   
   const modal = document.getElementById('agent-detail-modal');
+  const modalContent = document.getElementById('agent-modal-content');
   const backdrop = document.getElementById('agent-modal-backdrop');
   
-  if (!modal || !backdrop) {
-    console.warn('Agent modal elements not found');
+  if (!modal || !modalContent || !backdrop) {
+    console.warn('Agent modal elements not found', { modal, modalContent, backdrop });
     return;
   }
 
@@ -60,12 +61,12 @@ export function showAgentModal(agent: Agent): void {
   backdrop.classList.remove('hidden');
   modal.classList.remove('hidden');
   
-  // Trigger animation
+  // Trigger animation after a frame
   requestAnimationFrame(() => {
     backdrop.classList.remove('opacity-0');
     backdrop.classList.add('opacity-100');
-    modal.classList.remove('scale-95', 'opacity-0');
-    modal.classList.add('scale-100', 'opacity-100');
+    modalContent.classList.remove('scale-95', 'opacity-0');
+    modalContent.classList.add('scale-100', 'opacity-100');
   });
 }
 
@@ -74,15 +75,16 @@ export function showAgentModal(agent: Agent): void {
  */
 export function closeAgentModal(): void {
   const modal = document.getElementById('agent-detail-modal');
+  const modalContent = document.getElementById('agent-modal-content');
   const backdrop = document.getElementById('agent-modal-backdrop');
   
-  if (!modal || !backdrop) return;
+  if (!modal || !modalContent || !backdrop) return;
 
   // Animate out
   backdrop.classList.remove('opacity-100');
   backdrop.classList.add('opacity-0');
-  modal.classList.remove('scale-100', 'opacity-100');
-  modal.classList.add('scale-95', 'opacity-0');
+  modalContent.classList.remove('scale-100', 'opacity-100');
+  modalContent.classList.add('scale-95', 'opacity-0');
   
   // Hide after animation
   setTimeout(() => {
