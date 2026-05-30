@@ -329,6 +329,8 @@ The frontend will be available at `http://localhost:4321`
 
 RescueMesh supports pre-populating the database with simplified digital twin map data derived from public/open cave survey and archaeological/heritage datasets. This provides realistic mission terrain without requiring access to physical environments.
 
+**Live tactical maps now render terrain from Django Digital Twin data where available, with automatic fallback to local layouts for use cases without seeded terrain.**
+
 ### What are Digital Twins?
 
 Digital twins are simplified 3D representations of real-world environments stored as:
@@ -434,6 +436,32 @@ All digital twin data includes:
 - **Sensitivity level**: `public_demo`, `reduced_precision`, `restricted`, or `synthetic_only`
 
 **Important:** Sample data is synthetic for demonstration purposes. No actual sensitive cave locations or archaeological sites are exposed.
+
+### Live Tactical Map Integration
+
+The frontend tactical maps now support three rendering modes:
+
+1. **Django Digital Twin** - Terrain loaded from database via REST API
+   - Automatic coordinate scaling from metres to SVG
+   - Sector type-based visual styling
+   - Metadata display (depth, elevation, hazards)
+   - Source attribution badge shown on map
+   
+2. **Local Fallback** - Hardcoded TypeScript layouts for use cases without Digital Twin data
+   - Used for Collapsed Building Search (no seeded terrain yet)
+   - Badge indicates "Local Fallback" mode
+   
+3. **Hybrid Mode** - Digital Twin terrain + live mission state overlay
+   - Agent positions and movements
+   - Detection markers
+   - Relay network links
+   - Escalation markers
+
+**Frontend Integration Modules:**
+- `frontend/src/lib/api.ts` - Digital Twin API client functions
+- `frontend/src/lib/tactical-map/digitalTwinMapAdapter.ts` - Coordinate transformation
+- `frontend/src/lib/tactical-map/digitalTwinMapLoader.ts` - Async loader with caching
+- `frontend/src/lib/tactical-map/useCaseTerrainBindings.ts` - Use case → site mappings
 
 ### API Endpoints
 

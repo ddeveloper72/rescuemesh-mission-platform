@@ -667,6 +667,24 @@ GET /api/v1/mapping/waypoints/?route_group=primary-route
 
 ---
 
+## Frontend Integration
+
+### Tactical Map Rendering Modes
+
+1. **Django Digital Twin** - Terrain from REST API with automatic coordinate scaling
+2. **Local Fallback** - Hardcoded TypeScript layouts (Collapsed Building Search only)
+3. **Hybrid Mode** - Digital Twin terrain + live mission state overlay
+
+**Frontend Modules:**
+- `frontend/src/lib/api.ts` - API client
+- `frontend/src/lib/tactical-map/digitalTwinMapAdapter.ts` - Coordinate transformation
+- `frontend/src/lib/tactical-map/digitalTwinMapLoader.ts` - Async loader with caching
+- `frontend/src/lib/tactical-map/useCaseTerrainBindings.ts` - Use case mappings
+
+**Testing:** Visit `/demo/live/cave-rescue` etc. to see Digital Twin integration with green "Django Digital Twin" badge.
+
+---
+
 ## References
 
 - **Migovec Resurvey Project:** https://github.com/tr1813/migresurvey

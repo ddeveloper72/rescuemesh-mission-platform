@@ -5,10 +5,12 @@
  * Use-case specific layouts for different simulation types.
  * 
  * Now includes animated agent movement, progressive sector reveal,
- * and time-based detection markers.
+ * time-based detection markers, and Django Digital Twin integration.
  */
 
 import type { MissionSimulationState, Agent } from '../types/simulation';
+import { loadDigitalTwinMap, type DigitalTwinLoadResult } from './tactical-map/digitalTwinMapLoader';
+import type { TacticalMapViewModel } from './tactical-map/digitalTwinMapAdapter';
 
 interface MapConfig {
   sectors: TacticalSector[];
@@ -17,6 +19,13 @@ interface MapConfig {
   height: number;
   routes?: TacticalAgentRoute[];
   detectionMarkers?: DetectionMarker[];
+  terrainSource?: 'django-digital-twin' | 'local-fallback';
+  terrainMeta?: {
+    siteName?: string;
+    terrainMapName?: string;
+    siteSlug?: string;
+    terrainMapSlug?: string;
+  };
 }
 
 interface Sector {
@@ -392,17 +401,17 @@ export function getFloodedStructureMapConfig(): MapConfig {
 export function getMapConfig(useCase: string): MapConfig {
   switch (useCase) {
     case 'industrial-inspection':
-      return getIndustrialInspectionMapConfig();
+      return { ...getIndustrialInspectionMapConfig(), terrainSource: 'local-fallback' };
     case 'collapsed-building-search':
-      return getCollapsedBuildingMapConfig();
+      return { ...getCollapsedBuildingMapConfig(), terrainSource: 'local-fallback' };
     case 'cave-rescue':
-      return getCaveRescueMapConfig();
+      return { ...getCaveRescueMapConfig(), terrainSource: 'local-fallback' };
     case 'flooded-structure':
-      return getFloodedStructureMapConfig();
+      return { ...getFloodedStructureMapConfig(), terrainSource: 'local-fallback' };
     case 'archaeological-exploration':
-      return getArchaeologicalExplorationMapConfig();
+      return { ...getArchaeologicalExplorationMapConfig(), terrainSource: 'local-fallback' };
     default:
-      return { width: 800, height: 450, sectors: [] };
+      return { width: 800, height: 450, sectors: [], terrainSource: 'local-fallback' };
   }
 }
 
@@ -969,8 +978,97 @@ export function initializeTacticalMap(useCase: string) {
   lastConfig = config;
   renderSectors(config, 0);
   renderCompassRose(); // Will be updated with navigation_model when state arrives
+  renderTerrainSourceBadge(config);
   
   return config;
+}
+
+/**
+ * Initialize tactical map with Django Digital Twin terrain (async)
+ * Falls back to local config if Digital Twin fails to load
+ */
+export async function initializeTacticalMapWithDigitalTwin(useCase: string): Promise<MapConfig> {
+  console.log(`[TacticalMap] Attempting to load Digital Twin terrain for: ${useCase}`);
+  
+  const result = await loadDigitalTwinMap(useCase);
+  
+  if (result.success && result.viewModel) {
+    console.log(`[TacticalMap] ✓ Digital Twin terrain loaded successfully`);
+    const config = convertViewModelToMapConfig(result.viewModel);
+    lastConfig = config;
+    renderSectors(config, 0);
+    renderCompassRose();
+    renderTerrainSourceBadge(config);
+    return config;
+  } else {
+    console.warn(`[TacticalMap] ⚠ Digital Twin load failed: ${result.error}`);
+    console.log(`[TacticalMap] → Falling back to local terrain layout`);
+    return initializeTacticalMap(useCase);
+  }
+}
+
+/**
+ * Convert TacticalMapViewModel to MapConfig
+ */
+function convertViewModelToMapConfig(viewModel: TacticalMapViewModel): MapConfig {
+  return {
+    sectors: viewModel.sectors,
+    hazardZones: viewModel.hazardZones,
+    width: viewModel.width,
+    height: viewModel.height,
+    routes: viewModel.routes,
+    detectionMarkers: viewModel.detectionMarkers,
+    terrainSource: viewModel.terrainSource,
+    terrainMeta: viewModel.terrainMeta,
+  };
+}
+
+/**
+ * Render terrain source badge
+ */
+function renderTerrainSourceBadge(config: MapConfig) {
+  const container = document.getElementById('tactical-map');
+  if (!container) return;
+
+  // Remove existing badge
+  const existingBadge = container.querySelector('.terrain-source-badge');
+  if (existingBadge) {
+    existingBadge.remove();
+  }
+
+  // Create badge
+  const badge = document.createElement('div');
+  badge.className = 'terrain-source-badge absolute top-2 left-2 z-10 px-3 py-1 rounded-full text-xs font-medium';
+  
+  if (config.terrainSource === 'django-digital-twin') {
+    badge.classList.add('bg-green-500/20', 'text-green-300', 'border', 'border-green-500/50');
+    badge.innerHTML = `
+      <span class="flex items-center gap-1.5">
+        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+        </svg>
+        <span>Django Digital Twin</span>
+      </span>
+    `;
+    
+    // Add tooltip with metadata
+    if (config.terrainMeta) {
+      badge.title = `Site: ${config.terrainMeta.siteName}\nMap: ${config.terrainMeta.terrainMapName}`;
+    }
+  } else {
+    badge.classList.add('bg-slate-500/20', 'text-slate-300', 'border', 'border-slate-500/50');
+    badge.innerHTML = `
+      <span class="flex items-center gap-1.5">
+        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+        </svg>
+        <span>Local Fallback</span>
+      </span>
+    `;
+    badge.title = 'Using local hardcoded terrain layout';
+  }
+
+  container.appendChild(badge);
 }
 
 /**

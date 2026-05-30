@@ -197,13 +197,15 @@ const initialClock = {
 
 <script>
   import { initializeSimulation } from '../../../lib/simulation-manager';
-  import { initializeTacticalMap, updateTacticalMap } from '../../../lib/tactical-map-manager';
+  import { initializeTacticalMapWithDigitalTwin, updateTacticalMap } from '../../../lib/tactical-map-manager';
   
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
   const manager = initializeSimulation(MISSION_PK);
   
-  // Initialize tactical map
-  const mapConfig = initializeTacticalMap('archaeological-exploration');
+  // Initialize tactical map with Digital Twin terrain (async)
+  (async () => {
+    const mapConfig = await initializeTacticalMapWithDigitalTwin('archaeological-exploration');
+  })(); // End async IIFE
   
   // Enhanced UI update for archaeological exploration
   const originalPoll = (manager as any).poll;

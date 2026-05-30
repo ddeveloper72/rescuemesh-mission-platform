@@ -49,6 +49,63 @@ export const API_ENDPOINTS = {
     list: () => `${API_BASE_URL}/agents/`,
     detail: (id: string) => `${API_BASE_URL}/agents/${id}/`,
   },
+  // Digital Twin / Mapping endpoints
+  digitalTwinSites: {
+    list: () => `${API_BASE_URL}/mapping/digital-twin-sites/`,
+    detail: (slug: string) => `${API_BASE_URL}/mapping/digital-twin-sites/${slug}/`,
+  },
+  terrainMaps: {
+    list: (params?: { site_slug?: string }) => {
+      const url = `${API_BASE_URL}/mapping/terrain-maps/`;
+      if (params?.site_slug) {
+        return `${url}?site_slug=${encodeURIComponent(params.site_slug)}`;
+      }
+      return url;
+    },
+    detail: (slug: string) => `${API_BASE_URL}/mapping/terrain-maps/${slug}/`,
+  },
+  terrainSectors: {
+    list: (params?: { terrain_map_slug?: string; sector_type?: string }) => {
+      const url = `${API_BASE_URL}/mapping/terrain-sectors/`;
+      const queryParams = new URLSearchParams();
+      if (params?.terrain_map_slug) {
+        queryParams.append('terrain_map_slug', params.terrain_map_slug);
+      }
+      if (params?.sector_type) {
+        queryParams.append('sector_type', params.sector_type);
+      }
+      return queryParams.toString() ? `${url}?${queryParams.toString()}` : url;
+    },
+  },
+  terrainPaths: {
+    list: (params?: { terrain_map_slug?: string; path_type?: string }) => {
+      const url = `${API_BASE_URL}/mapping/terrain-paths/`;
+      const queryParams = new URLSearchParams();
+      if (params?.terrain_map_slug) {
+        queryParams.append('terrain_map_slug', params.terrain_map_slug);
+      }
+      if (params?.path_type) {
+        queryParams.append('path_type', params.path_type);
+      }
+      return queryParams.toString() ? `${url}?${queryParams.toString()}` : url;
+    },
+  },
+  waypoints: {
+    list: (params?: { terrain_map_slug?: string; route_group?: string }) => {
+      const url = `${API_BASE_URL}/mapping/waypoints/`;
+      const queryParams = new URLSearchParams();
+      if (params?.terrain_map_slug) {
+        queryParams.append('terrain_map_slug', params.terrain_map_slug);
+      }
+      if (params?.route_group) {
+        queryParams.append('route_group', params.route_group);
+      }
+      return queryParams.toString() ? `${url}?${queryParams.toString()}` : url;
+    },
+  },
+  mapArtifacts: {
+    list: () => `${API_BASE_URL}/mapping/map-artifacts/`,
+  },
 };
 
 /**
@@ -194,6 +251,115 @@ export interface AgentRoleTemplate {
 }
 
 /**
+ * Digital Twin / Mapping API types
+ */
+export interface DigitalTwinSite {
+  id: string;
+  slug: string;
+  name: string;
+  site_type: 'cave' | 'archaeology' | 'industrial' | 'synthetic';
+  country: string;
+  description: string;
+  source_name: string;
+  source_url: string;
+  source_license: string;
+  attribution: string;
+  sensitivity_level: 'public_demo' | 'reduced_precision' | 'restricted' | 'synthetic_only';
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TerrainMap {
+  id: string;
+  slug: string;
+  digital_twin_site: string;
+  digital_twin_site_slug: string;
+  digital_twin_site_name: string;
+  name: string;
+  description: string;
+  coordinate_system: string;
+  origin_lat: number | null;
+  origin_lon: number | null;
+  origin_label: string;
+  units: string;
+  source_format: string;
+  sector_count: number;
+  waypoint_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TerrainSector {
+  id: string;
+  terrain_map: string;
+  terrain_map_slug: string;
+  sector_id: string;
+  label: string;
+  sector_type: string;
+  x_m: number;
+  y_m: number;
+  z_m: number | null;
+  width_m: number | null;
+  height_m: number | null;
+  depth_m: number | null;
+  elevation_m: number | null;
+  confidence: number;
+  metadata: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TerrainPath {
+  id: string;
+  terrain_map: string;
+  terrain_map_slug: string;
+  from_sector: string;
+  from_sector_id: string;
+  from_sector_label: string;
+  to_sector: string;
+  to_sector_id: string;
+  to_sector_label: string;
+  distance_m: number;
+  bearing_deg: number | null;
+  vertical_change_m: number | null;
+  path_type: string;
+  traversal_risk: string;
+  capabilities_required: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Waypoint {
+  id: string;
+  terrain_map: string;
+  terrain_map_slug: string;
+  waypoint_id: string;
+  label: string;
+  x_m: number;
+  y_m: number;
+  z_m: number | null;
+  sequence: number | null;
+  route_group: string;
+  metadata: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MapArtifact {
+  id: string;
+  digital_twin_site: string;
+  artifact_type: string;
+  file_format: string;
+  description: string;
+  file_path: string;
+  external_url: string;
+  licensing_notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
  * Fetch functions for common data
  */
 export async function getUseCases(): Promise<APIResult<PaginatedResponse<UseCaseListItem>>> {
@@ -214,6 +380,69 @@ export async function getOutputs(): Promise<APIResult<PaginatedResponse<Expected
 
 export async function getAgentRoles(): Promise<APIResult<PaginatedResponse<AgentRoleTemplate>>> {
   return fetchAPI<PaginatedResponse<AgentRoleTemplate>>(API_ENDPOINTS.agentRoles.list());
+}
+
+/**
+ * Digital Twin / Mapping fetch functions
+ */
+
+/**
+ * Fetch Digital Twin Sites
+ */
+export async function getDigitalTwinSites(): Promise<APIResult<DigitalTwinSite[]>> {
+  return await fetchAPI<DigitalTwinSite[]>(API_ENDPOINTS.digitalTwinSites.list());
+}
+
+/**
+ * Fetch Terrain Maps (optionally filtered by site slug)
+ */
+export async function getTerrainMaps(siteSlug?: string): Promise<APIResult<TerrainMap[]>> {
+  const url = siteSlug 
+    ? API_ENDPOINTS.terrainMaps.list({ site_slug: siteSlug })
+    : API_ENDPOINTS.terrainMaps.list();
+  return await fetchAPI<TerrainMap[]>(url);
+}
+
+/**
+ * Fetch Terrain Sectors (optionally filtered by terrain map slug)
+ */
+export async function getTerrainSectors(
+  terrainMapSlug?: string, 
+  sectorType?: string
+): Promise<APIResult<TerrainSector[]>> {
+  const url = API_ENDPOINTS.terrainSectors.list({ 
+    terrain_map_slug: terrainMapSlug,
+    sector_type: sectorType 
+  });
+  return await fetchAPI<TerrainSector[]>(url);
+}
+
+/**
+ * Fetch Terrain Paths (optionally filtered by terrain map slug)
+ */
+export async function getTerrainPaths(
+  terrainMapSlug?: string,
+  pathType?: string
+): Promise<APIResult<TerrainPath[]>> {
+  const url = API_ENDPOINTS.terrainPaths.list({ 
+    terrain_map_slug: terrainMapSlug,
+    path_type: pathType 
+  });
+  return await fetchAPI<TerrainPath[]>(url);
+}
+
+/**
+ * Fetch Waypoints (optionally filtered by terrain map slug)
+ */
+export async function getWaypoints(
+  terrainMapSlug?: string,
+  routeGroup?: string
+): Promise<APIResult<Waypoint[]>> {
+  const url = API_ENDPOINTS.waypoints.list({ 
+    terrain_map_slug: terrainMapSlug,
+    route_group: routeGroup 
+  });
+  return await fetchAPI<Waypoint[]>(url);
 }
 
 /**

@@ -218,29 +218,31 @@ const initialClock = {
 
 <script>
   import { initializeSimulation } from '../../../lib/simulation-manager';
-  import { initializeTacticalMap, updateTacticalMap } from '../../../lib/tactical-map-manager';
+  import { initializeTacticalMapWithDigitalTwin, updateTacticalMap } from '../../../lib/tactical-map-manager';
   import { initDetectionModalManager } from '../../../lib/detection-modal-manager';
   import { initAgentModalManager, showAgentModal } from '../../../lib/agent-modal-manager';
   
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
   const manager = initializeSimulation(MISSION_PK);
   
-  // Initialize tactical map
-  const mapConfig = initializeTacticalMap('flooded-structure');
+  // Initialize tactical map with Digital Twin terrain (async)
+  (async () => {
+    const mapConfig = await initializeTacticalMapWithDigitalTwin('flooded-structure');
   
-  // Initialize detection modal manager
-  initDetectionModalManager();
+    // Initialize detection modal manager
+    initDetectionModalManager();
   
-  // Initialize agent modal manager
-  initAgentModalManager();
+    // Initialize agent modal manager
+    initAgentModalManager();
   
-  // Listen for agent marker clicks
-  window.addEventListener('agent-marker-clicked', (event: Event) => {
-    const customEvent = event as CustomEvent;
-    if (customEvent.detail?.agent) {
-      showAgentModal(customEvent.detail.agent);
-    }
-  });
+    // Listen for agent marker clicks
+    window.addEventListener('agent-marker-clicked', (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail?.agent) {
+        showAgentModal(customEvent.detail.agent);
+      }
+    });
+  })(); // End async IIFE
   
   const originalPoll = (manager as any).poll;
   (manager as any).poll = async function() {
