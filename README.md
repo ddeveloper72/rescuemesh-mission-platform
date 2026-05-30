@@ -16,6 +16,12 @@ RescueMesh is a simulation-first mission platform that demonstrates how autonomo
 
 **This is a demonstration and training platform**, not a real-time drone control system. No physical drone hardware is required for the MVP.
 
+## Safety and Purpose
+
+RescueMesh is safety-focused and non-weaponised. It models autonomous mapping, sensing, communications and operator decision support for rescue, inspection, environmental and heritage exploration scenarios.
+
+Beyond rescue and industrial inspection, RescueMesh can model archaeological and heritage exploration where fragile, inaccessible spaces must be mapped without unnecessary human entry or disturbance.
+
 ## Why Mesh Relay Communications?
 
 In dangerous GPS-denied environments such as caves, collapsed buildings, or flooded structures, autonomous agents often lose direct contact with mission control. RescueMesh models a **mesh relay network** where agents can:
@@ -34,6 +40,7 @@ The platform visualises the **communication chain, agent status, map confidence,
 - **Cave Rescue** - Mapping and path discovery in underground systems
 - **Flooded Structure** - Amphibious inspection and obstruction mapping
 - **Industrial Inspection** - Confined space hazard assessment
+- **Archaeological Exploration** - Non-destructive mapping of fragile heritage sites
 
 ## Key Features
 
@@ -62,6 +69,26 @@ Generate structured prompts for AI analysis with:
 - WiFi/Bluetooth device scanning
 - Confidence scoring
 - Human review requirements
+
+## Interoperability Philosophy
+
+RescueMesh uses **structured, interoperable mission data** inspired by healthcare interoperability standards (HL7 FHIR, CDA), IoT standards (OGC SensorThings, W3C SOSA/SSN), and geospatial standards. Mission data is designed to be:
+
+- **Exchangeable** - Standard formats enable data sharing across systems
+- **Validated** - Schema validation ensures data consistency
+- **Versioned** - API versioning supports backward compatibility
+- **Explainable** - Provenance tracking shows data lineage and confidence
+
+While RescueMesh is not a healthcare system, it applies proven interoperability principles from health data exchange to mission planning and autonomous agent coordination. This approach ensures that:
+
+- **Sensor observations** align with semantic standards rather than ad-hoc formats
+- **AI recommendations** include confidence scores, provenance metadata, and human-review flags
+- **Mission reports** can integrate with emergency service workflows
+- **Future emergency-to-healthcare handover** scenarios could map rescue findings into medical interoperability patterns when missions transition from search and rescue to patient care
+
+The platform models 17 conceptual resource types (Mission, Agent, Device, Sensor, Observation, EnvironmentalReading, MediaFrame, MapArtifact, TerrainSector, RelayLink, CommunicationMode, Hazard, Detection, Alert, Recommendation, MissionEvent, Provenance) to ensure consistent data representation across the mission lifecycle.
+
+Learn more: [Interoperability Architecture](/architecture/interoperability)
 
 ## Demo Routes
 
@@ -310,6 +337,7 @@ MIT License - See [LICENSE](LICENSE) file for details
 ## Contact
 
 For questions, suggestions, or collaboration:
+- [About me](https://ddeveloper72.github.io/)
 - [LinkedIn](https://www.linkedin.com/in/duncanfalconer/)
 - [GitHub](https://github.com/ddeveloper72)
 - [GitHub Issues](https://github.com/ddeveloper72/rescuemesh-mission-platform/issues)
