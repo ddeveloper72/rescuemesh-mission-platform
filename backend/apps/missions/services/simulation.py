@@ -1776,6 +1776,41 @@ def simulate_cave_rescue(
     # Navigation model for GPS-denied cave environment
     # Uses local 3D coordinate system with mission north reference
     origin_position = {'x': 120, 'y': 240, 'z': 0}  # Entrance Chamber
+    
+    # Calculate per-agent navigation intelligence
+    # Add distance, bearing, and depth/elevation labels to each agent
+    for agent in agents:
+        agent_pos = agent.get('position', origin_position)
+        
+        # 2D and 3D distances from origin
+        distance_2d = calculate_distance_2d(origin_position, agent_pos)
+        distance_3d = calculate_distance_3d(origin_position, agent_pos)
+        
+        # Bearing from origin (only if agent has moved significantly)
+        if distance_2d > 1.0:
+            bearing_deg = calculate_bearing_degrees(origin_position, agent_pos)
+            bearing_cardinal = bearing_to_cardinal(bearing_deg, points=16)
+        else:
+            bearing_deg = 0
+            bearing_cardinal = 'N'
+        
+        # Elevation and depth
+        elevation_m, depth_m = calculate_elevation_depth(agent_pos.get('z', 0))
+        vertical_label = calculate_vertical_profile_label(agent_pos.get('z', 0), context='cave')
+        depth_elevation_label = format_depth_elevation_label(agent_pos.get('z', 0), use_arrows=True)
+        
+        # Add navigation intelligence fields
+        agent['navigation'] = {
+            'distance_from_origin_m': round(distance_2d, 1),
+            'straight_line_3d_distance_from_origin_m': round(distance_3d, 1),
+            'bearing_from_origin_deg': round(bearing_deg, 1) if distance_2d > 1 else None,
+            'bearing_from_origin_cardinal': bearing_cardinal if distance_2d > 1 else None,
+            'elevation_m': round(elevation_m, 1),
+            'depth_m': round(depth_m, 1),
+            'vertical_offset_from_origin_m': round(elevation_m, 1),
+            'vertical_profile_label': vertical_label,
+            'depth_elevation_label': depth_elevation_label
+        }
     compass_confidence, compass_reliability, compass_reason = calculate_compass_confidence(
         environment_type='cave',
         distance_from_origin_m=0,
@@ -2368,6 +2403,41 @@ def simulate_flooded_structure(
     # Navigation model for flooded structure environment
     # Uses local 3D coordinate system with water depth references
     origin_position = {'x': 125, 'y': 90, 'z': 0}  # Entry Pool surface
+    
+    # Calculate per-agent navigation intelligence
+    # Add distance, bearing, and depth/elevation labels to each agent
+    for agent in agents:
+        agent_pos = agent.get('position', origin_position)
+        
+        # 2D and 3D distances from origin
+        distance_2d = calculate_distance_2d(origin_position, agent_pos)
+        distance_3d = calculate_distance_3d(origin_position, agent_pos)
+        
+        # Bearing from origin (only if agent has moved significantly)
+        if distance_2d > 1.0:
+            bearing_deg = calculate_bearing_degrees(origin_position, agent_pos)
+            bearing_cardinal = bearing_to_cardinal(bearing_deg, points=16)
+        else:
+            bearing_deg = 0
+            bearing_cardinal = 'N'
+        
+        # Elevation and depth (water depth context)
+        elevation_m, depth_m = calculate_elevation_depth(agent_pos.get('z', 0))
+        vertical_label = calculate_vertical_profile_label(agent_pos.get('z', 0), context='water')
+        depth_elevation_label = format_depth_elevation_label(agent_pos.get('z', 0), use_arrows=True)
+        
+        # Add navigation intelligence fields
+        agent['navigation'] = {
+            'distance_from_origin_m': round(distance_2d, 1),
+            'straight_line_3d_distance_from_origin_m': round(distance_3d, 1),
+            'bearing_from_origin_deg': round(bearing_deg, 1) if distance_2d > 1 else None,
+            'bearing_from_origin_cardinal': bearing_cardinal if distance_2d > 1 else None,
+            'elevation_m': round(elevation_m, 1),
+            'depth_m': round(depth_m, 1),
+            'vertical_offset_from_origin_m': round(elevation_m, 1),
+            'vertical_profile_label': vertical_label,
+            'depth_elevation_label': depth_elevation_label
+        }
     compass_confidence, compass_reliability, compass_reason = calculate_compass_confidence(
         environment_type='flooded_building',
         distance_from_origin_m=0,
@@ -3081,6 +3151,41 @@ def simulate_industrial_inspection(
     # Navigation model for industrial inspection environment
     # Uses local 3D coordinate system for confined space navigation
     origin_position = {'x': 110, 'y': 90, 'z': 0}  # Entry Point
+    
+    # Calculate per-agent navigation intelligence
+    # Add distance, bearing, and depth/elevation labels to each agent
+    for agent in agents:
+        agent_pos = agent.get('position', origin_position)
+        
+        # 2D and 3D distances from origin
+        distance_2d = calculate_distance_2d(origin_position, agent_pos)
+        distance_3d = calculate_distance_3d(origin_position, agent_pos)
+        
+        # Bearing from origin (only if agent has moved significantly)
+        if distance_2d > 1.0:
+            bearing_deg = calculate_bearing_degrees(origin_position, agent_pos)
+            bearing_cardinal = bearing_to_cardinal(bearing_deg, points=16)
+        else:
+            bearing_deg = 0
+            bearing_cardinal = 'N'
+        
+        # Elevation and depth
+        elevation_m, depth_m = calculate_elevation_depth(agent_pos.get('z', 0))
+        vertical_label = calculate_vertical_profile_label(agent_pos.get('z', 0), context='industrial')
+        depth_elevation_label = format_depth_elevation_label(agent_pos.get('z', 0), use_arrows=True)
+        
+        # Add navigation intelligence fields
+        agent['navigation'] = {
+            'distance_from_origin_m': round(distance_2d, 1),
+            'straight_line_3d_distance_from_origin_m': round(distance_3d, 1),
+            'bearing_from_origin_deg': round(bearing_deg, 1) if distance_2d > 1 else None,
+            'bearing_from_origin_cardinal': bearing_cardinal if distance_2d > 1 else None,
+            'elevation_m': round(elevation_m, 1),
+            'depth_m': round(depth_m, 1),
+            'vertical_offset_from_origin_m': round(elevation_m, 1),
+            'vertical_profile_label': vertical_label,
+            'depth_elevation_label': depth_elevation_label
+        }
     compass_confidence, compass_reliability, compass_reason = calculate_compass_confidence(
         environment_type='industrial_facility',
         distance_from_origin_m=0,
