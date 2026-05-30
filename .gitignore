@@ -1,7 +1,8 @@
 
 
-#Ignore vscode AI rules
-.github\instructions\*.md
+#Ignore environment variables file
+.env
+.github/instructions/*.md
 
 #Ignore virtual environment
 .venv
@@ -69,6 +70,3 @@ Thumbs.db
 .coverage
 htmlcov/
 .pytest_cache/
-
-#Ignore environment variables file
-.env
