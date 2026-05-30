@@ -201,6 +201,27 @@ The platform simulates realistic failures:
 - Mission abort
 - Black-box recovery
 
+## Communication Modes
+
+The platform models diverse communication strategies for different mission types:
+
+### Emergency Response Scenarios
+- Real-time mesh relay networks
+- Dynamic relay node deployment
+- Critical telemetry streaming
+- Low-latency command links
+
+### Non-Emergency Exploration
+For non-emergency exploration scenarios such as archaeological surveys and heritage site documentation, agents may use:
+
+- **Mesh Relay Networks** - Multi-hop communication through agent chains
+- **Static Relay Nodes** - Fixed communication bridges in mapped terrain
+- **Tethered/Fibre Data Options** - (Future) High-bandwidth wired connections for extended operations
+- **Store-and-Forward Media** - (Future) Delayed data transfer for deep penetration missions
+- **NFC Black-Box Recovery** - Near-field recovery of mission logs from failed or powered-down assets
+
+The platform remains **simulation-first** and **non-destructive** across all communication modes, prioritizing preservation and safety in heritage environments.
+
 ## Security Boundaries
 
 This is a **simulation and decision-support dashboard**, not a real-time control system.

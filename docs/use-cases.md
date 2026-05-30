@@ -214,6 +214,111 @@ Inspect industrial facilities with hazardous materials or confined spaces withou
 
 ---
 
+## 5. Archaeological Exploration
+
+**Priority**: Heritage Preservation / Non-Destructive Survey
+
+### Mission Objective
+Use autonomous or semi-autonomous agents to progressively map fragile or inaccessible heritage environments while minimising human entry and physical disturbance.
+
+### Terrain Characteristics
+- Fragile underground chambers
+- Cave systems with historical significance
+- Buried passageways and ancient tunnels
+- Wells, ruins, and sealed chambers
+- GPS completely denied
+- Poor lighting (complete darkness)
+- Dust, moisture, unstable surfaces
+- Preservation-sensitive artefacts or wall surfaces
+
+### Recommended Agents
+
+**Micro Scout Drone**
+- Compact frame for narrow passages
+- Low-speed navigation
+- Advanced obstacle avoidance
+- Low-light camera
+- NFC black-box recovery module
+
+**LiDAR Mapping Drone**
+- High-fidelity LiDAR/depth mapping
+- RGB still camera
+- Multiple-pass refinement capability
+- Shared map contribution
+- High-confidence reconstruction
+
+**Low-Light Imaging Drone**
+- Specialized low-light camera
+- Infrared/night vision sensor pack
+- Still-image capture mode
+- Visual documentation capability
+- Minimal air disturbance design
+
+**Static Relay / Environmental Node**
+- Mesh relay capability
+- Temperature sensor
+- Humidity sensor
+- O₂ sensor
+- CO₂ sensor
+- Dust/particulate monitoring
+- Long-life battery
+
+### Expected Sensors
+- LiDAR/depth mapping
+- Low-light cameras
+- Infrared/night vision
+- RGB still cameras
+- Temperature sensors
+- Humidity sensors
+- O₂ sensors
+- CO₂ sensors
+- Dust/particulate monitors
+- Obstacle avoidance sensors
+
+### Failure Risks
+- Dust occlusion affecting LiDAR and cameras
+- Low-light image degradation
+- Narrow-passage navigation challenges
+- Fragile surface proximity warnings
+- Radio attenuation through rock and ancient masonry
+- Humidity sensor degradation
+- Agent stranded with NFC recovery available
+
+### Expected Outputs
+- Progressive chamber map with gradual revelation
+- High-fidelity 3D terrain reconstruction
+- Image catalogue and visual documentation
+- Fragile-zone markers
+- Artefact candidate markers (review only, not definitive)
+- Environmental safety readings (temperature, humidity, O₂, CO₂, dust)
+- Route confidence map
+- Relay chain topology map
+- Human review recommendations
+
+### Communications Modes
+For non-emergency exploration, the platform models:
+- Mesh relay networks
+- Static relay nodes
+- Tethered/fibre data connections (future)
+- Store-and-forward media (future)
+- NFC black-box recovery
+
+### AI Analyst Behavior
+- Identify areas requiring expert review
+- Flag possible artefact candidates as "review only" (not definitive identification)
+- Warn where confidence is low
+- Warn where human entry may damage the site
+- Recommend further non-invasive scanning before physical access
+
+### Preservation Principles
+- Non-destructive mapping only
+- Minimize physical disturbance
+- Flag fragile areas for restricted access
+- Document before any physical intervention
+- Prioritize remote sensing over direct contact
+
+---
+
 ## Use Case Template
 
 When creating a new use case, define:

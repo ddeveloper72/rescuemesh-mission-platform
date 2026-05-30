@@ -189,6 +189,11 @@ def calculate_mission_state(
             mission_id, mission_name, elapsed_seconds, speed_multiplier,
             started_at, status
         )
+    elif use_case_slug == 'archaeological-exploration':
+        return simulate_archaeological_exploration(
+            mission_id, mission_name, elapsed_seconds, speed_multiplier,
+            started_at, status
+        )
     else:
         # Generic fallback
         return create_empty_state(
@@ -2757,6 +2762,474 @@ def create_placeholder_state(
             'human_review_required': False,
             'confidence': 0.65
         }
+    }
+
+
+def simulate_archaeological_exploration(
+    mission_id: str,
+    mission_name: str,
+    elapsed_seconds: float,
+    speed_multiplier: float,
+    started_at: Optional[datetime],
+    status: str
+) -> Dict[str, Any]:
+    """
+    Simulate Archaeological Exploration scenario.
+    
+    Non-destructive heritage site mapping with progressive chamber discovery,
+    fragile surface detection, environmental monitoring, and preservation-focused
+    decision making.
+    
+    Timeline:
+    - 0-60s: Entry preparation and relay deployment
+    - 60-120s: Micro scout enters first chamber
+    - 120-180s: First chamber rough mapping complete
+    - 180-240s: LiDAR drone enters for high-fidelity scan
+    - 240-300s: Possible artefact candidate detected
+    - 300-360s: Low-light imaging begins
+    - 360-420s: Narrow passage navigation challenge
+    - 420-480s: Second chamber discovered
+    - 480-540s: Environmental readings show humidity concern
+    - 540+: Progressive refinement and cataloguing
+    """
+    minutes_elapsed = elapsed_seconds / 60.0
+    
+    # Agent states evolve over time
+    agents = []
+    
+    # Static Relay/Environmental Node (deployed at entry, always present)
+    agents.append({
+        'agent_id': 'env-node-1',
+        'name': 'Entry Environmental Node',
+        'role': 'Relay and environmental monitoring',
+        'state': 'active',
+        'battery_percent': 100,  # Long-life battery
+        'signal_strength': 98,
+        'location_label': 'Entry Chamber',
+        'position': {'x': 50, 'y': 200, 'z': 0},
+        'sensors': ['Temperature', 'Humidity', 'O2', 'CO2', 'Dust Monitor'],
+        'nfc_recovery_available': False
+    })
+    
+    # Micro Scout Drone (enters at 60s)
+    if elapsed_seconds >= 60:
+        scout_battery = max(8, 100 - ((elapsed_seconds - 60) / 25))
+        scout_signal = max(45, 88 - ((elapsed_seconds - 60) / 15))
+        
+        if elapsed_seconds < 360:
+            scout_state = 'healthy'
+            scout_location = 'First Chamber'
+        elif elapsed_seconds < 450:
+            scout_state = 'degraded'
+            scout_location = 'Narrow Passage'
+        else:
+            scout_state = 'stranded'
+            scout_location = 'Narrow Passage (stranded)'
+        
+        agents.append({
+            'agent_id': 'micro-scout',
+            'name': 'Micro Scout Drone',
+            'role': 'Initial exploration',
+            'state': scout_state,
+            'battery_percent': int(scout_battery),
+            'signal_strength': int(scout_signal),
+            'location_label': scout_location,
+            'position': {
+                'x': 50 + ((elapsed_seconds - 60) / 8),
+                'y': 200,
+                'z': 1.2
+            },
+            'sensors': ['Low-light Camera', 'Obstacle Avoidance'],
+            'nfc_recovery_available': scout_state == 'stranded'
+        })
+    
+    # LiDAR Mapping Drone (enters at 180s for detailed scan)
+    if elapsed_seconds >= 180:
+        lidar_battery = max(12, 100 - ((elapsed_seconds - 180) / 22))
+        lidar_signal = max(55, 85 - ((elapsed_seconds - 180) / 18))
+        lidar_state = 'healthy' if elapsed_seconds < 540 else 'degraded'
+        
+        if elapsed_seconds < 300:
+            lidar_location = 'First Chamber'
+        elif elapsed_seconds < 480:
+            lidar_location = 'Transition Passage'
+        else:
+            lidar_location = 'Second Chamber'
+        
+        agents.append({
+            'agent_id': 'lidar-mapper',
+            'name': 'LiDAR Mapping Drone',
+            'role': 'High-fidelity 3D reconstruction',
+            'state': lidar_state,
+            'battery_percent': int(lidar_battery),
+            'signal_strength': int(lidar_signal),
+            'location_label': lidar_location,
+            'position': {
+                'x': 50 + ((elapsed_seconds - 180) / 10),
+                'y': 200,
+                'z': 2
+            },
+            'sensors': ['LiDAR', 'RGB Camera', 'Depth Sensor'],
+            'nfc_recovery_available': False
+        })
+    
+    # Low-Light Imaging Drone (enters at 300s for documentation)
+    if elapsed_seconds >= 300:
+        imaging_battery = max(15, 100 - ((elapsed_seconds - 300) / 20))
+        imaging_signal = max(60, 82 - ((elapsed_seconds - 300) / 16))
+        imaging_state = 'healthy'
+        
+        if elapsed_seconds < 420:
+            imaging_location = 'First Chamber'
+        else:
+            imaging_location = 'Second Chamber'
+        
+        agents.append({
+            'agent_id': 'imaging-drone',
+            'name': 'Low-Light Imaging Drone',
+            'role': 'Visual documentation',
+            'state': imaging_state,
+            'battery_percent': int(imaging_battery),
+            'signal_strength': int(imaging_signal),
+            'location_label': imaging_location,
+            'position': {
+                'x': 50 + ((elapsed_seconds - 300) / 9),
+                'y': 200,
+                'z': 1.8
+            },
+            'sensors': ['Low-light Camera', 'Infrared', 'Night Vision'],
+            'nfc_recovery_available': False
+        })
+    
+    # Network state - rock/soil attenuation increases over time
+    if elapsed_seconds < 180:
+        mesh_health = max(75, 95 - (elapsed_seconds / 12))
+        packet_loss = min(8, elapsed_seconds / 30)
+    elif elapsed_seconds < 420:
+        mesh_health = max(60, 82 - ((elapsed_seconds - 180) / 15))
+        packet_loss = min(15, 5 + ((elapsed_seconds - 180) / 25))
+    else:
+        mesh_health = max(50, 68 - ((elapsed_seconds - 420) / 20))
+        packet_loss = min(22, 12 + ((elapsed_seconds - 420) / 30))
+    
+    relay_chain = ['env-node-1']
+    if elapsed_seconds >= 180:
+        relay_chain.append('lidar-mapper')
+    if elapsed_seconds >= 60 and elapsed_seconds < 450:
+        relay_chain.append('micro-scout')
+    
+    network = {
+        'base_signal_strength': int(max(50, 94 - (elapsed_seconds / 15))),
+        'mesh_health': int(mesh_health),
+        'relay_chain': relay_chain,
+        'packet_loss_percent': int(packet_loss)
+    }
+    
+    # Progressive chamber map revelation
+    coverage = min(85, (elapsed_seconds / 8))
+    confidence = max(0.68, 0.92 - (elapsed_seconds / 1500))
+    
+    discovered_chambers = []
+    if elapsed_seconds >= 90:
+        discovered_chambers.append('Entry Chamber')
+    if elapsed_seconds >= 180:
+        discovered_chambers.append('First Chamber')
+    if elapsed_seconds >= 300:
+        discovered_chambers.append('Transition Passage')
+    if elapsed_seconds >= 480:
+        discovered_chambers.append('Second Chamber')
+    
+    fragile_zones = []
+    if elapsed_seconds >= 240:
+        fragile_zones.append('First Chamber - East Wall (possible wall art)')
+    if elapsed_seconds >= 420:
+        fragile_zones.append('Transition Passage - Floor (unstable surface)')
+    if elapsed_seconds >= 540:
+        fragile_zones.append('Second Chamber - Ceiling (loose material)')
+    
+    map_data = {
+        'map_type': 'progressive-chamber-map',
+        'coverage_percent': int(coverage),
+        'confidence': round(confidence, 2),
+        'total_points': int(3500 + (elapsed_seconds * 18)),
+        'new_points_generated': 800,
+        'mapped_sectors': discovered_chambers,
+        'blocked_sectors': [],
+        'fragile_zones': fragile_zones,
+        'accessible_areas': [
+            {
+                'label': 'Entry Chamber',
+                'confidence': 0.95,
+                'risk': 'low'
+            }
+        ] + ([{
+            'label': 'First Chamber',
+            'confidence': 0.88,
+            'risk': 'low'
+        }] if elapsed_seconds >= 240 else []) + ([{
+            'label': 'Second Chamber',
+            'confidence': 0.72,
+            'risk': 'medium'
+        }] if elapsed_seconds >= 540 else [])
+    }
+    
+    # Environmental readings
+    environmental_readings = []
+    if elapsed_seconds >= 30:
+        environmental_readings.append({
+            'sensor_type': 'temperature',
+            'value': round(14.2 + (elapsed_seconds / 500), 1),
+            'unit': '°C',
+            'location': 'Entry Chamber',
+            'status': 'normal'
+        })
+        environmental_readings.append({
+            'sensor_type': 'humidity',
+            'value': min(85, int(62 + (elapsed_seconds / 15))),
+            'unit': '%',
+            'location': 'Entry Chamber',
+            'status': 'watch' if elapsed_seconds > 480 else 'normal'
+        })
+        environmental_readings.append({
+            'sensor_type': 'oxygen',
+            'value': round(20.8 - (elapsed_seconds / 2000), 1),
+            'unit': '%',
+            'location': 'Entry Chamber',
+            'status': 'normal'
+        })
+        environmental_readings.append({
+            'sensor_type': 'carbon_dioxide',
+            'value': min(800, int(420 + (elapsed_seconds / 3))),
+            'unit': 'ppm',
+            'location': 'Entry Chamber',
+            'status': 'normal'
+        })
+    
+    # Artefact candidate markers (review only)
+    artefact_candidates = []
+    if elapsed_seconds >= 240:
+        artefact_candidates.append({
+            'detected_at': '04:00',
+            'location': 'First Chamber, East Wall',
+            'type': 'possible wall marking or art',
+            'confidence': 0.62,
+            'human_review_required': True,
+            'status': 'review only - not definitive'
+        })
+    if elapsed_seconds >= 420:
+        artefact_candidates.append({
+            'detected_at': '07:00',
+            'location': 'Transition Passage, Floor',
+            'type': 'possible ceramic fragment',
+            'confidence': 0.45,
+            'human_review_required': True,
+            'status': 'review only - requires expert verification'
+        })
+    
+    # Image catalogue
+    captured_images = []
+    if elapsed_seconds >= 120:
+        captured_images.append({
+            'image_id': 'img-001',
+            'captured_at': '02:00',
+            'location': 'First Chamber - Overview',
+            'type': 'low-light',
+            'quality': 'good'
+        })
+    if elapsed_seconds >= 300:
+        captured_images.append({
+            'image_id': 'img-002',
+            'captured_at': '05:00',
+            'location': 'First Chamber - East Wall detail',
+            'type': 'infrared',
+            'quality': 'excellent'
+        })
+    if elapsed_seconds >= 480:
+        captured_images.append({
+            'image_id': 'img-003',
+            'captured_at': '08:00',
+            'location': 'Second Chamber - Entry view',
+            'type': 'low-light',
+            'quality': 'fair'
+        })
+    
+    sensors = {
+        'artefact_candidates': artefact_candidates,
+        'environmental_readings': environmental_readings,
+        'captured_images': captured_images,
+        'thermal_anomalies': [],
+        'audio_events': [],
+        'device_signals': []
+    }
+    
+    # Timeline events
+    events = []
+    if elapsed_seconds > 5:
+        events.append({
+            'type': 'mission-start',
+            'time': '00:00',
+            'title': 'Archaeological Exploration mission started',
+            'description': 'Non-destructive heritage site mapping initiated',
+            'agent': None
+        })
+    if elapsed_seconds > 30:
+        events.append({
+            'type': 'agent-deployed',
+            'time': '00:30',
+            'title': 'Entry Environmental Node deployed',
+            'description': 'Relay and environmental monitoring active',
+            'agent': 'env-node-1'
+        })
+    if elapsed_seconds > 60:
+        events.append({
+            'type': 'agent-deployed',
+            'time': '01:00',
+            'title': 'Micro Scout Drone entered first chamber',
+            'description': 'Initial low-speed exploration underway',
+            'agent': 'micro-scout'
+        })
+    if elapsed_seconds > 120:
+        events.append({
+            'type': 'mapping-progress',
+            'time': '02:00',
+            'title': 'First chamber rough outline complete',
+            'description': 'Initial chamber geometry mapped, confidence 65%',
+            'agent': 'micro-scout'
+        })
+    if elapsed_seconds > 180:
+        events.append({
+            'type': 'agent-deployed',
+            'time': '03:00',
+            'title': 'LiDAR Mapping Drone entered',
+            'description': 'High-fidelity 3D reconstruction beginning',
+            'agent': 'lidar-mapper'
+        })
+    if elapsed_seconds > 240:
+        events.append({
+            'type': 'detection',
+            'time': '04:00',
+            'title': 'Possible artefact candidate detected',
+            'description': 'East wall marking flagged for expert review (not definitive)',
+            'agent': 'imaging-drone',
+            'severity': 'info'
+        })
+    if elapsed_seconds > 300:
+        events.append({
+            'type': 'agent-deployed',
+            'time': '05:00',
+            'title': 'Low-Light Imaging Drone active',
+            'description': 'Visual documentation and photography underway',
+            'agent': 'imaging-drone'
+        })
+    if elapsed_seconds > 360:
+        events.append({
+            'type': 'warning',
+            'time': '06:00',
+            'title': 'Narrow passage navigation challenge',
+            'description': 'Micro scout experiencing confined space difficulty',
+            'agent': 'micro-scout',
+            'severity': 'moderate'
+        })
+    if elapsed_seconds > 420:
+        events.append({
+            'type': 'discovery',
+            'time': '07:00',
+            'title': 'Second chamber discovered',
+            'description': 'New chamber accessed via narrow passage',
+            'agent': 'lidar-mapper'
+        })
+    if elapsed_seconds > 450:
+        events.append({
+            'type': 'state-change',
+            'time': '07:30',
+            'title': 'Micro scout stranded in narrow passage',
+            'description': 'Agent left in place with NFC recovery available',
+            'agent': 'micro-scout',
+            'severity': 'info'
+        })
+    if elapsed_seconds > 480:
+        events.append({
+            'type': 'warning',
+            'time': '08:00',
+            'title': 'Humidity levels rising',
+            'description': 'Environmental monitoring shows moisture increase to 78%',
+            'agent': 'env-node-1',
+            'severity': 'moderate'
+        })
+    
+    # AI analysis - preservation focused
+    if elapsed_seconds < 180:
+        ai_summary = 'Initial chamber entry in progress. No artefact candidates yet. Environmental conditions normal.'
+        priority_findings = []
+        human_review = False
+        ai_confidence = 0.72
+    elif elapsed_seconds < 300:
+        ai_summary = 'First chamber mapping shows promising features. Possible wall markings detected on east surface. Recommend expert archaeological review before further entry.'
+        priority_findings = [
+            'Possible wall marking at east wall (confidence 62%, review only)'
+        ]
+        human_review = True
+        ai_confidence = 0.68
+    else:
+        ai_summary = 'Multiple chambers documented with progressive refinement. Artefact candidates flagged for expert review (not definitive identification). Humidity increasing in deeper sections - monitor before human entry. Micro scout stranded but NFC-readable for data recovery.'
+        priority_findings = [
+            'Possible wall marking at First Chamber east wall (confidence 62%)',
+            'Possible ceramic fragment at Transition Passage floor (confidence 45%)',
+            'Humidity rising to 78% - monitor environmental conditions',
+            'Fragile zones identified - restricted access recommended'
+        ]
+        human_review = True
+        ai_confidence = 0.75
+    
+    ai_analysis = {
+        'summary': ai_summary,
+        'priority_findings': priority_findings,
+        'human_review_required': human_review,
+        'confidence': ai_confidence
+    }
+    
+    # Media feeds placeholder
+    media_feeds = []
+    if elapsed_seconds >= 120:
+        media_feeds.append({
+            'feed_id': 'scout-cam-1',
+            'agent_id': 'micro-scout',
+            'sensor_type': 'low_light',
+            'label': 'Micro Scout - Low Light',
+            'status': 'active' if elapsed_seconds < 450 else 'stranded',
+            'last_frame_time': format_mission_time(elapsed_seconds - 5),
+            'quality': 'fair'
+        })
+    if elapsed_seconds >= 300:
+        media_feeds.append({
+            'feed_id': 'imaging-cam-1',
+            'agent_id': 'imaging-drone',
+            'sensor_type': 'low_light',
+            'label': 'Imaging Drone - Low Light',
+            'status': 'active',
+            'last_frame_time': format_mission_time(elapsed_seconds - 2),
+            'quality': 'excellent'
+        })
+    
+    return {
+        'mission_id': mission_id,
+        'mission_name': mission_name,
+        'use_case_slug': 'archaeological-exploration',
+        'elapsed_seconds': elapsed_seconds,
+        'speed_multiplier': speed_multiplier,
+        'started_at': started_at.isoformat() if started_at else None,
+        'status': status,
+        'clock': {
+            'elapsed_time': format_mission_time(elapsed_seconds),
+            'speed': f'{speed_multiplier}x'
+        },
+        'agents': agents,
+        'network': network,
+        'map': map_data,
+        'sensors': sensors,
+        'events': events,
+        'ai_analysis': ai_analysis,
+        'media_feeds': media_feeds
     }
 
 

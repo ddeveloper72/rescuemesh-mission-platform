@@ -1,0 +1,386 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Interoperability" description="Structured, interoperable mission data architecture inspired by healthcare and IoT standards">
+  <div class="py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-5xl mx-auto">
+      <h1 class="text-4xl font-bold mb-8">Interoperability Architecture</h1>
+      
+      <!-- Navigation to subpages -->
+      <div class="mb-8 bg-slate-800 rounded-lg p-4 border border-slate-700">
+        <div class="flex flex-wrap gap-3">
+          <a href="/architecture" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors">
+            Overview
+          </a>
+          <a href="/architecture/interoperability" class="px-4 py-2 bg-rescue-600 rounded text-sm font-semibold">
+            Interoperability
+          </a>
+        </div>
+      </div>
+      
+      <section class="mb-12">
+        <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Structured Mission Data</h2>
+        <p class="text-slate-300 mb-4">
+          RescueMesh uses <strong>structured mission data</strong> rather than unstructured dashboard-only data. 
+          This approach is inspired by standards-based thinking from healthcare interoperability, where data must 
+          be exchangeable, validated, versioned, and explainable across organizational boundaries.
+        </p>
+        <p class="text-slate-300 mb-4">
+          The project draws architectural inspiration from healthcare interoperability standards such as HL7 FHIR, 
+          CDA, and MyHealth@EU, but <strong>RescueMesh is not a healthcare system</strong>. Instead, it applies the 
+          principles of structured data, API architecture, and semantic interoperability to mission planning and 
+          autonomous agent coordination.
+        </p>
+        <p class="text-slate-300 mb-4">
+          Future emergency-service handover scenarios could map selected findings into healthcare-style interoperability 
+          patterns, enabling safer data exchange when missions transition from search and rescue to medical evacuation 
+          or patient care.
+        </p>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Standards Alignment</h2>
+        <div class="grid md:grid-cols-2 gap-6 mb-6">
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h3 class="text-xl font-semibold mb-3">IoT & Geospatial Standards</h3>
+            <p class="text-slate-300 mb-3">
+              Sensor observations are better aligned with IoT and geospatial standards:
+            </p>
+            <ul class="space-y-2 text-slate-300">
+              <li>• <strong>OGC SensorThings API</strong> - Standardized sensor data model</li>
+              <li>• <strong>W3C SOSA/SSN</strong> - Semantic Sensor Network ontology</li>
+              <li>• <strong>GeoJSON / WKT</strong> - Spatial geometry representation</li>
+              <li>• <strong>ISO 19115</strong> - Geospatial metadata (future)</li>
+            </ul>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h3 class="text-xl font-semibold mb-3">AI & Provenance</h3>
+            <p class="text-slate-300 mb-3">
+              AI recommendations include structured metadata:
+            </p>
+            <ul class="space-y-2 text-slate-300">
+              <li>• <strong>Confidence scores</strong> - Quantified recommendation certainty</li>
+              <li>• <strong>Provenance</strong> - Data lineage and processing chain</li>
+              <li>• <strong>Human review flags</strong> - Mandatory operator oversight</li>
+              <li>• <strong>W3C PROV</strong> - Provenance ontology concepts (future)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Conceptual Resource Types</h2>
+        <p class="text-slate-300 mb-6">
+          RescueMesh models mission data using structured resource types inspired by FHIR resource patterns. 
+          These types ensure consistent data representation and enable future API standardization.
+        </p>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">Mission</h4>
+            <p class="text-sm text-slate-300">Complete operational scenario with objective, timeline, and agents</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">Agent</h4>
+            <p class="text-sm text-slate-300">Autonomous or semi-autonomous entity: drone, robot, relay, sensor</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">Device</h4>
+            <p class="text-sm text-slate-300">Physical hardware: motors, cameras, radios, batteries</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">Sensor</h4>
+            <p class="text-sm text-slate-300">Measurement instrument: LiDAR, thermal, gas detector</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">Observation</h4>
+            <p class="text-sm text-slate-300">Single sensor reading with timestamp, value, unit, confidence</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">EnvironmentalReading</h4>
+            <p class="text-sm text-slate-300">Temperature, humidity, O₂, CO₂, pressure measurements</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">MediaFrame</h4>
+            <p class="text-sm text-slate-300">Image, video, audio capture with metadata and provenance</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">MapArtifact</h4>
+            <p class="text-sm text-slate-300">3D point cloud, terrain mesh, route map, coverage grid</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">TerrainSector</h4>
+            <p class="text-sm text-slate-300">Spatial zone: chamber, corridor, void, hazard area</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">RelayLink</h4>
+            <p class="text-sm text-slate-300">Communication link between agents: signal strength, latency, bandwidth</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">CommunicationMode</h4>
+            <p class="text-sm text-slate-300">Mesh relay, static node, tethered, store-and-forward</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">Hazard</h4>
+            <p class="text-sm text-slate-300">Environmental danger: unstable structure, toxic gas, flood risk</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">Detection</h4>
+            <p class="text-sm text-slate-300">Possible survivor signature: thermal, audio, WiFi/Bluetooth</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">Alert</h4>
+            <p class="text-sm text-slate-300">Time-critical notification requiring operator attention</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">Recommendation</h4>
+            <p class="text-sm text-slate-300">AI-generated suggestion with confidence and human-review flag</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">MissionEvent</h4>
+            <p class="text-sm text-slate-300">Timestamped state change: detection, failure, decision</p>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h4 class="font-semibold text-rescue-400 mb-2">Provenance</h4>
+            <p class="text-sm text-slate-300">Data lineage: who, what, when, how, why</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-2xl font-semibold mb-4 text-rescue-400">MeshCore vs MeshStatic</h2>
+        <p class="text-slate-300 mb-6">
+          RescueMesh distinguishes between active mesh networking and static deployed assets:
+        </p>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h3 class="text-xl font-semibold mb-3 text-rescue-400">MeshCore</h3>
+            <p class="text-slate-300 mb-3">
+              Active live mesh communication systems:
+            </p>
+            <ul class="space-y-2 text-slate-300 text-sm">
+              <li>• Relay routing and packet forwarding</li>
+              <li>• Packet loss measurement</li>
+              <li>• Network health monitoring</li>
+              <li>• Link stability assessment</li>
+              <li>• Dynamic relay decisions</li>
+              <li>• Multi-hop path optimization</li>
+              <li>• Mesh topology visualization</li>
+            </ul>
+          </div>
+          <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+            <h3 class="text-xl font-semibold mb-3 text-rescue-400">MeshStatic</h3>
+            <p class="text-slate-300 mb-3">
+              Static or semi-static deployed assets:
+            </p>
+            <ul class="space-y-2 text-slate-300 text-sm">
+              <li>• Landed relay drones</li>
+              <li>• Static sensor nodes</li>
+              <li>• NFC-readable black boxes</li>
+              <li>• Abandoned hardware markers</li>
+              <li>• Last-known-good device snapshots</li>
+              <li>• Recoverable mission evidence</li>
+              <li>• Post-mission asset inventory</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Technology Packs</h2>
+        <p class="text-slate-300 mb-6">
+          Standardized sensor and capability packages for mission planning:
+        </p>
+
+        <!-- Low-Light / Infrared Pack -->
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700 mb-6">
+          <h3 class="text-xl font-semibold mb-3 text-rescue-400">1. Low-Light / Infrared Pack</h3>
+          <p class="text-slate-300 mb-3">
+            Visual sensing in darkness or low-visibility environments:
+          </p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <h4 class="font-semibold text-slate-200 mb-2">Capabilities</h4>
+              <ul class="space-y-1 text-sm text-slate-300">
+                <li>• Low-light RGB imaging</li>
+                <li>• Infrared illumination</li>
+                <li>• Thermal imaging</li>
+                <li>• Image intensification (placeholder)</li>
+                <li>• Night-vision mode</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-semibold text-slate-200 mb-2">Confidence Penalties</h4>
+              <ul class="space-y-1 text-sm text-slate-300">
+                <li>• Dust degradation</li>
+                <li>• Smoke obscuration</li>
+                <li>• Moisture interference</li>
+                <li>• Reflective surface artifacts</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hazardous Atmosphere Pack -->
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700 mb-6">
+          <h3 class="text-xl font-semibold mb-3 text-rescue-400">2. Hazardous Atmosphere Pack</h3>
+          <p class="text-slate-300 mb-3">
+            Environmental monitoring for dangerous or confined spaces:
+          </p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <h4 class="font-semibold text-slate-200 mb-2">Sensors</h4>
+              <ul class="space-y-1 text-sm text-slate-300">
+                <li>• Oxygen (O₂) measurement</li>
+                <li>• Carbon dioxide (CO₂) detection</li>
+                <li>• Hydrogen (H₂) detection</li>
+                <li>• Methane (CH₄) detection</li>
+                <li>• Temperature monitoring</li>
+                <li>• Pressure sensing</li>
+                <li>• Humidity measurement</li>
+                <li>• Contamination (placeholder)</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-semibold text-slate-200 mb-2">Safety Thresholds</h4>
+              <ul class="space-y-1 text-sm text-slate-300">
+                <li>• Normal / Watch / Warning / Critical</li>
+                <li>• Human-entry safety assessment</li>
+                <li>• Time-based exposure limits</li>
+                <li>• PPE recommendations</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Long-Range Asset Identification Pack -->
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700 mb-6">
+          <h3 class="text-xl font-semibold mb-3 text-rescue-400">3. Long-Range Asset Identification Pack</h3>
+          <p class="text-slate-300 mb-4">
+            <strong>Important:</strong> Long-distance toll-tag-like technology should be modeled as 
+            <strong>UHF RFID / long-range RFID</strong>, not NFC. This technology operates at distances 
+            of several meters to tens of meters, unlike NFC which is limited to centimeters.
+          </p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <h4 class="font-semibold text-slate-200 mb-2">Use Cases</h4>
+              <ul class="space-y-1 text-sm text-slate-300">
+                <li>• Identifying tagged RescueMesh assets</li>
+                <li>• Reading deployed relay nodes</li>
+                <li>• Inventorying static sensors</li>
+                <li>• Post-mission recovery operations</li>
+                <li>• Asset health check without physical contact</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-semibold text-slate-200 mb-2">Not For</h4>
+              <ul class="space-y-1 text-sm text-slate-300">
+                <li>• Primary survivor location (use WiFi/Bluetooth/audio/thermal)</li>
+                <li>• Real-time high-bandwidth data transfer</li>
+                <li>• Secure cryptographic operations</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- NFC / Black-Box Recovery Pack -->
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700 mb-6">
+          <h3 class="text-xl font-semibold mb-3 text-rescue-400">4. NFC / Black-Box Recovery Pack</h3>
+          <p class="text-slate-300 mb-3">
+            Short-range near-field communication for recovery and service operations:
+          </p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <h4 class="font-semibold text-slate-200 mb-2">Capabilities</h4>
+              <ul class="space-y-1 text-sm text-slate-300">
+                <li>• Short-range recovery tap (&lt; 10 cm)</li>
+                <li>• Service interface access</li>
+                <li>• Last-state snapshot readout</li>
+                <li>• Powered-down black-box access</li>
+                <li>• External power connection detection</li>
+                <li>• Limited resurrection beacon mode</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-semibold text-slate-200 mb-2">Use Cases</h4>
+              <ul class="space-y-1 text-sm text-slate-300">
+                <li>• Failed asset identification</li>
+                <li>• Mission log retrieval</li>
+                <li>• Diagnostic information access</li>
+                <li>• Recovery technician workflow</li>
+                <li>• Post-mission evidence collection</li>
+              </ul>
+            </div>
+          </div>
+          <p class="text-xs text-slate-400 mt-3">
+            Note: NFC cannot meaningfully recharge a drone for flight. Model meaningful recharge separately 
+            using docking, battery swap, wired connector, or dedicated wireless power hardware.
+          </p>
+        </div>
+
+        <!-- Authorised Device Assistance Pack -->
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700 mb-6">
+          <h3 class="text-xl font-semibold mb-3 text-rescue-400">5. Authorised Device Assistance Pack</h3>
+          <p class="text-slate-300 mb-4">
+            <strong>Privacy-safe, consent-based device interaction</strong> for emergency scenarios. 
+            This pack must respect law, policy, and individual rights.
+          </p>
+          <div class="grid md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <h4 class="font-semibold text-slate-200 mb-2">Permitted (with consent)</h4>
+              <ul class="space-y-1 text-sm text-slate-300">
+                <li>• Consent-based device enrollment</li>
+                <li>• Emergency-authorised "play sound" on owner device</li>
+                <li>• Silent beacon from enrolled devices only</li>
+                <li>• Passive WiFi/Bluetooth detection (non-tracking)</li>
+                <li>• Optional rescue-app integration</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-semibold text-slate-200 mb-2">Not Permitted</h4>
+              <ul class="space-y-1 text-sm text-slate-300">
+                <li>• Unauthorised remote control of phones</li>
+                <li>• Tracking without consent or legal authority</li>
+                <li>• Access to personal data without consent</li>
+                <li>• Covert surveillance</li>
+                <li>• Bypassing device security without lawful authority</li>
+              </ul>
+            </div>
+          </div>
+          <div class="bg-amber-900 bg-opacity-30 border border-amber-600 rounded p-4">
+            <p class="text-sm text-amber-200">
+              <strong>⚠️ Legal and Ethical Requirements:</strong><br>
+              Device assistance features must comply with privacy law, emergency service regulations, 
+              and ethical guidelines. "Play sound" functionality should only activate on:
+            </p>
+            <ul class="text-sm text-amber-200 mt-2 space-y-1 ml-4">
+              <li>• Devices enrolled by the owner in a rescue-assistance app, OR</li>
+              <li>• Emergency scenarios where lawful authority exists and life safety justifies the action</li>
+            </ul>
+            <p class="text-sm text-amber-200 mt-2">
+              Passive detection (WiFi/Bluetooth MAC address observation) must respect local tracking and 
+              surveillance laws.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-2xl font-semibold mb-4 text-rescue-400">Implementation Status</h2>
+        <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+          <p class="text-slate-300 mb-3">
+            The interoperability architecture is currently <strong>conceptual</strong>. Implementation priorities:
+          </p>
+          <ol class="space-y-2 text-slate-300">
+            <li><strong>1. Resource Type Schemas:</strong> Define JSON schemas for each resource type</li>
+            <li><strong>2. API Versioning:</strong> Implement /api/v1/ with structured endpoints</li>
+            <li><strong>3. Validation:</strong> Add schema validation to Django serializers</li>
+            <li><strong>4. Provenance Tracking:</strong> Add data lineage metadata to observations</li>
+            <li><strong>5. Standards Mapping:</strong> Document alignment with OGC SensorThings and W3C SOSA</li>
+            <li><strong>6. Export Formats:</strong> Enable mission data export in standardized formats</li>
+          </ol>
+        </div>
+      </section>
+    </div>
+  </div>
+</BaseLayout>

@@ -143,8 +143,67 @@ export function getIndustrialInspectionMapConfig(): MapConfig {
   };
 }
 
-/**
- * Collapsed Building Map Configuration
+/** * Archaeological Exploration Map Configuration
+ * Progressive chamber discovery with fragile zone warnings
+ */
+export function getArchaeologicalExplorationMapConfig(): MapConfig {
+  const sectors: TacticalSector[] = [
+    { id: 'entry-chamber', label: 'Entry Chamber', x: 50, y: 180, width: 120, height: 100, type: 'accessible', revealAt: 60 },
+    { id: 'first-chamber', label: 'First Chamber', x: 190, y: 170, width: 160, height: 120, type: 'accessible', revealAt: 180 },
+    { id: 'transition-passage', label: 'Transition Passage', x: 370, y: 210, width: 140, height: 50, type: 'hazard', revealAt: 300 },
+    { id: 'narrow-passage', label: 'Narrow Passage', x: 530, y: 220, width: 80, height: 30, type: 'hazard', revealAt: 360 },
+    { id: 'second-chamber', label: 'Second Chamber', x: 630, y: 160, width: 140, height: 130, type: 'accessible', revealAt: 480 },
+  ];
+
+  const routes: TacticalAgentRoute[] = [
+    {
+      agentId: 'micro-scout',  // Micro Scout Drone
+      startsAt: 60,
+      route: [
+        { time: 60, x: 110, y: 230, sectorId: 'entry-chamber', label: 'Initial entry' },
+        { time: 120, x: 270, y: 230, sectorId: 'first-chamber', label: 'First chamber rough scan' },
+        { time: 240, x: 440, y: 235, sectorId: 'transition-passage', label: 'Transition passage' },
+        { time: 360, x: 570, y: 235, sectorId: 'narrow-passage', label: 'Narrow passage navigation' },
+        { time: 450, x: 570, y: 235, sectorId: 'narrow-passage', label: 'Stranded - NFC available' },
+      ]
+    },
+    {
+      agentId: 'lidar-mapper',  // LiDAR Mapping Drone
+      startsAt: 180,
+      route: [
+        { time: 180, x: 110, y: 230, sectorId: 'entry-chamber', label: 'Deploy for detailed scan' },
+        { time: 240, x: 270, y: 230, sectorId: 'first-chamber', label: 'High-fidelity first chamber' },
+        { time: 360, x: 440, y: 235, sectorId: 'transition-passage', label: 'Passage mapping' },
+        { time: 480, x: 700, y: 225, sectorId: 'second-chamber', label: 'Second chamber discovery' },
+        { time: 600, x: 700, y: 225, sectorId: 'second-chamber', label: 'Detailed reconstruction' },
+      ]
+    },
+    {
+      agentId: 'imaging-drone',  // Low-Light Imaging Drone
+      startsAt: 300,
+      route: [
+        { time: 300, x: 110, y: 230, sectorId: 'entry-chamber', label: 'Deploy for documentation' },
+        { time: 360, x: 270, y: 230, sectorId: 'first-chamber', label: 'Visual documentation' },
+        { time: 480, x: 700, y: 225, sectorId: 'second-chamber', label: 'Second chamber photography' },
+      ]
+    },
+  ];
+
+  const detectionMarkers: DetectionMarker[] = [
+    { id: 'artefact-wall', type: 'artefact', x: 300, y: 180, appearsAt: 240, label: 'Possible wall marking', icon: 'A' },
+    { id: 'artefact-floor', type: 'artefact', x: 450, y: 250, appearsAt: 420, label: 'Possible ceramic fragment', icon: 'A' },
+  ];
+
+  return {
+    width: 800,
+    height: 450,
+    sectors,
+    routes,
+    detectionMarkers,
+  };
+}
+
+/** * Collapsed Building Map Configuration
  */
 export function getCollapsedBuildingMapConfig(): MapConfig {
   const sectors: TacticalSector[] = [
@@ -340,6 +399,8 @@ export function getMapConfig(useCase: string): MapConfig {
       return getCaveRescueMapConfig();
     case 'flooded-structure':
       return getFloodedStructureMapConfig();
+    case 'archaeological-exploration':
+      return getArchaeologicalExplorationMapConfig();
     default:
       return { width: 800, height: 450, sectors: [] };
   }

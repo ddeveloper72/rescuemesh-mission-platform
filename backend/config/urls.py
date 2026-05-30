@@ -25,5 +25,6 @@ urlpatterns = [
         path('outputs/', include('apps.mapping.urls')),
         path('prompts/', include('apps.ai_prompts.urls')),
         path('telemetry/', include('apps.telemetry.urls')),
+        path('', include('apps.media_generation.urls')),
     ])),
 ]

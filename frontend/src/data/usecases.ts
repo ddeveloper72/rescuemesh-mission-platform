@@ -375,6 +375,113 @@ export const useCaseProfiles: UseCaseProfile[] = [
         description: 'Prioritised defect list, recommended human review points, and follow-up inspection actions'
       }
     ]
+  },
+  {
+    slug: 'archaeological-exploration',
+    title: 'Archaeological Exploration',
+    priority: 'Heritage Preservation / Non-Destructive Survey',
+    missionObjective: 'Use autonomous or semi-autonomous agents to progressively map fragile or inaccessible heritage environments while minimising human entry and physical disturbance.',
+    terrainCharacteristics: {
+      type: 'Fragile underground chambers, cave systems, buried passageways, wells, tunnels, or ruins',
+      gps: 'Fully denied in underground or enclosed heritage structures',
+      communications: 'Radio attenuation through rock, soil, and ancient masonry',
+      lighting: 'Complete darkness except agent-mounted illumination',
+      hazards: ['Fragile artefacts', 'Unstable surfaces', 'Dust', 'Moisture', 'Narrow passages', 'Preservation-sensitive wall surfaces', 'Potential structural instability']
+    },
+    recommendedAgents: [
+      {
+        name: 'Micro Scout Drone',
+        role: 'Compact exploration and obstacle avoidance',
+        description: 'Small form-factor drone for initial entry and narrow passage navigation',
+        capabilities: ['Compact frame', 'Low-speed navigation', 'Obstacle avoidance', 'Low-light camera', 'NFC black-box recovery module']
+      },
+      {
+        name: 'LiDAR Mapping Drone',
+        role: 'High-fidelity 3D reconstruction',
+        description: 'Primary mapping agent for detailed chamber reconstruction',
+        capabilities: ['LiDAR/depth mapping', 'RGB still camera', 'High-confidence reconstruction', 'Shared map contribution', 'Multiple-pass refinement']
+      },
+      {
+        name: 'Low-Light Imaging Drone',
+        role: 'Visual documentation and artefact photography',
+        description: 'Specialised imaging agent for low-light visual documentation',
+        capabilities: ['Low-light camera', 'Infrared/night vision sensor pack', 'Still-image capture', 'Visual documentation mode', 'Minimal air disturbance']
+      },
+      {
+        name: 'Static Relay / Environmental Node',
+        role: 'Communications and environmental monitoring',
+        description: 'Static node for mesh relay and preservation-critical environmental monitoring',
+        capabilities: ['Mesh relay', 'Temperature sensor', 'Humidity sensor', 'O₂ sensor', 'CO₂ sensor', 'Dust/particulate monitoring placeholder', 'Long-life battery']
+      }
+    ],
+    expectedFailures: [
+      {
+        name: 'Dust Occlusion',
+        description: 'Ancient dust particles may degrade LiDAR and camera quality'
+      },
+      {
+        name: 'Low-Light Image Degradation',
+        description: 'Insufficient lighting or sensor noise in completely dark environments'
+      },
+      {
+        name: 'Narrow-Passage Navigation Risk',
+        description: 'Confined spaces may limit agent mobility or cause temporary loss of control'
+      },
+      {
+        name: 'Fragile Surface Proximity Warning',
+        description: 'Agent may trigger alerts when approaching preservation-sensitive surfaces or artefacts'
+      },
+      {
+        name: 'Radio Attenuation',
+        description: 'Signal degradation through rock, soil, and ancient masonry structures'
+      },
+      {
+        name: 'Humidity Sensor Degradation',
+        description: 'High humidity in underground chambers may affect sensor accuracy'
+      },
+      {
+        name: 'Agent Stranded',
+        description: 'Agent may become stranded in narrow passage and remain NFC-readable for data recovery'
+      }
+    ],
+    expectedOutputs: [
+      {
+        name: 'Progressive Chamber Map',
+        description: 'Gradually revealed 3D map showing chambers, passages, and architectural features'
+      },
+      {
+        name: '3D Terrain Reconstruction',
+        description: 'High-fidelity point cloud or mesh for heritage documentation and analysis'
+      },
+      {
+        name: 'Image Catalogue',
+        description: 'Returned media including low-light photographs and visual documentation'
+      },
+      {
+        name: 'Fragile-Zone Markers',
+        description: 'Highlighted areas requiring special caution or restricted access'
+      },
+      {
+        name: 'Artefact Candidate Markers',
+        description: 'Possible artefacts flagged for human review (review only, not definitive identification)'
+      },
+      {
+        name: 'Environmental Safety Readings',
+        description: 'Temperature, humidity, O₂, CO₂, and dust levels for human safety assessment'
+      },
+      {
+        name: 'Route Confidence Map',
+        description: 'Confidence-scored routes showing safe paths and areas requiring further survey'
+      },
+      {
+        name: 'Relay Chain Map',
+        description: 'Communication network topology and coverage map'
+      },
+      {
+        name: 'Human Review Recommendations',
+        description: 'AI-flagged areas requiring expert archaeological or conservation review'
+      }
+    ]
   }
 ];
 
