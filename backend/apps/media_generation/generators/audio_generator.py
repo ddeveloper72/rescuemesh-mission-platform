@@ -222,7 +222,7 @@ def generate_voice_like_audio_tts(media_id, message_type='distress'):
         engine = pyttsx3.init()
         
         # Make the voice clearly artificial/robotic
-        engine.setProperty('rate', 140)  # Slightly slower, more deliberate
+        engine.setProperty('rate', 56)  # Very slow, deliberate (60% reduction from 140)
         engine.setProperty('volume', 1.0)
         
         # Try to select a robotic or distinct voice
