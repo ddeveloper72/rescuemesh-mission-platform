@@ -367,6 +367,18 @@ Demo data is inspired by:
    - **Liberty Ship Specifications** - Historical WWII cargo vessel class (Public domain)
      - https://en.wikipedia.org/wiki/Liberty_ship
 
+5. **Industrial Facility Datasets** - For confined space and hazardous environment scenarios
+   - **Swiss Apartment Models** - 42,207 apartments with 242,257 rooms (Open access)
+     - https://zenodo.org/record/7070952
+   - **3D Semantic City Models** - Building and facility 3D models (Varies by dataset)
+     - https://github.com/OloOcki/awesome-citygml
+   - **Homeland Infrastructure Foundation-Level Data (HIFLD)** - Critical infrastructure (Public domain)
+     - https://hifld-geoplatform.opendata.arcgis.com/
+   - **BuildData - Canadian Construction Data API** - Building and construction data (API terms)
+     - https://builddata.ca/
+   - **OSHA Confined Space Standards** - Safety and access standards (Public domain)
+     - https://www.osha.gov/confined-spaces
+
 ### Running the Seed Command
 
 ```bash
@@ -406,6 +418,12 @@ The platform includes three demonstration digital twins:
    - 9 paths including wade, swim, dive, sealed passages
    - 9 waypoints for amphibious robot navigation
    - Inspired by Liberty ship general specifications (synthetic demo)
+
+4. **`industrial_facility_sample.json`** - Industrial processing facility
+   - 9 sectors (utility corridors, equipment rooms, pipe corridors, tank chamber, confined space, hazard zone)
+   - 9 paths with confined space entry procedures
+   - 9 waypoints for hazardous environment inspection
+   - Inspired by industrial spatial patterns and OSHA confined space standards (synthetic demo)
 
 ### Attribution and Sensitivity
 

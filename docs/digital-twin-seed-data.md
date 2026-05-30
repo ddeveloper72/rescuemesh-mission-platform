@@ -60,7 +60,7 @@ Discrete region within a terrain map (chamber, passage, junction, etc.).
 **Key Fields:**
 - `sector_id`: Identifier (e.g., "C1", "passage-alpha")
 - `label`: Human-readable name
-- `sector_type`: `chamber`, `passage`, `junction`, `entrance`, `shaft`, `sump`, `room`, `corridor`, `void`, `hazard`, `cargo_hold`, `engine_room`, `bridge`, `crew_quarters`, `bilge`, `hull_breach`
+- `sector_type`: `chamber`, `passage`, `junction`, `entrance`, `shaft`, `sump`, `room`, `corridor`, `void`, `hazard`, `cargo_hold`, `engine_room`, `bridge`, `crew_quarters`, `bilge`, `hull_breach`, `utility_corridor`, `equipment_room`, `pipe_corridor`, `tank_chamber`, `control_room`, `confined_space`
 - `x_m`, `y_m`, `z_m`: 3D position in meters
 - `width_m`, `height_m`, `depth_m`: Approximate dimensions
 - `elevation_m`: Elevation relative to reference
@@ -235,6 +235,65 @@ Modern naval and commercial vessel schematics are generally not publicly availab
 - `wade`: Shallow water passage
 - `sealed_passage`: Watertight door
 - `emergency_hatch`: Emergency access hatch
+
+### 5. Industrial Facility Datasets (Industrial Inspection Use Case)
+**For:** Confined space, hazardous environment, and industrial infrastructure inspection
+
+#### Swiss Apartment Models
+**URL:** https://zenodo.org/record/7070952  
+**License:** Open access  
+**Data Type:** 42,207 apartments with 242,257 rooms - detailed interior 3D data  
+**Coverage:** Swiss residential buildings with detailed room layouts
+
+**Suitable For:**
+- Interior space modeling
+- Confined space simulation
+- Room-to-room navigation patterns
+- Compartment structure
+
+#### 3D Semantic City Models
+**URL:** https://github.com/OloOcki/awesome-citygml  
+**License:** Varies by dataset (check individual entries)  
+**Data Type:** Collection of open 3D semantic city/region models in CityGML format  
+**Coverage:** Global city and building models
+
+**Suitable For:**
+- Industrial building exteriors
+- Facility layouts
+- Urban infrastructure
+
+#### Homeland Infrastructure Foundation-Level Data (HIFLD)
+**URL:** https://hifld-geoplatform.opendata.arcgis.com/  
+**License:** Public domain (US Government)  
+**Data Type:** Critical infrastructure datasets  
+**Coverage:** United States infrastructure
+
+**Suitable For:**
+- Industrial facility locations
+- Infrastructure mapping
+- Critical facility identification
+
+#### BuildData - Canadian Construction Data API
+**URL:** https://builddata.ca/  
+**License:** API terms apply  
+**Data Type:** Normalized construction/development data  
+**Coverage:** Canadian building and construction data
+
+**Suitable For:**
+- Building information
+- Industrial construction data
+- Facility specifications
+
+**Note on Industrial Facility Digital Twins:**
+Industrial facilities have restricted access due to safety, security, and intellectual property concerns. Proprietary BIM models, facility point clouds, and operational layouts are generally not publicly available. The industrial facility sample (`industrial_facility_sample.json`) uses a synthetic digital twin inspired by general industrial facility spatial patterns and confined space safety standards (OSHA 1910.146). This approach provides realistic confined space inspection scenarios without exposing operational facility details.
+
+**Industrial-Specific Sector Types:**
+- `utility_corridor`: Utility distribution corridor
+- `equipment_room`: Equipment/machinery room
+- `pipe_corridor`: Pipe/conduit corridor
+- `tank_chamber`: Storage tank compartment
+- `control_room`: Control/monitoring room
+- `confined_space`: Permit-required confined space
 
 ---
 

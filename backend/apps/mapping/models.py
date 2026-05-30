@@ -237,6 +237,13 @@ class TerrainSector(models.Model):
         ('crew_quarters', 'Crew Quarters'),
         ('bilge', 'Bilge'),
         ('hull_breach', 'Hull Breach'),
+        # Industrial facility sectors
+        ('utility_corridor', 'Utility Corridor'),
+        ('equipment_room', 'Equipment Room'),
+        ('pipe_corridor', 'Pipe Corridor'),
+        ('tank_chamber', 'Tank Chamber'),
+        ('control_room', 'Control Room'),
+        ('confined_space', 'Confined Space'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

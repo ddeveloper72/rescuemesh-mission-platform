@@ -1,0 +1,548 @@
+{
+  "site": {
+    "slug": "industrial-confined-space-demo",
+    "name": "Industrial Processing Facility - Confined Space Demo",
+    "site_type": "industrial",
+    "country": "Synthetic",
+    "description": "Synthetic digital twin of an industrial processing facility with confined spaces, hazardous atmospheres, and equipment compartments. Inspired by general industrial facility layouts and confined space safety standards. This demonstration shows autonomous inspection robot navigation through restricted access areas, gas monitoring, and hazard assessment scenarios.",
+    "source_name": "Industrial facility general layout patterns and confined space standards",
+    "source_url": "https://zenodo.org/record/7070952",
+    "source_license": "Open access (inspired by Swiss Apartment Models interior spatial patterns)",
+    "attribution": "Compartment structure inspired by interior spatial modeling methodologies from Swiss Apartment Models dataset (Zenodo, 42,207 apartments, 242,257 rooms). This is a synthetic digital twin for simulation purposes only, not based on any specific operational facility. Industrial confined space layout follows general safety and access standards.",
+    "sensitivity_level": "synthetic_only",
+    "notes": "Industrial facilities have restricted access due to safety, security, and intellectual property concerns. This synthetic twin demonstrates confined space inspection and hazard assessment without exposing operational facility details."
+  },
+  "terrain_map": {
+    "slug": "processing-section-level-2",
+    "name": "Processing Section - Level 2 (Restricted Access)",
+    "coordinate_system": "local_mission_3d_grid",
+    "origin_label": "External maintenance access point (ground level, east wall)",
+    "units": "meters",
+    "source_format": "synthetic"
+  },
+  "sectors": [
+    {
+      "sector_id": "access-shaft-01",
+      "label": "Vertical Access Shaft",
+      "sector_type": "shaft",
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "width_m": 1.2,
+      "height_m": 8.0,
+      "depth_m": 1.2,
+      "elevation_m": 0.0,
+      "confidence": 0.95,
+      "source_ref": "External maintenance access",
+      "metadata": {
+        "access_type": "vertical_ladder",
+        "ladder_height_m": 8.0,
+        "clearance_width_m": 1.2,
+        "lighting": "emergency_only",
+        "ventilation": "passive",
+        "entry_difficulty": "moderate",
+        "ppe_required": ["hard_hat", "harness", "gas_monitor"],
+        "permit_required": "confined_space_entry"
+      }
+    },
+    {
+      "sector_id": "utility-corridor-main",
+      "label": "Main Utility Corridor",
+      "sector_type": "utility_corridor",
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": -8.0,
+      "width_m": 2.0,
+      "height_m": 2.2,
+      "depth_m": 25.0,
+      "elevation_m": -8.0,
+      "confidence": 0.92,
+      "source_ref": "Level 2 main corridor",
+      "metadata": {
+        "pipe_runs": ["steam", "cooling_water", "compressed_air", "electrical_conduit"],
+        "ambient_temperature_c": 28.0,
+        "humidity_percent": 65,
+        "noise_level_db": 72,
+        "lighting": "continuous",
+        "ventilation": "forced_air",
+        "structural_condition": "good"
+      }
+    },
+    {
+      "sector_id": "equipment-room-a",
+      "label": "Equipment Room A - Pumps",
+      "sector_type": "equipment_room",
+      "x_m": 10.0,
+      "y_m": -5.0,
+      "z_m": -8.0,
+      "width_m": 8.0,
+      "height_m": 3.5,
+      "depth_m": 10.0,
+      "elevation_m": -8.0,
+      "confidence": 0.88,
+      "source_ref": "Pump station compartment",
+      "metadata": {
+        "equipment_type": "centrifugal_pumps",
+        "equipment_count": 4,
+        "operational_status": "2_running_2_standby",
+        "vibration_level": "normal",
+        "temperature_c": 32.0,
+        "noise_level_db": 85,
+        "hazards": ["rotating_equipment", "high_noise", "hot_surfaces"],
+        "inspection_priority": "routine"
+      }
+    },
+    {
+      "sector_id": "pipe-corridor-01",
+      "label": "Pipe Corridor 01 - Steam Lines",
+      "sector_type": "pipe_corridor",
+      "x_m": 25.0,
+      "y_m": 0.0,
+      "z_m": -8.0,
+      "width_m": 1.5,
+      "height_m": 2.0,
+      "depth_m": 8.0,
+      "elevation_m": -8.0,
+      "confidence": 0.85,
+      "source_ref": "Steam distribution corridor",
+      "metadata": {
+        "pipe_type": "high_pressure_steam",
+        "pipe_diameter_mm": 150,
+        "insulation_condition": "moderate_degradation",
+        "temperature_c": 65.0,
+        "clearance_width_m": 0.8,
+        "access_difficulty": "tight_squeeze",
+        "hazards": ["high_temperature", "confined_space", "burns_risk"],
+        "inspection_priority": "high"
+      }
+    },
+    {
+      "sector_id": "tank-chamber-01",
+      "label": "Storage Tank Chamber 01",
+      "sector_type": "tank_chamber",
+      "x_m": 35.0,
+      "y_m": -8.0,
+      "z_m": -8.5,
+      "width_m": 12.0,
+      "height_m": 6.0,
+      "depth_m": 12.0,
+      "elevation_m": -8.5,
+      "confidence": 0.80,
+      "source_ref": "Chemical storage tank area",
+      "metadata": {
+        "tank_type": "vertical_storage",
+        "tank_capacity_m3": 50,
+        "contents": "process_chemical_inert",
+        "fill_level_percent": 65,
+        "ventilation": "forced_exhaust",
+        "gas_monitoring": "continuous_h2s_co",
+        "atmospheric_hazard": "potential_oxygen_deficient",
+        "emergency_response": "chemical_spill_kit_location_adjacent"
+      }
+    },
+    {
+      "sector_id": "control-room-local",
+      "label": "Local Control Room",
+      "sector_type": "control_room",
+      "x_m": 12.0,
+      "y_m": 3.0,
+      "z_m": -8.0,
+      "width_m": 5.0,
+      "height_m": 3.0,
+      "depth_m": 6.0,
+      "elevation_m": -8.0,
+      "confidence": 0.93,
+      "source_ref": "Local operator station",
+      "metadata": {
+        "control_type": "distributed_control_system",
+        "operator_capacity": 2,
+        "environmental_condition": "climate_controlled",
+        "temperature_c": 22.0,
+        "humidity_percent": 45,
+        "lighting": "full",
+        "communications": "ethernet_phone_radio",
+        "emergency_shutdown_access": true
+      }
+    },
+    {
+      "sector_id": "confined-space-01",
+      "label": "Confined Access Void",
+      "sector_type": "confined_space",
+      "x_m": 48.0,
+      "y_m": -3.0,
+      "z_m": -10.0,
+      "width_m": 2.5,
+      "height_m": 1.8,
+      "depth_m": 5.0,
+      "elevation_m": -10.0,
+      "confidence": 0.75,
+      "source_ref": "Below-floor utility space",
+      "metadata": {
+        "access_type": "crawl_space",
+        "entry_dimensions_m": "0.6x0.8",
+        "atmosphere_classification": "permit_required_confined_space",
+        "oxygen_percent": 19.2,
+        "combustible_gas_lel_percent": 0,
+        "toxic_gas_ppm": 0,
+        "ventilation": "none_natural_only",
+        "lighting": "none_portable_required",
+        "hazards": ["oxygen_deficiency_risk", "engulfment_risk", "limited_egress"],
+        "rescue_difficulty": "extreme"
+      }
+    },
+    {
+      "sector_id": "hazard-zone-01",
+      "label": "Hazard Zone - Gas Detector Alert",
+      "sector_type": "hazard",
+      "x_m": 42.0,
+      "y_m": -10.0,
+      "z_m": -8.5,
+      "width_m": 6.0,
+      "height_m": 2.5,
+      "depth_m": 8.0,
+      "elevation_m": -8.5,
+      "confidence": 0.70,
+      "source_ref": "Hazardous atmosphere zone",
+      "metadata": {
+        "hazard_type": "toxic_gas_h2s",
+        "gas_concentration_ppm": 15,
+        "exposure_limit_ppm": 10,
+        "alarm_status": "low_level_warning",
+        "ventilation": "exhaust_fan_activated",
+        "entry_restriction": "scba_required",
+        "source_suspected": "process_leak_small",
+        "mitigation_status": "investigation_required",
+        "evacuation_route": "retreat_to_utility_corridor"
+      }
+    },
+    {
+      "sector_id": "maintenance-access-02",
+      "label": "Maintenance Access Hatch",
+      "sector_type": "room",
+      "x_m": 20.0,
+      "y_m": 8.0,
+      "z_m": -8.0,
+      "width_m": 3.0,
+      "height_m": 2.5,
+      "depth_m": 3.0,
+      "elevation_m": -8.0,
+      "confidence": 0.88,
+      "source_ref": "Secondary access point",
+      "metadata": {
+        "access_type": "personnel_hatch",
+        "door_status": "locked_permit_required",
+        "emergency_exit": true,
+        "lighting": "motion_activated",
+        "fire_suppression": "portable_extinguisher",
+        "first_aid_kit": true
+      }
+    }
+  ],
+  "paths": [
+    {
+      "from_sector": "access-shaft-01",
+      "to_sector": "utility-corridor-main",
+      "distance_m": 8.5,
+      "bearing_deg": 180.0,
+      "vertical_change_m": -8.0,
+      "path_type": "ladder",
+      "traversal_risk": "moderate",
+      "confidence": 0.95,
+      "capabilities_required": ["vertical_mobility", "ladder_navigation", "gas_monitoring"],
+      "metadata": {
+        "descent_type": "fixed_ladder",
+        "ppe_required": ["harness", "hard_hat", "gas_monitor"],
+        "lighting": "emergency_only",
+        "estimated_time_s": 45,
+        "permit_required": "confined_space_entry"
+      }
+    },
+    {
+      "from_sector": "utility-corridor-main",
+      "to_sector": "equipment-room-a",
+      "distance_m": 12.8,
+      "bearing_deg": 220.0,
+      "vertical_change_m": 0.0,
+      "path_type": "passage",
+      "traversal_risk": "low",
+      "confidence": 0.92,
+      "capabilities_required": ["standard_mobility", "noise_tolerance"],
+      "metadata": {
+        "door_type": "standard_industrial",
+        "door_status": "normally_open",
+        "lighting": "continuous",
+        "noise_level_db": 78,
+        "clearance_adequate": true
+      }
+    },
+    {
+      "from_sector": "utility-corridor-main",
+      "to_sector": "pipe-corridor-01",
+      "distance_m": 25.5,
+      "bearing_deg": 90.0,
+      "vertical_change_m": 0.0,
+      "path_type": "passage",
+      "traversal_risk": "low",
+      "confidence": 0.90,
+      "capabilities_required": ["standard_mobility"],
+      "metadata": {
+        "corridor_type": "main_access",
+        "lighting": "continuous",
+        "pipe_overhead_clearance_m": 1.9,
+        "traffic": "regular_personnel"
+      }
+    },
+    {
+      "from_sector": "pipe-corridor-01",
+      "to_sector": "tank-chamber-01",
+      "distance_m": 14.2,
+      "bearing_deg": 135.0,
+      "vertical_change_m": -0.5,
+      "path_type": "crawl",
+      "traversal_risk": "high",
+      "confidence": 0.82,
+      "capabilities_required": ["compact_profile", "heat_tolerance", "confined_space_rated"],
+      "metadata": {
+        "path_type_detail": "tight_equipment_passage",
+        "clearance_height_m": 1.2,
+        "clearance_width_m": 0.8,
+        "ambient_temperature_c": 55,
+        "hazards": ["hot_pipes", "tight_clearance", "low_headroom"],
+        "recommended_approach": "slow_careful_navigation"
+      }
+    },
+    {
+      "from_sector": "utility-corridor-main",
+      "to_sector": "control-room-local",
+      "distance_m": 13.5,
+      "bearing_deg": 45.0,
+      "vertical_change_m": 0.0,
+      "path_type": "passage",
+      "traversal_risk": "low",
+      "confidence": 0.93,
+      "capabilities_required": ["standard_mobility"],
+      "metadata": {
+        "door_type": "fire_rated",
+        "door_status": "normally_closed",
+        "access_control": "keycard_required",
+        "lighting": "full",
+        "climate_transition": "entering_conditioned_space"
+      }
+    },
+    {
+      "from_sector": "tank-chamber-01",
+      "to_sector": "confined-space-01",
+      "distance_m": 15.8,
+      "bearing_deg": 105.0,
+      "vertical_change_m": -1.5,
+      "path_type": "crawl",
+      "traversal_risk": "extreme",
+      "confidence": 0.70,
+      "capabilities_required": ["compact_profile", "confined_space_rated", "atmospheric_monitoring", "tether_capability"],
+      "metadata": {
+        "entry_type": "floor_hatch",
+        "hatch_dimensions_m": "0.6x0.8",
+        "descent_equipment": "portable_ladder_required",
+        "atmosphere_classification": "permit_required_confined_space",
+        "ventilation_required": "forced_air_pre_entry",
+        "rescue_plan": "tripod_winch_standby",
+        "abort_available": true,
+        "communication": "tethered_radio_only"
+      }
+    },
+    {
+      "from_sector": "tank-chamber-01",
+      "to_sector": "hazard-zone-01",
+      "distance_m": 10.5,
+      "bearing_deg": 160.0,
+      "vertical_change_m": 0.0,
+      "path_type": "passage",
+      "traversal_risk": "extreme",
+      "confidence": 0.68,
+      "capabilities_required": ["gas_monitoring", "scba_capable", "toxic_environment_rated"],
+      "metadata": {
+        "atmospheric_hazard": "h2s_gas_present",
+        "gas_concentration_ppm": 15,
+        "entry_restriction": "scba_required_continuous_monitoring",
+        "alarm_status": "low_level_warning_active",
+        "abort_threshold": "gas_20_ppm_or_oxygen_below_19.5",
+        "recommended_action": "defer_entry_until_ventilation_effective"
+      }
+    },
+    {
+      "from_sector": "utility-corridor-main",
+      "to_sector": "maintenance-access-02",
+      "distance_m": 22.4,
+      "bearing_deg": 35.0,
+      "vertical_change_m": 0.0,
+      "path_type": "passage",
+      "traversal_risk": "low",
+      "confidence": 0.88,
+      "capabilities_required": ["standard_mobility"],
+      "metadata": {
+        "door_type": "emergency_exit",
+        "door_status": "locked_break_glass_release",
+        "emergency_route": true,
+        "lighting": "emergency_only",
+        "signage": "emergency_exit_illuminated"
+      }
+    },
+    {
+      "from_sector": "access-shaft-01",
+      "to_sector": "control-room-local",
+      "distance_m": 13.8,
+      "bearing_deg": 45.0,
+      "vertical_change_m": -8.0,
+      "path_type": "ladder",
+      "traversal_risk": "moderate",
+      "confidence": 0.85,
+      "capabilities_required": ["vertical_mobility", "ladder_navigation"],
+      "metadata": {
+        "route_type": "direct_alternative",
+        "external_access": true,
+        "emergency_evacuation_route": true,
+        "personnel_preference": "primary_route_for_control_room_access"
+      }
+    }
+  ],
+  "waypoints": [
+    {
+      "waypoint_id": "wp-entry",
+      "label": "External Access Point",
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "sequence": 1,
+      "route_group": "primary-inspection",
+      "metadata": {
+        "waypoint_type": "entry",
+        "permit_station": true,
+        "ppe_donning_area": true,
+        "gas_monitor_calibration": true
+      }
+    },
+    {
+      "waypoint_id": "wp-corridor-main",
+      "label": "Main Corridor Junction",
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": -8.0,
+      "sequence": 2,
+      "route_group": "primary-inspection",
+      "metadata": {
+        "waypoint_type": "navigation",
+        "relay_node_recommended": true,
+        "junction_point": true,
+        "safe_staging_area": true
+      }
+    },
+    {
+      "waypoint_id": "wp-equipment-survey",
+      "label": "Equipment Room Survey Point",
+      "x_m": 10.0,
+      "y_m": -5.0,
+      "z_m": -8.0,
+      "sequence": 3,
+      "route_group": "primary-inspection",
+      "metadata": {
+        "waypoint_type": "survey",
+        "sensor_focus": ["thermal", "vibration", "acoustic"],
+        "dwell_time_s": 90,
+        "equipment_inspection": true
+      }
+    },
+    {
+      "waypoint_id": "wp-pipe-corridor",
+      "label": "Pipe Corridor Inspection",
+      "x_m": 25.0,
+      "y_m": 0.0,
+      "z_m": -8.0,
+      "sequence": 4,
+      "route_group": "primary-inspection",
+      "metadata": {
+        "waypoint_type": "inspection",
+        "sensor_focus": ["thermal", "visual_corrosion"],
+        "dwell_time_s": 120,
+        "insulation_condition_assessment": true
+      }
+    },
+    {
+      "waypoint_id": "wp-tank-assessment",
+      "label": "Tank Chamber Gas Monitoring",
+      "x_m": 35.0,
+      "y_m": -8.0,
+      "z_m": -8.5,
+      "sequence": 5,
+      "route_group": "hazard-assessment",
+      "metadata": {
+        "waypoint_type": "hazard_assessment",
+        "sensor_focus": ["gas_h2s", "gas_co", "oxygen", "temperature"],
+        "dwell_time_s": 180,
+        "continuous_monitoring_required": true,
+        "abort_threshold": "gas_10_ppm_h2s"
+      }
+    },
+    {
+      "waypoint_id": "wp-control-room",
+      "label": "Control Room Safe Zone",
+      "x_m": 12.0,
+      "y_m": 3.0,
+      "z_m": -8.0,
+      "sequence": 6,
+      "route_group": "evacuation-route",
+      "metadata": {
+        "waypoint_type": "safe_zone",
+        "communications_hub": true,
+        "emergency_coordination": true,
+        "climate_controlled": true
+      }
+    },
+    {
+      "waypoint_id": "wp-confined-space-pre",
+      "label": "Confined Space Pre-Entry",
+      "x_m": 45.0,
+      "y_m": -5.0,
+      "z_m": -8.5,
+      "sequence": 7,
+      "route_group": "confined-space-entry",
+      "metadata": {
+        "waypoint_type": "pre_entry_check",
+        "sensor_focus": ["oxygen", "combustible_gas", "toxic_gas"],
+        "dwell_time_s": 300,
+        "permit_verification": true,
+        "rescue_equipment_check": true,
+        "atmospheric_test_required": true
+      }
+    },
+    {
+      "waypoint_id": "wp-hazard-zone-boundary",
+      "label": "Hazard Zone Boundary",
+      "x_m": 38.0,
+      "y_m": -8.0,
+      "z_m": -8.5,
+      "sequence": 8,
+      "route_group": "hazard-assessment",
+      "metadata": {
+        "waypoint_type": "hazard_boundary",
+        "sensor_focus": ["gas_h2s", "gas_co", "oxygen"],
+        "dwell_time_s": 60,
+        "decision_point": true,
+        "abort_recommendation": "if_gas_above_threshold"
+      }
+    },
+    {
+      "waypoint_id": "wp-emergency-exit",
+      "label": "Emergency Exit Staging",
+      "x_m": 20.0,
+      "y_m": 8.0,
+      "z_m": -8.0,
+      "sequence": 9,
+      "route_group": "evacuation-route",
+      "metadata": {
+        "waypoint_type": "emergency_exit",
+        "evacuation_route": true,
+        "assembly_point": "external_muster_point_east"
+      }
+    }
+  ]
+}
