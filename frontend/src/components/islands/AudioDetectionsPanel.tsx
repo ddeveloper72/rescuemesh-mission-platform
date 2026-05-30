@@ -124,6 +124,30 @@ export default function AudioDetectionsPanel({ missionId, audioDetections = [] }
     }
   };
 
+  // Open detection in modal
+  const openDetectionModal = (detection: AudioDetection) => {
+    // Transform detection data to match modal's expected format
+    const detectionDetail = {
+      id: detection.id,
+      type: 'audio' as const,
+      label: getAudioTypeLabel(detection.audio_type),
+      description: detection.description,
+      agent_name: detection.agent_name,
+      location_label: detection.location_label,
+      mission_time: detection.mission_time,
+      confidence: detection.confidence,
+      signal_quality: detection.signal_quality,
+      audio_url: detection.audio_url,
+      spectrogram_url: detection.spectrogram_url,
+      annotations: detection.annotations
+    };
+
+    // Dispatch event for modal to pick up
+    window.dispatchEvent(new CustomEvent('detection-marker-clicked', {
+      detail: { detection: detectionDetail }
+    }));
+  };
+
   if (!displayedDetections || displayedDetections.length === 0) {
     return (
       <div className="bg-gray-900/50 rounded-lg border border-gray-700/50 p-6">
@@ -157,7 +181,9 @@ export default function AudioDetectionsPanel({ missionId, audioDetections = [] }
         {displayedDetections.slice(-6).reverse().map((detection) => (
           <div
             key={detection.id}
-            className="bg-black/40 rounded-lg border border-gray-700/70 p-4 hover:border-gray-600 transition-colors"
+            className="bg-black/40 rounded-lg border border-gray-700/70 p-4 hover:border-gray-600 transition-colors cursor-pointer"
+            onClick={() => openDetectionModal(detection)}
+            title="Click to view full details"
           >
             {/* Detection header */}
             <div className="flex items-start justify-between mb-3">
@@ -178,8 +204,13 @@ export default function AudioDetectionsPanel({ missionId, audioDetections = [] }
                   </div>
                 </div>
               </div>
-              <div className={`px-2 py-0.5 rounded text-xs font-semibold border whitespace-nowrap ${getStatusBadgeColor(detection.status)}`}>
-                {detection.status.replace(/_/g, ' ').toUpperCase()}
+              <div className="flex items-center gap-2">
+                <div className={`px-2 py-0.5 rounded text-xs font-semibold border whitespace-nowrap ${getStatusBadgeColor(detection.status)}`}>
+                  {detection.status.replace(/_/g, ' ').toUpperCase()}
+                </div>
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </div>
             </div>
 
@@ -219,7 +250,10 @@ export default function AudioDetectionsPanel({ missionId, audioDetections = [] }
               {getFullUrl(detection.audio_url) && (
                 <div className="flex flex-col justify-center items-center gap-3 bg-gray-900/60 rounded border border-gray-700 p-4">
                   <button
-                    onClick={() => toggleAudioPlayback(detection.id, getFullUrl(detection.audio_url)!)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent modal from opening when clicking play button
+                      toggleAudioPlayback(detection.id, getFullUrl(detection.audio_url)!);
+                    }}
                     className={`p-4 rounded-full transition-colors ${
                       currentlyPlaying === detection.id
                         ? 'bg-red-600 hover:bg-red-700'
