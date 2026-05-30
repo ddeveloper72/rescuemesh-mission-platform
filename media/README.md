@@ -93,9 +93,16 @@ All images include:
 
 - **Knocking** - 3-5 knocks with low-frequency impact sounds
 - **Tapping** - Higher frequency, sharper impacts (SOS patterns supported)
-- **Voice-like** - Modulated frequencies simulating human speech
+- **Voice-like** - Text-to-speech generated robotic distress messages (using pyttsx3) or waveform fallback
 - **Static** - White noise with low-frequency rumble
 - **Ambient** - Cave drips, underwater muffled sounds, industrial hum
+
+The voice-like audio uses **text-to-speech (TTS)** technology to generate realistic but clearly synthetic/robotic human-like audio. Messages include:
+- Distress signals ("Assistance requested. Unit status compromised.")
+- Status updates ("Automated status update. Unit operational.")
+- Alert notifications ("Anomaly detected. Sensor readings abnormal.")
+
+All TTS messages are designed to be obviously artificial/robotic to avoid any ethical concerns while providing realistic audio patterns for demo purposes. Falls back to waveform-based generation if pyttsx3 is unavailable.
 
 ### Spectrograms (PNG)
 
@@ -122,6 +129,7 @@ Examples:
 - **wave** (stdlib) - WAV audio file generation
 - **struct** (stdlib) - Binary audio data formatting
 - **math/random** (stdlib) - Waveform generation
+- **pyttsx3** - Text-to-speech for voice-like audio (optional, falls back to waveform generation)
 
 No external binary dependencies (FFmpeg, ImageMagick, etc.) required.
 
