@@ -1,0 +1,389 @@
+{
+  "site": {
+    "slug": "heritage-underground-chamber-demo",
+    "name": "Archaeological Underground Chamber (Heritage Demo)",
+    "site_type": "archaeology",
+    "country": "Mediterranean Region",
+    "description": "Simplified digital twin inspired by open heritage 3D archaeological site documentation patterns. This is a demonstration structure for heritage preservation and non-destructive survey simulations, not a specific real site.",
+    "source_name": "Open Heritage 3D Alliance - Documentation Pattern Study",
+    "source_url": "https://openheritage3d.org/",
+    "source_license": "Demonstration data inspired by OHA best practices",
+    "attribution": "Digital twin structure inspired by Open Heritage 3D Alliance cultural heritage documentation methodologies. Founding members: CyArk, Historic Environment Scotland, University of South Florida Libraries. This is a synthetic demonstration for non-destructive survey training purposes.",
+    "sensitivity_level": "synthetic_only",
+    "notes": "Synthetic archaeological site structure created for heritage preservation mission simulations. Demonstrates non-destructive 3D documentation, fragile artifact areas, and conservation constraints. Not based on a specific real archaeological site."
+  },
+  "terrain_map": {
+    "slug": "underground-chamber-complex",
+    "name": "Underground Chamber Complex (Heritage Demo)",
+    "coordinate_system": "local_mission_3d_grid",
+    "origin_label": "Modern access point at (0, 0, 0)",
+    "units": "meters",
+    "source_format": "synthetic"
+  },
+  "sectors": [
+    {
+      "sector_id": "access-tunnel",
+      "label": "Modern Access Tunnel",
+      "sector_type": "corridor",
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "width_m": 2.5,
+      "height_m": 2.2,
+      "depth_m": 8.0,
+      "elevation_m": 0.0,
+      "confidence": 0.98,
+      "source_ref": "heritage-demo-access",
+      "metadata": {
+        "modern_structure": true,
+        "heritage_value": "none",
+        "description": "Modern excavation access tunnel - safe for standard equipment"
+      }
+    },
+    {
+      "sector_id": "antechamber",
+      "label": "Antechamber",
+      "sector_type": "room",
+      "x_m": 12.0,
+      "y_m": 2.0,
+      "z_m": -2.0,
+      "width_m": 5.0,
+      "height_m": 3.5,
+      "depth_m": 6.0,
+      "elevation_m": -2.0,
+      "confidence": 0.92,
+      "source_ref": "heritage-demo-ante",
+      "metadata": {
+        "heritage_value": "high",
+        "period": "ancient",
+        "description": "Small antechamber with carved stone doorway - fragile surfaces"
+      }
+    },
+    {
+      "sector_id": "main-chamber",
+      "label": "Main Ceremonial Chamber",
+      "sector_type": "chamber",
+      "x_m": 20.0,
+      "y_m": 4.0,
+      "z_m": -3.5,
+      "width_m": 12.0,
+      "height_m": 6.0,
+      "depth_m": 14.0,
+      "elevation_m": -3.5,
+      "confidence": 0.95,
+      "source_ref": "heritage-demo-main",
+      "metadata": {
+        "heritage_value": "exceptional",
+        "period": "ancient",
+        "features": ["wall_paintings", "carved_columns", "stone_altar"],
+        "description": "Primary ceremonial chamber with intact wall decorations - requires non-contact documentation"
+      }
+    },
+    {
+      "sector_id": "artifact-alcove-north",
+      "label": "Northern Artifact Alcove",
+      "sector_type": "room",
+      "x_m": 25.0,
+      "y_m": 12.0,
+      "z_m": -3.0,
+      "width_m": 3.0,
+      "height_m": 2.5,
+      "depth_m": 3.5,
+      "elevation_m": -3.0,
+      "confidence": 0.88,
+      "source_ref": "heritage-demo-alcove-n",
+      "metadata": {
+        "heritage_value": "exceptional",
+        "fragile_contents": true,
+        "description": "Small alcove with pottery fragments and carved niches - extreme caution required"
+      }
+    },
+    {
+      "sector_id": "artifact-alcove-south",
+      "label": "Southern Artifact Alcove",
+      "sector_type": "room",
+      "x_m": 25.0,
+      "y_m": -4.0,
+      "z_m": -3.0,
+      "width_m": 3.0,
+      "height_m": 2.5,
+      "depth_m": 3.5,
+      "elevation_m": -3.0,
+      "confidence": 0.88,
+      "source_ref": "heritage-demo-alcove-s",
+      "metadata": {
+        "heritage_value": "exceptional",
+        "fragile_contents": true,
+        "description": "Alcove with textile fragments and organic materials - no drone turbulence allowed"
+      }
+    },
+    {
+      "sector_id": "burial-corridor",
+      "label": "Burial Corridor",
+      "sector_type": "corridor",
+      "x_m": 35.0,
+      "y_m": 4.0,
+      "z_m": -4.5,
+      "width_m": 2.8,
+      "height_m": 2.0,
+      "depth_m": 10.0,
+      "elevation_m": -4.5,
+      "confidence": 0.90,
+      "source_ref": "heritage-demo-burial-corridor",
+      "metadata": {
+        "heritage_value": "high",
+        "low_ceiling": true,
+        "description": "Low corridor leading to burial chamber - carved inscription on ceiling"
+      }
+    },
+    {
+      "sector_id": "burial-chamber",
+      "label": "Burial Chamber",
+      "sector_type": "chamber",
+      "x_m": 45.0,
+      "y_m": 4.0,
+      "z_m": -5.0,
+      "width_m": 8.0,
+      "height_m": 4.0,
+      "depth_m": 8.0,
+      "elevation_m": -5.0,
+      "confidence": 0.93,
+      "source_ref": "heritage-demo-burial",
+      "metadata": {
+        "heritage_value": "exceptional",
+        "sensitive_area": true,
+        "features": ["stone_sarcophagi", "wall_inscriptions", "ceiling_decorations"],
+        "description": "Burial chamber with multiple sarcophagi - cultural sensitivity required, non-contact documentation only"
+      }
+    },
+    {
+      "sector_id": "collapse-zone",
+      "label": "Partial Collapse Zone",
+      "sector_type": "hazard",
+      "x_m": 52.0,
+      "y_m": 4.0,
+      "z_m": -5.5,
+      "width_m": 6.0,
+      "height_m": 2.5,
+      "depth_m": 5.0,
+      "elevation_m": -5.5,
+      "confidence": 0.70,
+      "source_ref": "heritage-demo-collapse",
+      "metadata": {
+        "heritage_value": "moderate",
+        "structural_hazard": true,
+        "description": "Ancient partial collapse - unstable ceiling, assessment required before full documentation"
+      }
+    }
+  ],
+  "paths": [
+    {
+      "from_sector": "access-tunnel",
+      "to_sector": "antechamber",
+      "distance_m": 13.0,
+      "bearing_deg": 80.0,
+      "vertical_change_m": -2.0,
+      "path_type": "passage",
+      "traversal_risk": "low",
+      "confidence": 0.95,
+      "capabilities_required": ["basic_navigation"],
+      "metadata": {
+        "description": "Clear passage from modern access to heritage structure"
+      }
+    },
+    {
+      "from_sector": "antechamber",
+      "to_sector": "main-chamber",
+      "distance_m": 9.5,
+      "bearing_deg": 75.0,
+      "vertical_change_m": -1.5,
+      "path_type": "passage",
+      "traversal_risk": "low",
+      "confidence": 0.92,
+      "capabilities_required": ["basic_navigation", "heritage_safe_propulsion"],
+      "metadata": {
+        "heritage_constraints": true,
+        "description": "Doorway with carved lintel - avoid contact with surfaces"
+      }
+    },
+    {
+      "from_sector": "main-chamber",
+      "to_sector": "artifact-alcove-north",
+      "distance_m": 9.0,
+      "bearing_deg": 45.0,
+      "vertical_change_m": 0.5,
+      "path_type": "open",
+      "traversal_risk": "moderate",
+      "confidence": 0.88,
+      "capabilities_required": ["precision_hover", "heritage_safe_propulsion"],
+      "metadata": {
+        "heritage_constraints": true,
+        "fragile_contents": true,
+        "description": "Small opening to alcove - minimize propeller wash near artifacts"
+      }
+    },
+    {
+      "from_sector": "main-chamber",
+      "to_sector": "artifact-alcove-south",
+      "distance_m": 9.0,
+      "bearing_deg": 315.0,
+      "vertical_change_m": 0.5,
+      "path_type": "open",
+      "traversal_risk": "moderate",
+      "confidence": 0.88,
+      "capabilities_required": ["precision_hover", "heritage_safe_propulsion"],
+      "metadata": {
+        "heritage_constraints": true,
+        "fragile_contents": true,
+        "description": "Small opening to alcove - organic materials very sensitive to air disturbance"
+      }
+    },
+    {
+      "from_sector": "main-chamber",
+      "to_sector": "burial-corridor",
+      "distance_m": 16.0,
+      "bearing_deg": 85.0,
+      "vertical_change_m": -1.0,
+      "path_type": "passage",
+      "traversal_risk": "low",
+      "confidence": 0.90,
+      "capabilities_required": ["basic_navigation", "low_profile"],
+      "metadata": {
+        "heritage_constraints": true,
+        "low_ceiling": true,
+        "description": "Narrow passage with low carved ceiling - maintain safe distance"
+      }
+    },
+    {
+      "from_sector": "burial-corridor",
+      "to_sector": "burial-chamber",
+      "distance_m": 11.0,
+      "bearing_deg": 90.0,
+      "vertical_change_m": -0.5,
+      "path_type": "passage",
+      "traversal_risk": "low",
+      "confidence": 0.93,
+      "capabilities_required": ["basic_navigation", "heritage_safe_propulsion"],
+      "metadata": {
+        "heritage_constraints": true,
+        "culturally_sensitive": true,
+        "description": "Entry to burial chamber - respect cultural sensitivity"
+      }
+    },
+    {
+      "from_sector": "burial-chamber",
+      "to_sector": "collapse-zone",
+      "distance_m": 8.5,
+      "bearing_deg": 95.0,
+      "vertical_change_m": -0.5,
+      "path_type": "passage",
+      "traversal_risk": "high",
+      "confidence": 0.70,
+      "capabilities_required": ["structural_assessment", "heritage_safe_propulsion"],
+      "metadata": {
+        "heritage_constraints": true,
+        "structural_hazard": true,
+        "description": "Unstable area - assessment mission only, no full documentation until stabilized"
+      }
+    }
+  ],
+  "waypoints": [
+    {
+      "waypoint_id": "wp-surface-entry",
+      "label": "Surface Entry Point",
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "sequence": 1,
+      "route_group": "heritage-survey-route",
+      "metadata": {
+        "waypoint_type": "mission_start",
+        "radio_quality": "excellent",
+        "safety_zone": true
+      }
+    },
+    {
+      "waypoint_id": "wp-heritage-boundary",
+      "label": "Heritage Structure Boundary",
+      "x_m": 10.0,
+      "y_m": 1.0,
+      "z_m": -1.5,
+      "sequence": 2,
+      "route_group": "heritage-survey-route",
+      "metadata": {
+        "waypoint_type": "boundary_marker",
+        "conservation_protocols_required": true
+      }
+    },
+    {
+      "waypoint_id": "wp-main-chamber-center",
+      "label": "Main Chamber Survey Center",
+      "x_m": 20.0,
+      "y_m": 4.0,
+      "z_m": -3.5,
+      "sequence": 3,
+      "route_group": "heritage-survey-route",
+      "metadata": {
+        "waypoint_type": "survey_point",
+        "360_scan_position": true,
+        "heritage_value": "exceptional"
+      }
+    },
+    {
+      "waypoint_id": "wp-alcove-north-survey",
+      "label": "Northern Alcove Survey Position",
+      "x_m": 25.0,
+      "y_m": 12.0,
+      "z_m": -3.0,
+      "sequence": 4,
+      "route_group": "heritage-survey-route",
+      "metadata": {
+        "waypoint_type": "artifact_documentation",
+        "hover_only": true,
+        "minimize_propwash": true
+      }
+    },
+    {
+      "waypoint_id": "wp-alcove-south-survey",
+      "label": "Southern Alcove Survey Position",
+      "x_m": 25.0,
+      "y_m": -4.0,
+      "z_m": -3.0,
+      "sequence": 5,
+      "route_group": "heritage-survey-route",
+      "metadata": {
+        "waypoint_type": "artifact_documentation",
+        "hover_only": true,
+        "organic_materials_present": true
+      }
+    },
+    {
+      "waypoint_id": "wp-burial-chamber-survey",
+      "label": "Burial Chamber Documentation Point",
+      "x_m": 45.0,
+      "y_m": 4.0,
+      "z_m": -5.0,
+      "sequence": 6,
+      "route_group": "heritage-survey-route",
+      "metadata": {
+        "waypoint_type": "survey_point",
+        "culturally_sensitive": true,
+        "non_contact_only": true
+      }
+    },
+    {
+      "waypoint_id": "wp-collapse-assessment",
+      "label": "Collapse Zone Assessment Position",
+      "x_m": 52.0,
+      "y_m": 4.0,
+      "z_m": -5.5,
+      "sequence": 7,
+      "route_group": "heritage-survey-route",
+      "metadata": {
+        "waypoint_type": "hazard_assessment",
+        "structural_hazard": true,
+        "maintain_safe_distance": true
+      }
+    }
+  ]
+}

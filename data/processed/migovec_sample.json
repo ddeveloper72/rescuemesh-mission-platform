@@ -1,0 +1,318 @@
+{
+  "site": {
+    "slug": "migovec-primadona-demo",
+    "name": "Migovec Primadona (Simplified Demo Extract)",
+    "site_type": "cave",
+    "country": "Slovenia",
+    "description": "Simplified digital twin extract inspired by the Migovec Primadona cave system survey data. This is a demonstration subset with reduced precision for simulation purposes, not a complete or accurate representation of the real cave system.",
+    "source_name": "Migovec Resurvey Project (ICCC/JSPDT)",
+    "source_url": "https://github.com/tr1813/migresurvey",
+    "source_license": "Public survey data (simplified for demo)",
+    "attribution": "Original survey data collected by Imperial College Caving Club (ICCC) and Jamarska Sekcija Planinskega Drustva Tolmin (JSPDT), 1974-2019. This digital twin is a simplified demonstration extract, not official survey data.",
+    "sensitivity_level": "synthetic_only",
+    "notes": "This is a synthetic demonstration based on publicly available survey structure patterns from the Migovec system. Coordinates, dimensions, and connections are approximated for simulation purposes. Not suitable for actual cave rescue planning."
+  },
+  "terrain_map": {
+    "slug": "primadona-entrance-zone",
+    "name": "Primadona Entrance Zone (Demo)",
+    "coordinate_system": "local_mission_3d_grid",
+    "origin_label": "Simulated entrance at (0, 0, 0)",
+    "units": "meters",
+    "source_format": "synthetic"
+  },
+  "sectors": [
+    {
+      "sector_id": "entrance",
+      "label": "Entrance Chamber",
+      "sector_type": "entrance",
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "width_m": 8.0,
+      "height_m": 6.0,
+      "depth_m": 12.0,
+      "elevation_m": 0.0,
+      "confidence": 0.95,
+      "source_ref": "synthetic-demo-entrance",
+      "metadata": {
+        "surface_access": true,
+        "daylight_visible": true,
+        "description": "Large entrance chamber with good radio line-of-sight to surface"
+      }
+    },
+    {
+      "sector_id": "passage-1",
+      "label": "Main Passage - Section 1",
+      "sector_type": "passage",
+      "x_m": 15.0,
+      "y_m": -8.0,
+      "z_m": -5.0,
+      "width_m": 3.5,
+      "height_m": 4.0,
+      "depth_m": 18.0,
+      "elevation_m": -5.0,
+      "confidence": 0.90,
+      "source_ref": "synthetic-demo-p1",
+      "metadata": {
+        "surface_access": false,
+        "description": "Sloping passage descending from entrance"
+      }
+    },
+    {
+      "sector_id": "junction-alpha",
+      "label": "Junction Alpha",
+      "sector_type": "junction",
+      "x_m": 28.0,
+      "y_m": -12.0,
+      "z_m": -12.0,
+      "width_m": 6.0,
+      "height_m": 5.0,
+      "depth_m": 6.0,
+      "elevation_m": -12.0,
+      "confidence": 0.85,
+      "source_ref": "synthetic-demo-j-alpha",
+      "metadata": {
+        "branch_count": 3,
+        "description": "Three-way junction with narrow passages branching north and south"
+      }
+    },
+    {
+      "sector_id": "chamber-1",
+      "label": "Chamber One",
+      "sector_type": "chamber",
+      "x_m": 35.0,
+      "y_m": -8.0,
+      "z_m": -15.0,
+      "width_m": 12.0,
+      "height_m": 8.0,
+      "depth_m": 15.0,
+      "elevation_m": -15.0,
+      "confidence": 0.88,
+      "source_ref": "synthetic-demo-c1",
+      "metadata": {
+        "large_void": true,
+        "description": "Large chamber with boulder floor and possible continuation upward"
+      }
+    },
+    {
+      "sector_id": "squeeze-1",
+      "label": "Tight Squeeze",
+      "sector_type": "passage",
+      "x_m": 45.0,
+      "y_m": -5.0,
+      "z_m": -18.0,
+      "width_m": 1.2,
+      "height_m": 1.8,
+      "depth_m": 8.0,
+      "elevation_m": -18.0,
+      "confidence": 0.75,
+      "source_ref": "synthetic-demo-squeeze1",
+      "metadata": {
+        "tight_passage": true,
+        "description": "Very narrow section requiring crawling - potential drone limitation"
+      }
+    },
+    {
+      "sector_id": "shaft-1",
+      "label": "Vertical Shaft",
+      "sector_type": "shaft",
+      "x_m": 52.0,
+      "y_m": -4.0,
+      "z_m": -28.0,
+      "width_m": 3.0,
+      "height_m": 12.0,
+      "depth_m": 3.0,
+      "elevation_m": -28.0,
+      "confidence": 0.80,
+      "source_ref": "synthetic-demo-shaft1",
+      "metadata": {
+        "vertical_drop": 10.0,
+        "description": "Vertical shaft requiring climbing equipment - drone must descend cautiously"
+      }
+    },
+    {
+      "sector_id": "chamber-2",
+      "label": "Lower Chamber",
+      "sector_type": "chamber",
+      "x_m": 58.0,
+      "y_m": -2.0,
+      "z_m": -32.0,
+      "width_m": 10.0,
+      "height_m": 6.0,
+      "depth_m": 12.0,
+      "elevation_m": -32.0,
+      "confidence": 0.82,
+      "source_ref": "synthetic-demo-c2",
+      "metadata": {
+        "terminal_chamber": true,
+        "description": "Lower chamber with no obvious continuation - potential search endpoint"
+      }
+    }
+  ],
+  "paths": [
+    {
+      "from_sector": "entrance",
+      "to_sector": "passage-1",
+      "distance_m": 19.0,
+      "bearing_deg": 152.0,
+      "vertical_change_m": -5.0,
+      "path_type": "passage",
+      "traversal_risk": "low",
+      "confidence": 0.92,
+      "capabilities_required": ["basic_navigation", "low_light_vision"],
+      "metadata": {
+        "description": "Clear sloping passage from entrance"
+      }
+    },
+    {
+      "from_sector": "passage-1",
+      "to_sector": "junction-alpha",
+      "distance_m": 15.5,
+      "bearing_deg": 145.0,
+      "vertical_change_m": -7.0,
+      "path_type": "passage",
+      "traversal_risk": "low",
+      "confidence": 0.88,
+      "capabilities_required": ["basic_navigation", "low_light_vision"],
+      "metadata": {
+        "description": "Continuing descent to junction"
+      }
+    },
+    {
+      "from_sector": "junction-alpha",
+      "to_sector": "chamber-1",
+      "distance_m": 9.2,
+      "bearing_deg": 115.0,
+      "vertical_change_m": -3.0,
+      "path_type": "passage",
+      "traversal_risk": "moderate",
+      "confidence": 0.85,
+      "capabilities_required": ["basic_navigation", "boulder_navigation"],
+      "metadata": {
+        "description": "Boulder-strewn path to chamber"
+      }
+    },
+    {
+      "from_sector": "chamber-1",
+      "to_sector": "squeeze-1",
+      "distance_m": 12.0,
+      "bearing_deg": 105.0,
+      "vertical_change_m": -3.0,
+      "path_type": "crawl",
+      "traversal_risk": "high",
+      "confidence": 0.75,
+      "capabilities_required": ["compact_profile", "low_light_vision"],
+      "metadata": {
+        "description": "Tight crawl space - large drones cannot pass"
+      }
+    },
+    {
+      "from_sector": "squeeze-1",
+      "to_sector": "shaft-1",
+      "distance_m": 11.5,
+      "bearing_deg": 100.0,
+      "vertical_change_m": -10.0,
+      "path_type": "descent",
+      "traversal_risk": "extreme",
+      "confidence": 0.72,
+      "capabilities_required": ["vertical_mobility", "precise_altitude_control"],
+      "metadata": {
+        "description": "Steep vertical descent - requires careful maneuvering"
+      }
+    },
+    {
+      "from_sector": "shaft-1",
+      "to_sector": "chamber-2",
+      "distance_m": 8.0,
+      "bearing_deg": 95.0,
+      "vertical_change_m": -4.0,
+      "path_type": "passage",
+      "traversal_risk": "moderate",
+      "confidence": 0.80,
+      "capabilities_required": ["basic_navigation"],
+      "metadata": {
+        "description": "Short passage to terminal chamber"
+      }
+    }
+  ],
+  "waypoints": [
+    {
+      "waypoint_id": "wp-entrance",
+      "label": "Mission Start Point",
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "z_m": 0.0,
+      "sequence": 1,
+      "route_group": "primary-route",
+      "metadata": {
+        "waypoint_type": "mission_start",
+        "radio_quality": "excellent"
+      }
+    },
+    {
+      "waypoint_id": "wp-relay-1",
+      "label": "Relay Position 1",
+      "x_m": 15.0,
+      "y_m": -8.0,
+      "z_m": -5.0,
+      "sequence": 2,
+      "route_group": "primary-route",
+      "metadata": {
+        "waypoint_type": "relay_candidate",
+        "radio_quality": "good"
+      }
+    },
+    {
+      "waypoint_id": "wp-junction",
+      "label": "Decision Point - Junction Alpha",
+      "x_m": 28.0,
+      "y_m": -12.0,
+      "z_m": -12.0,
+      "sequence": 3,
+      "route_group": "primary-route",
+      "metadata": {
+        "waypoint_type": "decision_point",
+        "radio_quality": "moderate"
+      }
+    },
+    {
+      "waypoint_id": "wp-chamber-survey",
+      "label": "Chamber One Survey Point",
+      "x_m": 35.0,
+      "y_m": -8.0,
+      "z_m": -15.0,
+      "sequence": 4,
+      "route_group": "primary-route",
+      "metadata": {
+        "waypoint_type": "survey_point",
+        "radio_quality": "weak"
+      }
+    },
+    {
+      "waypoint_id": "wp-squeeze-before",
+      "label": "Pre-Squeeze Assessment",
+      "x_m": 42.0,
+      "y_m": -6.0,
+      "z_m": -17.0,
+      "sequence": 5,
+      "route_group": "primary-route",
+      "metadata": {
+        "waypoint_type": "hazard_assessment",
+        "radio_quality": "very_weak"
+      }
+    },
+    {
+      "waypoint_id": "wp-terminal",
+      "label": "Terminal Chamber - End of Route",
+      "x_m": 58.0,
+      "y_m": -2.0,
+      "z_m": -32.0,
+      "sequence": 6,
+      "route_group": "primary-route",
+      "metadata": {
+        "waypoint_type": "mission_end",
+        "radio_quality": "none"
+      }
+    }
+  ]
+}

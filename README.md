@@ -325,6 +325,99 @@ The frontend will be available at `http://localhost:4321`
 2. Navigate to **Use Cases** → **Collapsed Building Search**
 3. Click **Launch Demo** to see the simulated mission dashboard
 
+## Digital Twin Seed Data
+
+RescueMesh supports pre-populating the database with simplified digital twin map data derived from public/open cave survey and archaeological/heritage datasets. This provides realistic mission terrain without requiring access to physical environments.
+
+### What are Digital Twins?
+
+Digital twins are simplified 3D representations of real-world environments stored as:
+- **Terrain sectors** - Chambers, passages, junctions, shafts (with bounding boxes and metadata)
+- **Paths** - Connections between sectors with distance, bearing, vertical change, and traversal risk
+- **Waypoints** - Navigation points along mission routes
+
+**Why not full point clouds?**  
+Full LiDAR/photogrammetry point clouds are multi-gigabyte files unsuitable for SQL storage. Instead, we store simplified structure with references to external point cloud files when needed.
+
+### Source Datasets
+
+Demo data is inspired by:
+
+1. **Migovec Resurvey Project** - Cave survey data from Slovenia (Therion/Survex formats)
+   - https://github.com/tr1813/migresurvey
+   - Collected by ICCC and JSPDT, 1974-2019
+
+2. **CAVERS Dataset** - Cave SLAM data with RGB-D, LiDAR, thermal sensors (MIT License)
+   - https://github.com/spaceuma/cavers/
+   - DOI: https://doi.org/10.5281/zenodo.19367714
+
+3. **Open Heritage 3D** - Cultural heritage 3D documentation
+   - https://openheritage3d.org/
+   - Founded by CyArk, Historic Environment Scotland, USF Libraries
+
+### Running the Seed Command
+
+```bash
+# Seed all digital twin samples
+python manage.py seed_digital_twins
+
+# Clear existing data first
+python manage.py seed_digital_twins --clear
+
+# Import specific file
+python manage.py seed_digital_twins --file migovec_sample.json
+```
+
+**Docker Usage:**
+```bash
+docker exec -it rescuemesh-backend python manage.py seed_digital_twins
+```
+
+### Sample Data Included
+
+The platform includes two demonstration digital twins:
+
+1. **`migovec_sample.json`** - Simplified cave system structure
+   - 7 sectors (entrance, passages, chambers, shaft)
+   - 6 paths with distance/bearing/risk data
+   - 6 waypoints for route planning
+   - Based on public cave survey patterns (synthetic demo)
+
+2. **`archaeology_sample.json`** - Underground heritage site
+   - 8 sectors (ceremonial chambers, artifact alcoves, burial chamber)
+   - 7 paths with heritage conservation constraints
+   - 7 waypoints for non-destructive documentation
+   - Inspired by heritage 3D documentation best practices (synthetic demo)
+
+### Attribution and Sensitivity
+
+All digital twin data includes:
+- **Source name and URL**
+- **License information**
+- **Required attribution text**
+- **Sensitivity level**: `public_demo`, `reduced_precision`, `restricted`, or `synthetic_only`
+
+**Important:** Sample data is synthetic for demonstration purposes. No actual sensitive cave locations or archaeological sites are exposed.
+
+### API Endpoints
+
+```
+GET /api/v1/mapping/digital-twin-sites/
+GET /api/v1/mapping/terrain-maps/
+GET /api/v1/mapping/terrain-sectors/
+GET /api/v1/mapping/terrain-paths/
+GET /api/v1/mapping/waypoints/
+```
+
+### Learn More
+
+See [docs/digital-twin-seed-data.md](docs/digital-twin-seed-data.md) for:
+- Detailed data model documentation
+- How to add new digital twin sources
+- Point cloud processing guidance
+- Future format support (Therion, Survex, LAS/LAZ, E57, GeoJSON, 3D Tiles)
+- Licensing and sensitivity rules
+
 ## Development
 
 ### Frontend Development
