@@ -1773,6 +1773,37 @@ def simulate_cave_rescue(
                 'description': description
             })
     
+    # Navigation model for GPS-denied cave environment
+    # Uses local 3D coordinate system with mission north reference
+    origin_position = {'x': 120, 'y': 240, 'z': 0}  # Entrance Chamber
+    compass_confidence, compass_reliability, compass_reason = calculate_compass_confidence(
+        environment_type='cave',
+        distance_from_origin_m=0,
+        has_metal_nearby=False,  # Natural cave system
+        has_electrical_interference=False
+    )
+    
+    navigation_model = {
+        'coordinate_system': 'local_mission_3d_grid',
+        'origin_sector_id': 'entrance',
+        'origin_label': 'Cave Entrance',
+        'origin_position': origin_position,
+        'units': 'metres',
+        'horizontal_units': 'metres',
+        'vertical_units': 'metres',
+        'svg_unit_to_metres': 0.25,
+        'grid_square_metres': 5,
+        'z_reference': 'origin_relative',
+        'z_positive_direction': 'up',
+        'depth_positive_direction': 'down',
+        'north_reference': 'mission_north',
+        'bearing_reference': 'magnetic_simulated',
+        'magnetic_declination_deg': 0,
+        'bearing_confidence': round(compass_confidence, 2),
+        'bearing_reliability': compass_reliability,
+        'bearing_reliability_reason': compass_reason
+    }
+    
     return {
         'mission': {
             'mission_id': mission_id,
@@ -1786,6 +1817,7 @@ def simulate_cave_rescue(
             'speed_multiplier': speed_multiplier,
             'is_running': status == 'running'
         },
+        'navigation_model': navigation_model,
         'agents': agents,
         'network': network,
         'map': map_data,
@@ -2333,6 +2365,37 @@ def simulate_flooded_structure(
             'description': 'Environmental sensor package monitoring water conditions.'
         })
     
+    # Navigation model for flooded structure environment
+    # Uses local 3D coordinate system with water depth references
+    origin_position = {'x': 125, 'y': 90, 'z': 0}  # Entry Pool surface
+    compass_confidence, compass_reliability, compass_reason = calculate_compass_confidence(
+        environment_type='flooded_building',
+        distance_from_origin_m=0,
+        has_metal_nearby=True,  # Metal structures in building
+        has_electrical_interference=False
+    )
+    
+    navigation_model = {
+        'coordinate_system': 'local_mission_3d_grid',
+        'origin_sector_id': 'entry_pool',
+        'origin_label': 'Entry Pool (Surface)',
+        'origin_position': origin_position,
+        'units': 'metres',
+        'horizontal_units': 'metres',
+        'vertical_units': 'metres',
+        'svg_unit_to_metres': 0.25,
+        'grid_square_metres': 5,
+        'z_reference': 'water_surface',
+        'z_positive_direction': 'up',
+        'depth_positive_direction': 'down',
+        'north_reference': 'mission_north',
+        'bearing_reference': 'magnetic_simulated',
+        'magnetic_declination_deg': 0,
+        'bearing_confidence': round(compass_confidence, 2),
+        'bearing_reliability': compass_reliability,
+        'bearing_reliability_reason': compass_reason
+    }
+    
     return {
         'mission': {
             'mission_id': mission_id,
@@ -2346,6 +2409,7 @@ def simulate_flooded_structure(
             'speed_multiplier': speed_multiplier,
             'is_running': status == 'running'
         },
+        'navigation_model': navigation_model,
         'agents': agents,
         'network': network,
         'map': map_data,
@@ -3014,6 +3078,37 @@ def simulate_industrial_inspection(
                 'description': 'Surface corrosion detected on pipe surface. Maintenance attention required.'
             })
     
+    # Navigation model for industrial inspection environment
+    # Uses local 3D coordinate system for confined space navigation
+    origin_position = {'x': 110, 'y': 90, 'z': 0}  # Entry Point
+    compass_confidence, compass_reliability, compass_reason = calculate_compass_confidence(
+        environment_type='industrial_facility',
+        distance_from_origin_m=0,
+        has_metal_nearby=True,  # Metal pipes, tanks, equipment
+        has_electrical_interference=True  # Active electrical equipment
+    )
+    
+    navigation_model = {
+        'coordinate_system': 'local_mission_3d_grid',
+        'origin_sector_id': 'entry',
+        'origin_label': 'Entry Point',
+        'origin_position': origin_position,
+        'units': 'metres',
+        'horizontal_units': 'metres',
+        'vertical_units': 'metres',
+        'svg_unit_to_metres': 0.25,
+        'grid_square_metres': 5,
+        'z_reference': 'origin_relative',
+        'z_positive_direction': 'up',
+        'depth_positive_direction': 'down',
+        'north_reference': 'mission_north',
+        'bearing_reference': 'magnetic_simulated',
+        'magnetic_declination_deg': 0,
+        'bearing_confidence': round(compass_confidence, 2),
+        'bearing_reliability': compass_reliability,
+        'bearing_reliability_reason': compass_reason
+    }
+    
     return {
         'mission': {
             'mission_id': mission_id,
@@ -3027,6 +3122,7 @@ def simulate_industrial_inspection(
             'speed_multiplier': speed_multiplier,
             'is_running': status == 'running'
         },
+        'navigation_model': navigation_model,
         'agents': agents,
         'network': network,
         'map': map_data,
