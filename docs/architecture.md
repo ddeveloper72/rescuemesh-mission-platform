@@ -201,6 +201,140 @@ The platform simulates realistic failures:
 - Mission abort
 - Black-box recovery
 
+## Mission Distance Intelligence
+
+RescueMesh uses **local 3D mission coordinates** for GPS-denied environments, providing operators with critical navigation intelligence for complex terrain where GPS is unavailable or unreliable.
+
+### 3D Coordinate System
+
+The platform uses a **local mission origin** (typically the entry point or base station) as the reference point for all measurements:
+
+**Coordinate Axes:**
+- **x**: Local east/west or map horizontal axis (metres)
+- **y**: Local north/south or map vertical axis (metres)  
+- **z**: Vertical offset from origin (metres)
+  - z = 0 at mission origin/entry point
+  - Positive z = above the origin
+  - Negative z = below the origin
+
+**Derived Measurements:**
+- **elevation_m**: Vertical offset relative to origin (positive or negative)
+- **depth_m**: Positive value for positions below origin (abs(z) when z < 0)
+- **route_distance_m**: Actual path distance through terrain (sum of segments)
+- **straight_line_distance_m**: Direct Euclidean distance ignoring obstacles
+
+### Compass Bearing System
+
+The platform calculates **compass bearings** for direction-finding in GPS-denied spaces:
+
+**Bearing Convention:**
+- 0° = North
+- 90° = East
+- 180° = South
+- 270° = West
+
+**Cardinal Directions:** 16-point compass rose (N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW, SW, WSW, W, WNW, NW, NNW)
+
+**Compass Reliability:** Bearings include environment-aware confidence scores:
+- **Good (85-100%)**: Open areas, minimal interference
+- **Acceptable (65-84%)**: Moderate metal/concrete presence
+- **Degraded (45-64%)**: Heavy metal structures, EMI
+- **Unreliable (<45%)**: Severe interference, deep underground
+
+Compass confidence degrades based on:
+- Steel reinforcement in collapsed buildings
+- Rock composition in caves
+- Submerged metal in flooded structures
+- Electromagnetic interference in industrial sites
+
+### Navigation Data Model
+
+**For Each Sector:**
+- 3D centroid position (x, y, z)
+- Distance from origin (2D and 3D)
+- Bearing from origin with cardinal direction
+- Elevation or depth label ("4 m below entry", "+3 m above entry")
+- Vertical profile description
+
+**For Each Path Segment:**
+- Horizontal distance
+- Vertical change (gain or loss)
+- 3D segment distance  
+- Slope percentage and incline classification
+- Traversal risk based on slope
+- Bearing along segment
+
+**For Each Agent:**
+- Current 3D position
+- Distance from origin
+- Bearing from origin
+- Current heading (if moving)
+- Depth or elevation
+- Route distance travelled
+- Estimated return distance and time
+- Nearest relay (distance and bearing)
+- Contact path length through relay mesh
+- Communications risk
+
+**For Each Detection:**
+- 3D position
+- Distance from origin (route distance and straight-line)
+- Bearing from origin
+- Depth or elevation context
+- Contact path length to base through relays
+- Communications risk assessment
+
+### Use Case Examples
+
+**Collapsed Building Search:**
+- Model floors, stairwells, basement voids
+- Upper/lower floor detection
+- "Void Space 2: 63 m route, 074° ENE, ↓ 4 m below entry"
+
+**Cave Rescue:**
+- Descending tunnels and chambers
+- Depth below entrance critical for planning
+- "Deep Squeeze: 112 m route, 078° ENE, ↓ 11 m below entrance"
+
+**Flooded Structure:**
+- Water depth and submerged elevation
+- Surface relay vs. underwater drone positions
+- "Submerged zone: 3.5 m depth, contact path 45 m"
+
+**Industrial Inspection:**
+- Elevated platforms, ducts, basements
+- "Pipe Gallery: 28 m route, +6 m above plant floor"
+
+### Frontend Visualization
+
+**Tactical Map:**
+- Compass rose indicator (top-right corner)
+- Color-coded by bearing reliability
+- Depth/elevation chips on agent markers (↓ 4 m, ↑ 3 m)
+- Tooltips with full 3D position data
+
+**Distance & Link Budget Panel:**
+- Agent distance, bearing, and elevation
+- Nearest relay with bearing
+- Return route distance and estimated time
+- Contact path length through mesh
+- Communications risk indicators
+
+**Vertical Profile Display:**
+- Simple SVG elevation chart (future feature)
+- Shows route distance vs. depth/elevation
+- Marks relays, hazards, detections
+
+### Future Compatibility
+
+This local 3D coordinate system is designed for future integration with:
+- **GeoJSON-style 3D positions** - Altitude as third coordinate
+- **PostGIS spatial queries** - For database-backed spatial analysis
+- **ROS path/pose data** - Standard robotics coordinate frames
+- **Bathymetric/depth mapping** - For underwater and flooded missions
+
+The system remains **deterministic and simulation-first**, with no external dependencies on GPS, cloud services, or mapping APIs in the MVP.
+
 ## Communication Modes
 
 The platform models diverse communication strategies for different mission types:

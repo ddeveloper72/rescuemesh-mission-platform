@@ -8,6 +8,9 @@
 export interface MissionSimulationState {
   mission: MissionInfo;
   simulation_clock: SimulationClock;
+  navigation_model?: NavigationModel;
+  sectors?: DetailedSector[];
+  paths?: PathSegment[];
   agents: Agent[];
   network: NetworkState;
   map: MapState;
@@ -17,6 +20,7 @@ export interface MissionSimulationState {
   terrain_reconstruction?: TerrainReconstruction;
   media_feeds?: MediaFrame[];
   mission_escalation?: MissionEscalation;
+  audio_detections?: AudioDetection[];
 }
 
 export interface MissionInfo {
@@ -44,6 +48,7 @@ export interface Agent {
   position: Position;
   sensors: string[];
   nfc_recovery_available: boolean;
+  navigation?: AgentNavigationData;
 }
 
 export type AgentState =
@@ -78,6 +83,133 @@ export interface Position {
   y: number;
   z: number;
 }
+/**
+ * Navigation model for GPS-denied 3D mission coordinates
+ */
+export interface NavigationModel {
+  coordinate_system: string;
+  origin_sector_id: string;
+  origin_label: string;
+  origin_position: Position;
+  units: string;
+  horizontal_units: string;
+  vertical_units: string;
+  svg_unit_to_metres: number;
+  grid_square_metres: number;
+  z_reference: string;
+  z_positive_direction: string;
+  depth_positive_direction: string;
+  north_reference: string;
+  bearing_reference: string;
+  magnetic_declination_deg: number;
+  bearing_confidence: number;
+  bearing_reliability: 'good' | 'acceptable' | 'degraded' | 'unreliable';
+  bearing_reliability_reason: string;
+}
+
+/**
+ * Detailed sector with 3D position and navigation data
+ */
+export interface DetailedSector {
+  sector_id: string;
+  label: string;
+  centroid: Position;
+  type: 'accessible' | 'blocked' | 'void' | 'water' | 'hazard';
+  elevation_m: number;
+  depth_m: number;
+  vertical_offset_from_origin_m: number;
+  straight_line_2d_distance_from_origin_m: number;
+  straight_line_3d_distance_from_origin_m: number;
+  bearing_from_origin_deg: number;
+  bearing_from_origin_cardinal: string;
+  vertical_profile_label: string;
+  depth_elevation_label: string;
+}
+
+/**
+ * Path segment with 3D distance and slope
+ */
+export interface PathSegment {
+  from_sector_id: string;
+  to_sector_id: string;
+  from_position: Position;
+  to_position: Position;
+  horizontal_distance_m: number;
+  vertical_change_m: number;
+  segment_3d_distance_m: number;
+  segment_bearing_deg: number;
+  segment_bearing_cardinal: string;
+  slope_percent: number;
+  incline_label: 'level' | 'ascending' | 'descending' | 'steep_ascent' | 'steep_descent' | 'vertical_ascent' | 'vertical_drop';
+  traversal_risk: 'low' | 'medium' | 'high';
+  status: string;
+  traversable_by_capabilities: string[];
+}
+
+/**
+ * Agent navigation data for distance, bearing, and elevation
+ */
+export interface AgentNavigationData {
+  distance_from_origin_m: number;
+  straight_line_3d_distance_from_origin_m: number;
+  bearing_from_origin_deg: number | null;
+  bearing_from_origin_cardinal: string | null;
+  heading_deg: number | null;
+  elevation_m: number;
+  depth_m: number;
+  vertical_offset_from_origin_m: number;
+  vertical_profile_label: string;
+  depth_elevation_label: string;
+  estimated_return_route_distance_m: number;
+  estimated_return_time_seconds: number;
+  nearest_relay: {
+    relay_id: string;
+    relay_name: string;
+    distance_m: number;
+    bearing_deg: number;
+    bearing_cardinal: string;
+  } | null;
+  contact_path_length_m: number;
+}
+
+/**
+ * Detection navigation data for position and comms risk
+ */
+export interface DetectionNavigationData {
+  route_distance_from_origin_m: number;
+  straight_line_3d_distance_from_origin_m: number;
+  bearing_from_origin_deg: number;
+  bearing_from_origin_cardinal: string;
+  elevation_m: number;
+  depth_m: number;
+  vertical_context_label: string;
+  depth_elevation_label: string;
+  contact_path_length_m: number;
+  comms_risk: 'low' | 'medium' | 'high';
+}
+
+/**
+ * Audio detection with position and navigation data
+ */
+export interface AudioDetection {
+  id: string;
+  agent_id: string;
+  agent_name: string;
+  sensor_type: string;
+  audio_type: string;
+  status: string;
+  mission_time: string;
+  signal_quality: number;
+  confidence: number;
+  location_label: string;
+  annotations: string[];
+  description: string;
+  audio_url?: string;
+  spectrogram_url?: string;
+  position?: Position;
+  navigation?: DetectionNavigationData;
+}
+
 
 export interface NetworkState {
   base_signal_strength: number;
