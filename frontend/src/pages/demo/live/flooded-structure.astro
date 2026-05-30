@@ -6,6 +6,7 @@ import DataSourceBadge from '../../../components/demo/DataSourceBadge.astro';
 import MediaFeedsPanel from '../../../components/islands/MediaFeedsPanel';
 import AudioDetectionsPanel from '../../../components/islands/AudioDetectionsPanel';
 import DetectionDetailModal from '../../../components/islands/DetectionDetailModal';
+import AgentDetailModal from '../../../components/demo/AgentDetailModal.astro';
 import DistanceLinkBudgetPanel from '../../../components/islands/DistanceLinkBudgetPanel';
 
 const MISSION_PK = '2c6ccd68-85f6-49ac-b28d-6f5358bc6a68';
@@ -166,6 +167,9 @@ const initialClock = {
 
       <!-- Detection Detail Modal -->
       <DetectionDetailModal client:load />
+      
+      <!-- Agent Detail Modal -->
+      <AgentDetailModal />
 
       <!-- Lower Dashboard Grid -->
       <div class="grid lg:grid-cols-1 gap-6 mt-6">
@@ -216,6 +220,7 @@ const initialClock = {
   import { initializeSimulation } from '../../../lib/simulation-manager';
   import { initializeTacticalMap, updateTacticalMap } from '../../../lib/tactical-map-manager';
   import { initDetectionModalManager } from '../../../lib/detection-modal-manager';
+  import { initAgentModalManager, showAgentModal } from '../../../lib/agent-modal-manager';
   
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
   const manager = initializeSimulation(MISSION_PK);
@@ -225,6 +230,17 @@ const initialClock = {
   
   // Initialize detection modal manager
   initDetectionModalManager();
+  
+  // Initialize agent modal manager
+  initAgentModalManager();
+  
+  // Listen for agent marker clicks
+  window.addEventListener('agent-marker-clicked', (event: Event) => {
+    const customEvent = event as CustomEvent;
+    if (customEvent.detail?.agent) {
+      showAgentModal(customEvent.detail.agent);
+    }
+  });
   
   const originalPoll = (manager as any).poll;
   (manager as any).poll = async function() {

@@ -725,7 +725,7 @@ export function updateAgents(agents: Agent[], config: MapConfig, currentTime: nu
     const hasDepthElevation = depthElevationLabel && depthElevationLabel !== '±0 m';
 
     elements.push(`
-      <g id="agent-${agent.agent_id}" class="agent-marker">
+      <g id="agent-${agent.agent_id}" class="agent-marker cursor-pointer hover:opacity-80 transition-opacity" data-agent-id="${agent.agent_id}">
         ${showPulse ? `
           <circle 
             cx="${pos.x}" 
@@ -787,6 +787,33 @@ export function updateAgents(agents: Agent[], config: MapConfig, currentTime: nu
   });
 
   agentsGroup.innerHTML = elements.join('');
+  
+  // Attach click handlers to agent markers
+  attachAgentMarkerClickHandlers(agents);
+}
+
+/**
+ * Attach click handlers to agent markers for detailed information display
+ */
+function attachAgentMarkerClickHandlers(agents: Agent[]) {
+  const markers = document.querySelectorAll('.agent-marker');
+  
+  markers.forEach(marker => {
+    marker.addEventListener('click', (event) => {
+      const target = event.currentTarget as SVGElement;
+      const agentId = target.getAttribute('data-agent-id');
+      
+      if (agentId) {
+        const agent = agents.find(a => a.agent_id === agentId);
+        if (agent) {
+          // Dispatch event to open agent detail modal
+          window.dispatchEvent(new CustomEvent('agent-marker-clicked', {
+            detail: { agent }
+          }));
+        }
+      }
+    });
+  });
 }
 
 /**

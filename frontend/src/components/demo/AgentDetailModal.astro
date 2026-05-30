@@ -1,0 +1,181 @@
+---
+/**
+ * Agent Detail Modal Component
+ * 
+ * Displays comprehensive positioning, payload, and operational status for agents.
+ * Used for survey mapping and monitoring in GPS-denied environments.
+ */
+---
+
+<!-- Modal Backdrop -->
+<div 
+  id="agent-modal-backdrop" 
+  class="hidden fixed inset-0 bg-black bg-opacity-75 z-40 opacity-0 transition-opacity duration-200"
+>
+</div>
+
+<!-- Agent Detail Modal -->
+<div 
+  id="agent-detail-modal" 
+  class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+>
+  <div class="pointer-events-auto bg-slate-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-slate-700 opacity-0 scale-95 transition-all duration-200">
+    <!-- Modal Header -->
+    <div class="sticky top-0 bg-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between z-10">
+      <div>
+        <h2 id="agent-modal-name" class="text-2xl font-bold text-slate-100">Agent Name</h2>
+        <p class="text-sm text-slate-400">
+          <span id="agent-modal-id" class="font-mono">agent-id</span> • <span id="agent-modal-role">Role</span>
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="agent-modal-status" class="px-3 py-1 rounded-full text-sm font-semibold bg-slate-700 text-slate-300">Status</span>
+        <button 
+          id="close-agent-modal" 
+          class="text-slate-400 hover:text-slate-200 transition-colors p-2 rounded-lg hover:bg-slate-700"
+          title="Close (Esc)"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="p-6 space-y-6">
+      
+      <!-- Operational Status Section -->
+      <section>
+        <h3 class="text-lg font-semibold text-slate-200 mb-3 flex items-center gap-2">
+          <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Operational Status
+        </h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-slate-900 p-4 rounded-lg">
+            <div class="text-sm text-slate-400 mb-1">Battery</div>
+            <div class="text-2xl font-bold text-slate-100 mb-2">
+              <span id="agent-modal-battery">0%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div id="agent-modal-battery-bar" class="h-full bg-green-500 transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="bg-slate-900 p-4 rounded-lg">
+            <div class="text-sm text-slate-400 mb-1">Signal Strength</div>
+            <div class="text-2xl font-bold text-slate-100 mb-2">
+              <span id="agent-modal-signal">0%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div id="agent-modal-signal-bar" class="h-full bg-cyan-500 transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3D Positioning Section -->
+      <section>
+        <h3 class="text-lg font-semibold text-slate-200 mb-3 flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          3D Positioning Data (Survey Coordinates)
+        </h3>
+        <div class="bg-slate-900 p-4 rounded-lg space-y-4">
+          <!-- Absolute coordinates -->
+          <div>
+            <div class="text-sm font-semibold text-cyan-300 mb-2">Absolute Position</div>
+            <div class="grid grid-cols-3 gap-3">
+              <div class="bg-slate-800 p-3 rounded">
+                <div class="text-xs text-slate-400 mb-1">X (East)</div>
+                <div class="text-lg font-mono font-bold text-emerald-400"><span id="agent-modal-pos-x">0.00</span> m</div>
+              </div>
+              <div class="bg-slate-800 p-3 rounded">
+                <div class="text-xs text-slate-400 mb-1">Y (North)</div>
+                <div class="text-lg font-mono font-bold text-emerald-400"><span id="agent-modal-pos-y">0.00</span> m</div>
+              </div>
+              <div class="bg-slate-800 p-3 rounded">
+                <div class="text-xs text-slate-400 mb-1">Z (Vertical)</div>
+                <div class="text-lg font-mono font-bold text-emerald-400"><span id="agent-modal-pos-z">0.00</span> m</div>
+              </div>
+            </div>
+            <div class="mt-2 text-sm text-slate-400">
+              Location: <span id="agent-modal-location" class="text-slate-300 font-medium">Unknown</span>
+            </div>
+          </div>
+
+          <!-- Relative to origin -->
+          <div class="border-t border-slate-700 pt-4">
+            <div class="text-sm font-semibold text-cyan-300 mb-2">Relative to Origin</div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-slate-800 p-3 rounded">
+                <div class="text-xs text-slate-400 mb-1">2D Distance</div>
+                <div class="text-lg font-bold text-cyan-400" id="agent-modal-distance-2d">0 m</div>
+              </div>
+              <div class="bg-slate-800 p-3 rounded">
+                <div class="text-xs text-slate-400 mb-1">3D Distance</div>
+                <div class="text-lg font-bold text-cyan-400" id="agent-modal-distance-3d">0 m</div>
+              </div>
+              <div class="bg-slate-800 p-3 rounded">
+                <div class="text-xs text-slate-400 mb-1">Bearing</div>
+                <div class="text-lg font-bold text-cyan-400">
+                  <span id="agent-modal-bearing">N</span> <span id="agent-modal-bearing-deg" class="text-sm text-slate-400">(0°)</span>
+                </div>
+              </div>
+              <div class="bg-slate-800 p-3 rounded">
+                <div class="text-xs text-slate-400 mb-1">Elevation</div>
+                <div class="text-lg font-bold text-cyan-400" id="agent-modal-elevation">0 m</div>
+              </div>
+            </div>
+            <div class="mt-3 bg-slate-800 p-3 rounded">
+              <div class="text-xs text-slate-400 mb-1">Vertical Profile</div>
+              <div class="text-sm font-medium text-slate-300" id="agent-modal-vertical-label">At origin level</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Payload / Sensors Section -->
+      <section>
+        <h3 class="text-lg font-semibold text-slate-200 mb-3 flex items-center gap-2">
+          <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          Payload & Sensors
+        </h3>
+        <div class="bg-slate-900 p-4 rounded-lg">
+          <ul id="agent-modal-sensors-list" class="space-y-2">
+            <li class="text-slate-400 italic">No sensors equipped</li>
+          </ul>
+        </div>
+        
+        <!-- Special capabilities -->
+        <div class="mt-3 flex flex-wrap gap-2">
+          <span id="agent-modal-nfc-badge" class="hidden px-3 py-1 bg-amber-900 text-amber-300 rounded-full text-sm font-semibold">
+            🔖 NFC Recovery Available
+          </span>
+        </div>
+      </section>
+
+      <!-- Survey Data Export Section -->
+      <section>
+        <h3 class="text-lg font-semibold text-slate-200 mb-3 flex items-center gap-2">
+          <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          Survey Data Export (JSON)
+        </h3>
+        <div class="bg-slate-950 p-4 rounded-lg overflow-x-auto">
+          <pre id="agent-modal-survey-data" class="text-xs text-green-400 font-mono whitespace-pre-wrap">{ }</pre>
+        </div>
+        <p class="mt-2 text-xs text-slate-400">
+          💡 This positioning data can be used for plotting 3D survey maps and digital twin reconstruction
+        </p>
+      </section>
+
+    </div>
+  </div>
+</div>
