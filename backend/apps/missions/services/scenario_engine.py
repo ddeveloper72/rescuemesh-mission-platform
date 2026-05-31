@@ -286,6 +286,140 @@ def get_active_events(
     return active_events
 
 
+def extract_thermal_detections(
+    events: List[ScenarioEvent],
+    elapsed_seconds: float,
+    terrain_sectors: Dict[str, TerrainSector],
+    agents: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """
+    Extract thermal detection events that have been triggered.
+    Detections persist even after detecting agent fails.
+    
+    Returns:
+        List of thermal anomaly detection records
+    """
+    detections = []
+    
+    for event in events:
+        # Only process triggered detection events
+        if event.trigger_at_seconds > elapsed_seconds:
+            continue
+            
+        # Check for thermal detection events
+        if event.event_type in ('detection-thermal', 'detection') and 'thermal' in event.title.lower():
+            # Get agent name
+            agent_name = event.agent_id or 'Unknown'
+            agent_obj = next((a for a in agents if a['agent_id'] == event.agent_id), None)
+            if agent_obj:
+                agent_name = agent_obj['name']
+            
+            # Get position from sector
+            position = None
+            sector = None
+            if event.sector_id and event.sector_id in terrain_sectors:
+                sector = terrain_sectors[event.sector_id]
+                position = {
+                    'x_m': sector.x_m + (sector.width_m / 2),
+                    'y_m': sector.y_m + (sector.height_m / 2),
+                    'z_m': sector.z_m,
+                }
+            
+            # Extract temperature from event_data if available
+            temperature_delta = event.event_data.get('temperature_delta', 0)
+            if not temperature_delta:
+                # Try to extract from description
+                import re
+                temp_match = re.search(r'(\d+\.?\d*)\s*[°\u00b0]?[Cc]', event.description or '')
+                if temp_match:
+                    temperature_delta = float(temp_match.group(1))
+            
+            detection = {
+                'id': f"thermal-{event.id}",
+                'agent_id': event.agent_id,
+                'agent_name': agent_name,
+                'detected_at': format_time(event.trigger_at_seconds),
+                'location': sector.label if sector else (event.sector_id or 'Unknown'),
+                'temperature_delta': temperature_delta,
+                'confidence': float(event.event_data.get('confidence', 0.75)),
+                'human_review_required': event.requires_user_action,
+                'status': event.severity,
+                'description': event.description or event.title,
+                'position': position,
+                'timestamp_seconds': event.trigger_at_seconds,
+            }
+            detections.append(detection)
+    
+    return detections
+
+
+def extract_audio_detections(
+    events: List[ScenarioEvent],
+    elapsed_seconds: float,
+    terrain_sectors: Dict[str, TerrainSector],
+    agents: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """
+    Extract audio detection events that have been triggered.
+    Detections persist even after detecting agent fails.
+    
+    Returns:
+        List of audio detection records
+    """
+    detections = []
+    
+    for event in events:
+        # Only process triggered detection events
+        if event.trigger_at_seconds > elapsed_seconds:
+            continue
+            
+        # Check for audio detection events
+        if event.event_type in ('detection-audio', 'detection') and 'audio' in event.title.lower():
+            # Get agent name
+            agent_name = event.agent_id or 'Unknown'
+            agent_obj = next((a for a in agents if a['agent_id'] == event.agent_id), None)
+            if agent_obj:
+                agent_name = agent_obj['name']
+            
+            # Get position from sector
+            position = None
+            sector = None
+            if event.sector_id and event.sector_id in terrain_sectors:
+                sector = terrain_sectors[event.sector_id]
+                position = {
+                    'x_m': sector.x_m + (sector.width_m / 2),
+                    'y_m': sector.y_m + (sector.height_m / 2),
+                    'z_m': sector.z_m,
+                }
+            
+            # Determine audio type from title/description
+            audio_type = 'voice_like'
+            title_lower = event.title.lower()
+            if 'tapping' in title_lower or 'knock' in title_lower:
+                audio_type = 'tapping'
+            elif 'voice' in title_lower:
+                audio_type = 'voice_like'
+            
+            detection = {
+                'id': f"audio-{event.id}",
+                'agent_id': event.agent_id,
+                'agent_name': agent_name,
+                'detected_at': format_time(event.trigger_at_seconds),
+                'location': sector.label if sector else (event.sector_id or 'Unknown'),
+                'type': audio_type,
+                'confidence': float(event.event_data.get('confidence', 0.65)),
+                'frequency_range': event.event_data.get('frequency_range', 'Unknown'),
+                'human_review_required': event.requires_user_action,
+                'status': 'detected' if not event.requires_user_action else 'human_review_required',
+                'description': event.description or event.title,
+                'position': position,
+                'timestamp_seconds': event.trigger_at_seconds,
+            }
+            detections.append(detection)
+    
+    return detections
+
+
 def generate_simulation_state_from_scenario(
     mission_id: str,
     scenario_id: str,
@@ -454,6 +588,10 @@ def generate_simulation_state_from_scenario(
             'event_data': event.event_data,
         })
     
+    # Extract sensor detections from triggered events
+    thermal_anomalies = extract_thermal_detections(events, elapsed_seconds, terrain_sectors, agents)
+    audio_events_data = extract_audio_detections(events, elapsed_seconds, terrain_sectors, agents)
+    
     # Build complete simulation state
     return {
         'mission': {
@@ -486,12 +624,12 @@ def generate_simulation_state_from_scenario(
             'total_points': len(explored_sector_ids) * 1000,  # Approximate point count
         },
         'sensors': {
-            'thermal_anomalies': [],  # TODO: Extract from scenario events
-            'audio_events': [],  # TODO: Extract from scenario events
+            'thermal_anomalies': thermal_anomalies,
+            'audio_events': audio_events_data,
             'gas_readings': [],  # TODO: Extract from scenario events
         },
         'events': timeline_events,
-        'audio_detections': [],  # TODO: Extract from scenario events
+        'audio_detections': audio_events_data,  # Same data, different format expected by some components
         'ai_analysis': {},  # TODO: Build from scenario
     }
 

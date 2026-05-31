@@ -935,6 +935,140 @@ export function renderNetworkConnections(agents: Agent[], config: MapConfig) {
 }
 
 /**
+ * Render sensor detection markers from live mission data
+ * Detections persist even after detecting agent fails
+ */
+export function renderSensorDetections(
+  sensors: {
+    thermal_anomalies?: Array<{
+      id: string;
+      agent_id: string;
+      agent_name: string;
+      detected_at: string;
+      location: string;
+      position?: { x_m: number; y_m: number; z_m: number };
+      temperature_delta: number;
+      confidence: number;
+      timestamp_seconds?: number;
+    }>;
+    audio_events?: Array<{
+      id: string;
+      agent_id: string;
+      agent_name: string;
+      detected_at: string;
+      location: string;
+      position?: { x_m: number; y_m: number; z_m: number };
+      type: string;
+      confidence: number;
+      timestamp_seconds?: number;
+    }>;
+  },
+  currentTime: number
+) {
+  const markersGroup = document.getElementById('map-detections');
+  if (!markersGroup) {
+    console.warn('Sensor detections group not found in SVG');
+    return;
+  }
+
+  const markers: string[] = [];
+
+  // Render thermal detections
+  if (sensors.thermal_anomalies && sensors.thermal_anomalies.length > 0) {
+    sensors.thermal_anomalies.forEach(detection => {
+      if (!detection.position) return;
+
+      // Convert position to SVG coordinates
+      const svgX = detection.position.x_m * 8; // 800/100 = 8 pixels per meter
+      const svgY = detection.position.y_m * 4.5; // 450/100 = 4.5 pixels per meter
+
+      // Check if detection is recent (within last 60 seconds)
+      const detectionAge = currentTime - (detection.timestamp_seconds || 0);
+      const isRecent = detectionAge < 60;
+      
+      // Visual styling based on age
+      const opacity = isRecent ? 1.0 : 0.6;
+      const pulseAnimation = isRecent ? 'animate-pulse' : '';
+      
+      markers.push(`
+        <g class="sensor-detection detection-thermal ${pulseAnimation}" 
+           data-detection-id="${detection.id}" 
+           data-detection-type="thermal"
+           data-agent-name="${detection.agent_name}"
+           data-detected-at="${detection.detected_at}"
+           opacity="${opacity}">
+          <circle 
+            cx="${svgX}" 
+            cy="${svgY}" 
+            r="14"
+            fill="rgba(239, 68, 68, 0.2)"
+            stroke="#ef4444"
+            stroke-width="2"
+          />
+          <text 
+            x="${svgX}" 
+            y="${svgY + 22}" 
+            text-anchor="middle" 
+            class="text-xs pointer-events-none"
+            fill="#ef4444"
+            style="font-size: 16px; font-weight: bold;"
+          >🔥</text>
+          <title>Thermal: ${detection.temperature_delta}°C @ ${detection.detected_at} by ${detection.agent_name}</title>
+        </g>
+      `);
+    });
+  }
+
+  // Render audio detections
+  if (sensors.audio_events && sensors.audio_events.length > 0) {
+    sensors.audio_events.forEach(detection => {
+      if (!detection.position) return;
+
+      // Convert position to SVG coordinates
+      const svgX = detection.position.x_m * 8;
+      const svgY = detection.position.y_m * 4.5;
+
+      // Check if detection is recent
+      const detectionAge = currentTime - (detection.timestamp_seconds || 0);
+      const isRecent = detectionAge < 60;
+      
+      // Visual styling based on age
+      const opacity = isRecent ? 1.0 : 0.6;
+      const pulseAnimation = isRecent ? 'animate-pulse' : '';
+      
+      markers.push(`
+        <g class="sensor-detection detection-audio ${pulseAnimation}" 
+           data-detection-id="${detection.id}" 
+           data-detection-type="audio"
+           data-agent-name="${detection.agent_name}"
+           data-detected-at="${detection.detected_at}"
+           opacity="${opacity}">
+          <circle 
+            cx="${svgX}" 
+            cy="${svgY}" 
+            r="14"
+            fill="rgba(139, 92, 246, 0.2)"
+            stroke="#8b5cf6"
+            stroke-width="2"
+          />
+          <text 
+            x="${svgX}" 
+            y="${svgY + 22}" 
+            text-anchor="middle" 
+            class="text-xs pointer-events-none"
+            fill="#8b5cf6"
+            style="font-size: 16px; font-weight: bold;"
+          >🔊</text>
+          <title>Audio: ${detection.type} @ ${detection.detected_at} by ${detection.agent_name} (Confidence: ${Math.round(detection.confidence * 100)}%)</title>
+        </g>
+      `);
+    });
+  }
+
+  markersGroup.innerHTML = markers.join('');
+}
+
+/**
  * Render detection markers (thermal, gas, etc.) - only after their appear time
  */
 export function renderDetectionMarkers(config: MapConfig, currentTime: number) {
@@ -1197,7 +1331,12 @@ export function updateTacticalMap(state: MissionSimulationState, config: MapConf
   // Render network connections between agents
   renderNetworkConnections(state.agents, config);
   
-  // Update detection markers
+  // Render live sensor detections (persistent, even after agent failure)
+  if (state.sensors) {
+    renderSensorDetections(state.sensors, currentTime);
+  }
+  
+  // Update static detection markers (from config)
   renderDetectionMarkers(config, currentTime);
   
   // Update compass rose with navigation model
