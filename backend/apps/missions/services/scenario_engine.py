@@ -481,7 +481,7 @@ def generate_simulation_state_from_scenario(
             'relay_nodes': sum(1 for a in agents if a['role'] == 'relay'),
         },
         'map': {
-            'coverage_percent': len(explored_sector_ids) / len(terrain_sectors) * 100 if terrain_sectors else 0,
+            'coverage_percent': round(len(explored_sector_ids) / len(terrain_sectors) * 100, 1) if terrain_sectors else 0,
             'confidence': 0.75,  # Simplified
             'total_points': len(explored_sector_ids) * 1000,  # Approximate point count
         },

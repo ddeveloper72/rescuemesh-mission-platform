@@ -564,7 +564,8 @@ export class SimulationManager {
   private updateMap(map: MissionSimulationState['map']): void {
     const coverageEl = getElementByIdSafe(SELECTORS.MAP_COVERAGE);
     if (coverageEl) {
-      coverageEl.textContent = `${map.coverage_percent}%`;
+      const coverage = typeof map.coverage_percent === 'number' ? map.coverage_percent.toFixed(1) : map.coverage_percent;
+      coverageEl.textContent = `${coverage}%`;
     }
     
     const confidenceEl = getElementByIdSafe(SELECTORS.MAP_CONFIDENCE);
