@@ -83,7 +83,7 @@ export async function loadDigitalTwinMap(
   try {
     // Fetch terrain map
     const mapsResult = await getTerrainMaps(binding.siteSlug);
-    if (!mapsResult.success || !mapsResult.data || mapsResult.data.length === 0) {
+    if (!mapsResult.success || !mapsResult.data) {
       return {
         success: false,
         error: `Failed to load terrain map: ${mapsResult.error || 'No data'}`,
@@ -91,7 +91,17 @@ export async function loadDigitalTwinMap(
       };
     }
 
-    const terrainMap = mapsResult.data.find(m => m.slug === binding.terrainMapSlug);
+    // Handle paginated response from Django REST Framework
+    const maps = Array.isArray(mapsResult.data) ? mapsResult.data : (mapsResult.data as any).results || [];
+    if (maps.length === 0) {
+      return {
+        success: false,
+        error: 'No terrain maps available',
+        terrainSource: 'local-fallback',
+      };
+    }
+
+    const terrainMap = maps.find(m => m.slug === binding.terrainMapSlug);
     if (!terrainMap) {
       return {
         success: false,
@@ -115,9 +125,10 @@ export async function loadDigitalTwinMap(
       };
     }
 
-    const sectors = sectorsResult.data;
-    const paths = pathsResult.data || [];
-    const waypoints = waypointsResult.data || [];
+    // Handle paginated responses from Django REST Framework
+    const sectors = Array.isArray(sectorsResult.data) ? sectorsResult.data : (sectorsResult.data as any).results || [];
+    const paths = pathsResult.data ? (Array.isArray(pathsResult.data) ? pathsResult.data : (pathsResult.data as any).results || []) : [];
+    const waypoints = waypointsResult.data ? (Array.isArray(waypointsResult.data) ? waypointsResult.data : (waypointsResult.data as any).results || []) : [];
 
     // Adapt to tactical map view model
     const viewModel = adaptDigitalTwinToTacticalMap(

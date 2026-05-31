@@ -225,8 +225,13 @@ export function adaptToRouteProfile(
     });
   }
 
+  // Filter sectors to only show explored ones (confidence > 0)
+  const exploredSectors = sectors.filter(sector => 
+    sector.confidence === undefined || sector.confidence > 0
+  );
+
   // Add sector points
-  for (const sector of sectors) {
+  for (const sector of exploredSectors) {
     const routeDistanceM = routeDistances.get(sector.id) || 0;
     const { depthM, elevationM } = calculateDepthElevation(sector);
     const zM = sector.z_m;
@@ -333,6 +338,16 @@ export function adaptToRouteProfile(
     contactContinuityRisk: longestRelayGapM > 300 ? 'critical' : longestRelayGapM > 150 ? 'high' : 'stable',
     deepestDetectionM
   };
+  
+  console.log('[RouteProfileAdapter] Calculated summary:', {
+    farthestAgentLabel,
+    farthestAgentDistanceM,
+    farthestAgentDepthM,
+    maxDepthM,
+    maxElevationM,
+    missionStateProvided: !!missionState,
+    agentCount: missionState?.agents?.length || 0
+  });
 
   return {
     originLabel,

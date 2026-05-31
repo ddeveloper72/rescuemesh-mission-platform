@@ -3,11 +3,14 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SimulationControls from '../../../components/demo/SimulationControls.astro';
 import TacticalMap from '../../../components/demo/TacticalMap.astro';
 import DataSourceBadge from '../../../components/demo/DataSourceBadge.astro';
+import EscalationBanner from '../../../components/demo/EscalationBanner.astro';
+import RecommendedActions from '../../../components/demo/RecommendedActions.astro';
 import MediaFeedsPanel from '../../../components/islands/MediaFeedsPanel';
 import AudioDetectionsPanel from '../../../components/islands/AudioDetectionsPanel';
 import DetectionDetailModal from '../../../components/islands/DetectionDetailModal';
 import AgentDetailModal from '../../../components/demo/AgentDetailModal.astro';
 import DistanceLinkBudgetPanel from '../../../components/islands/DistanceLinkBudgetPanel';
+import RouteProfile from '../../../components/demo/RouteProfile.astro';
 
 const MISSION_PK = 'c5d0ffd4-2fc8-4b45-841d-88ec93f27e8e';
 const USE_CASE = 'collapsed-building-search';
@@ -68,9 +71,20 @@ const initialClock = {
         <SimulationControls clock={initialClock} missionPk={MISSION_PK} />
       </div>
 
+      <!-- Mission Escalation Banner (dynamically populated) -->
+      <div id="escalation-banner-container"></div>
+
+      <!-- Recommended Actions Panel (dynamically populated) -->
+      <div id="recommended-actions-container" class="mb-8"></div>
+
       <!-- Tactical Map -->
       <div id="tactical-map-container" class="mb-8">
         <TacticalMap useCase={USE_CASE} />
+      </div>
+
+      <!-- Route Profile -->
+      <div id="route-profile-container" class="mb-8">
+        <RouteProfile containerId="route-profile" title="Route Profile — Vertical View" />
       </div>
 
       <!-- Dashboard Grid -->
@@ -239,9 +253,14 @@ const initialClock = {
 
 <script>
   import { initializeSimulation } from '../../../lib/simulation-manager';
-  import { initializeTacticalMap, updateTacticalMap } from '../../../lib/tactical-map-manager';
-  import { initDetectionModalManager } from '../../../lib/detection-modal-manager';
+  import { initializeTacticalMapWithDigitalTwin, updateTacticalMap } from '../../../lib/tactical-map-manager';
+  import { initDetectionModalManager, updateDetectionData } from '../../../lib/detection-modal-manager';
   import { initAgentModalManager, showAgentModal } from '../../../lib/agent-modal-manager';
+  import { initializeRouteProfile, updateRouteProfile } from '../../../lib/route-profile-renderer';
+  import { adaptToRouteProfile } from '../../../lib/tactical-map/routeProfileAdapter';
+  import { getTerrainSectors, getTerrainPaths, getWaypoints } from '../../../lib/api';
+  import { getTerrainBinding } from '../../../lib/tactical-map/useCaseTerrainBindings';
+  import { renderInteractiveActions } from '../../../lib/recommended-actions-manager';
   
   // Mission PK from Astro props (passed via data attribute)
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
@@ -249,22 +268,57 @@ const initialClock = {
   // Initialize simulation manager
   const manager = initializeSimulation(MISSION_PK);
   
-  // Initialize tactical map
-  const mapConfig = initializeTacticalMap('collapsed-building-search');
-  
-  // Initialize detection modal manager
-  initDetectionModalManager();
-  
-  // Initialize agent modal manager
-  initAgentModalManager();
-  
-  // Listen for agent marker clicks
-  window.addEventListener('agent-marker-clicked', (event: Event) => {
-    const customEvent = event as CustomEvent;
-    if (customEvent.detail?.agent) {
-      showAgentModal(customEvent.detail.agent);
+  // Initialize tactical map with Digital Twin terrain (async)
+  let mapConfig: any;
+  (async () => {
+    mapConfig = await initializeTacticalMapWithDigitalTwin('collapsed-building-search');
+    
+    // Initialize route profile with Digital Twin data
+    try {
+      const binding = getTerrainBinding('collapsed-building-search');
+      if (binding && binding.terrainMapSlug) {
+        const [sectorsResult, pathsResult, waypointsResult] = await Promise.all([
+          getTerrainSectors(binding.terrainMapSlug),
+          getTerrainPaths(binding.terrainMapSlug),
+          getWaypoints(binding.terrainMapSlug)
+        ]);
+        
+        if (sectorsResult.success && sectorsResult.data) {
+          // Handle paginated response from Django REST Framework
+          const sectors = Array.isArray(sectorsResult.data) ? sectorsResult.data : (sectorsResult.data as any).results || [];
+          const paths = pathsResult.success ? (Array.isArray(pathsResult.data) ? pathsResult.data : (pathsResult.data as any).results || []) : [];
+          const waypoints = waypointsResult.success ? (Array.isArray(waypointsResult.data) ? waypointsResult.data : (waypointsResult.data as any).results || []) : [];
+          
+          const routeProfileViewModel = adaptToRouteProfile(
+            sectors,
+            paths,
+            waypoints,
+            undefined,
+            'Ground Level Entry'
+          );
+          initializeRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
+        }
+      }
+    } catch (err) {
+      console.error('Route profile initialization failed:', err);
+      const loadingEl = document.getElementById('route-profile-loading');
+      if (loadingEl) loadingEl.textContent = 'Failed to load route profile';
     }
-  });
+  
+    // Initialize detection modal manager
+    initDetectionModalManager();
+  
+    // Initialize agent modal manager
+    initAgentModalManager();
+  
+    // Listen for agent marker clicks
+    window.addEventListener('agent-marker-clicked', (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail?.agent) {
+        showAgentModal(customEvent.detail.agent);
+      }
+    });
+  })();
   
   // Enhanced UI update function to show agents
   // This is a temporary extension until we refactor to a proper framework
@@ -275,6 +329,15 @@ const initialClock = {
       
       const state = this.getLastState();
       if (!state) return;
+      
+      // Update mission clock
+      const clockEl = document.getElementById('mission-clock-time');
+      if (clockEl && state.simulation_clock) {
+        const elapsed = state.simulation_clock.elapsed_seconds;
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = Math.floor(elapsed % 60);
+        clockEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
       
       // Update agents display
       const agentsContainer = document.getElementById('agents-container');
@@ -336,6 +399,101 @@ const initialClock = {
       
       // Update tactical map
       updateTacticalMap(state, mapConfig);
+      
+      // Update route profile
+      (async () => {
+        try {
+          const binding = getTerrainBinding('collapsed-building-search');
+          if (binding && binding.terrainMapSlug) {
+            const [sectorsResult, pathsResult, waypointsResult] = await Promise.all([
+              getTerrainSectors(binding.terrainMapSlug),
+              getTerrainPaths(binding.terrainMapSlug),
+              getWaypoints(binding.terrainMapSlug)
+            ]);
+            
+            if (sectorsResult.success && sectorsResult.data) {
+              // Handle paginated response from Django REST Framework
+              const sectors = Array.isArray(sectorsResult.data) ? sectorsResult.data : (sectorsResult.data as any).results || [];
+              const paths = pathsResult.success ? (Array.isArray(pathsResult.data) ? pathsResult.data : (pathsResult.data as any).results || []) : [];
+              const waypoints = waypointsResult.success ? (Array.isArray(waypointsResult.data) ? waypointsResult.data : (waypointsResult.data as any).results || []) : [];
+              
+              const routeProfileViewModel = adaptToRouteProfile(
+                sectors,
+                paths,
+                waypoints,
+                state,
+                'Ground Level Entry'
+              );
+              updateRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
+            }
+          }
+        } catch (err) {
+          console.error('Route profile update failed:', err);
+        }
+      })();
+      
+      // Update detection data for modal manager
+      updateDetectionData(state);
+      
+      // Handle escalation and recommended actions
+      if (state.escalation) {
+        const escalation = state.escalation;
+        
+        // Render Escalation Banner
+        const bannerContainer = document.getElementById('escalation-banner-container');
+        if (bannerContainer && escalation.active) {
+          const severityClasses = {
+            'critical': { container: 'bg-red-900/40 border-red-500', icon: 'text-red-400', title: 'text-red-200', text: 'text-red-100' },
+            'urgent': { container: 'bg-orange-900/40 border-orange-500', icon: 'text-orange-400', title: 'text-orange-200', text: 'text-orange-100' },
+            'warning': { container: 'bg-yellow-900/40 border-yellow-500', icon: 'text-yellow-400', title: 'text-yellow-200', text: 'text-yellow-100' },
+            'advisory': { container: 'bg-blue-900/40 border-blue-500', icon: 'text-blue-400', title: 'text-blue-200', text: 'text-blue-100' }
+          };
+          const classes = severityClasses[escalation.severity] || severityClasses.advisory;
+          const shouldPulse = escalation.severity === 'critical' || escalation.severity === 'urgent';
+          
+          const riskBadgeClasses = {
+            'critical': 'bg-red-900/60 border-red-600 text-red-200',
+            'high': 'bg-orange-900/60 border-orange-600 text-orange-200',
+            'watch': 'bg-yellow-900/60 border-yellow-600 text-yellow-200'
+          };
+          
+          bannerContainer.innerHTML = `
+            <div class="rounded-lg border-2 p-4 mb-6 ${classes.container} ${shouldPulse ? 'animate-pulse' : ''}" role="alert" aria-live="assertive">
+              <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 ${classes.icon}">
+                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                  </svg>
+                </div>
+                <div class="flex-grow">
+                  <div class="flex items-center gap-2 mb-2">
+                    <h3 class="text-lg font-bold ${classes.title}">
+                      ${escalation.severity.toUpperCase()}: Mission Escalation
+                    </h3>
+                    ${escalation.contact_continuity_risk && escalation.contact_continuity_risk !== 'stable' 
+                      ? `<span class="text-xs px-2 py-1 rounded border ${riskBadgeClasses[escalation.contact_continuity_risk]}">
+                           Contact Risk: ${escalation.contact_continuity_risk.toUpperCase()}
+                         </span>`
+                      : ''}
+                  </div>
+                  ${escalation.reason ? `<p class="text-base ${classes.text} leading-relaxed">${escalation.reason}</p>` : ''}
+                  ${escalation.area_of_interest 
+                    ? `<div class="mt-2 text-sm opacity-90">
+                         <span class="font-semibold">Area of Interest:</span> 
+                         <span class="font-mono ml-1">${escalation.area_of_interest}</span>
+                       </div>`
+                    : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        } else if (bannerContainer) {
+          bannerContainer.innerHTML = '';
+        }
+        
+        // Render Recommended Actions with interactive buttons
+        renderInteractiveActions(escalation, 'recommended-actions-container');
+      }
       
       // Update atmosphere sensors
       if (state.sensors && state.sensors.environmental_readings) {

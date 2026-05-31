@@ -31,6 +31,16 @@ export interface TacticalMapViewModel {
     siteSlug: string;
     terrainMapSlug: string;
   };
+  coordinateScaling?: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    scaleX: number;
+    scaleY: number;
+    offsetX: number;
+    offsetY: number;
+  };
 }
 
 export interface TacticalSector {
@@ -308,8 +318,14 @@ export function adaptDigitalTwinToTacticalMap(
   // Calculate coordinate scaling
   const scaling = calculateScaling(sectors, viewBoxWidth, viewBoxHeight);
 
+  // Filter out unexplored sectors (confidence === 0)
+  // Only show sectors that have been explored by agents
+  const exploredSectors = sectors.filter(sector => 
+    sector.confidence === undefined || sector.confidence > 0
+  );
+
   // Transform sectors
-  const tacticalSectors: TacticalSector[] = sectors.map((sector, index) => {
+  const tacticalSectors: TacticalSector[] = exploredSectors.map((sector, index) => {
     const svgPos = toSVGCoordinates(sector.x_m, sector.y_m, scaling);
     const width = (sector.width_m || 10) * scaling.scaleX;
     const height = Math.abs((sector.height_m || 10) * scaling.scaleY);
@@ -324,7 +340,7 @@ export function adaptDigitalTwinToTacticalMap(
       width,
       height,
       type: mapSectorType(sector.sector_type),
-      revealAt: index * 30, // Progressive reveal (30 seconds per sector)
+      revealAt: 0, // Sector is already explored when it appears
       confidenceAtReveal: sector.confidence,
       metadata: sector.metadata,
       ...depthElevation,
@@ -346,6 +362,16 @@ export function adaptDigitalTwinToTacticalMap(
       terrainMapName: terrainMap.name,
       siteSlug: terrainMap.digital_twin_site_slug,
       terrainMapSlug: terrainMap.slug,
+    },
+    coordinateScaling: {
+      minX: scaling.minX,
+      maxX: scaling.maxX,
+      minY: scaling.minY,
+      maxY: scaling.maxY,
+      scaleX: scaling.scaleX,
+      scaleY: scaling.scaleY,
+      offsetX: scaling.offsetX,
+      offsetY: scaling.offsetY,
     },
   };
 }

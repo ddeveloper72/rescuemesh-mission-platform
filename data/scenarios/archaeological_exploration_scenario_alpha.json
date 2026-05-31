@@ -1,0 +1,244 @@
+{
+  "scenario_id": "archaeological-exploration-alpha-01",
+  "name": "Archaeological Exploration Alpha - Underground Heritage Site",
+  "description": "Non-invasive exploration of underground heritage chambers. Models artifact detection, structural integrity assessment, and preservation monitoring.",
+  "use_case": "archaeological-exploration",
+  "digital_twin_site_slug": "heritage-underground-chamber-demo",
+  "digital_twin_terrain_slug": "underground-chamber-complex",
+  "origin_sector_id": "access-tunnel",
+  "duration_seconds": 600,
+  "agent_routes": [
+    {
+      "agent_id": "surface-coord",
+      "agent_name": "Surface Coordination",
+      "agent_role": "relay",
+      "deploy_at_seconds": 0,
+      "average_speed_m_per_s": 0,
+      "battery_drain_rate_percent_per_second": 0,
+      "sensors": ["Communication", "Data Archive"],
+      "behavior": "stationary_relay",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "access-tunnel",
+          "action": "establish_coordination",
+          "pause_duration_seconds": 600,
+          "notes": "Archaeological coordination point"
+        }
+      ]
+    },
+    {
+      "agent_id": "drone-a",
+      "agent_name": "Heritage Survey Drone",
+      "agent_role": "mapper",
+      "deploy_at_seconds": 30,
+      "average_speed_m_per_s": 0.5,
+      "battery_drain_rate_percent_per_second": 0.038,
+      "sensors": ["High-Res Camera", "LiDAR", "Photogrammetry", "UV Light"],
+      "behavior": "non_invasive_survey",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "access-tunnel",
+          "action": "entry_documentation",
+          "pause_duration_seconds": 20,
+          "notes": "Document modern access condition"
+        },
+        {
+          "sequence_order": 2,
+          "sector_id": "antechamber",
+          "action": "initial_survey",
+          "pause_duration_seconds": 45,
+          "notes": "Survey antechamber structure"
+        },
+        {
+          "sequence_order": 3,
+          "sector_id": "main-chamber",
+          "action": "detailed_photogrammetry",
+          "pause_duration_seconds": 90,
+          "notes": "3D scan of main ceremonial chamber"
+        },
+        {
+          "sequence_order": 4,
+          "sector_id": "artifact-alcove-north",
+          "action": "artifact_documentation",
+          "pause_duration_seconds": 60,
+          "notes": "Document northern alcove artifacts"
+        }
+      ]
+    },
+    {
+      "agent_id": "micro-scanner",
+      "agent_name": "Micro Artifact Scanner",
+      "agent_role": "detector",
+      "deploy_at_seconds": 120,
+      "average_speed_m_per_s": 0.3,
+      "battery_drain_rate_percent_per_second": 0.045,
+      "sensors": ["Macro Camera", "UV", "IR", "Spectroscopy"],
+      "behavior": "artifact_close_inspection",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "antechamber",
+          "action": "deploy",
+          "pause_duration_seconds": 10,
+          "notes": "Launch micro scanner"
+        },
+        {
+          "sequence_order": 2,
+          "sector_id": "main-chamber",
+          "action": "wall_inspection",
+          "pause_duration_seconds": 60,
+          "notes": "Wall art and inscription scan"
+        },
+        {
+          "sequence_order": 3,
+          "sector_id": "artifact-alcove-south",
+          "action": "artifact_detail_scan",
+          "pause_duration_seconds": 120,
+          "notes": "Detailed artifact imaging"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "trigger_at_seconds": 30,
+      "event_type": "milestone",
+      "title": "Access Tunnel Documented",
+      "description": "Modern access point documented. Proceeding to historical structure.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "access-tunnel",
+      "requires_user_action": false,
+      "event_data": {
+        "access_condition": "stable"
+      }
+    },
+    {
+      "trigger_at_seconds": 90,
+      "event_type": "milestone",
+      "title": "Antechamber Surveyed",
+      "description": "Antechamber structural integrity: good. No visible water ingress or collapse risk.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "antechamber",
+      "requires_user_action": false,
+      "event_data": {
+        "structural_integrity": "good",
+        "depth": "-2m"
+      }
+    },
+    {
+      "trigger_at_seconds": 150,
+      "event_type": "detection",
+      "title": "Wall Inscriptions Detected",
+      "description": "Ancient wall inscriptions visible in main chamber. High-resolution imaging initiated.",
+      "severity": "success",
+      "agent_id": "drone-a",
+      "sector_id": "main-chamber",
+      "requires_user_action": false,
+      "event_data": {
+        "artifact_type": "inscriptions",
+        "preservation": "good"
+      }
+    },
+    {
+      "trigger_at_seconds": 180,
+      "event_type": "milestone",
+      "title": "Main Chamber 3D Scan Progress",
+      "description": "Photogrammetry scan 40% complete. Ceremonial chamber structure captured.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "main-chamber",
+      "requires_user_action": false,
+      "event_data": {
+        "scan_progress": "40%"
+      }
+    },
+    {
+      "trigger_at_seconds": 240,
+      "event_type": "detection",
+      "title": "Ceramic Artifacts Detected",
+      "description": "Multiple ceramic vessels identified in northern alcove. Intact condition.",
+      "severity": "success",
+      "agent_id": "drone-a",
+      "sector_id": "artifact-alcove-north",
+      "requires_user_action": false,
+      "event_data": {
+        "artifact_count": 7,
+        "artifact_type": "ceramic_vessels",
+        "condition": "intact"
+      }
+    },
+    {
+      "trigger_at_seconds": 300,
+      "event_type": "milestone",
+      "title": "Main Chamber Scan Complete",
+      "description": "3D photogrammetry scan complete. High-resolution model generated.",
+      "severity": "success",
+      "agent_id": "drone-a",
+      "sector_id": "main-chamber",
+      "requires_user_action": false,
+      "event_data": {
+        "scan_resolution": "0.5mm",
+        "model_quality": "high"
+      }
+    },
+    {
+      "trigger_at_seconds": 360,
+      "event_type": "detection",
+      "title": "Pigment Analysis - UV Fluorescence",
+      "description": "UV imaging reveals previously invisible pigments on wall art. Preservation excellent.",
+      "severity": "success",
+      "agent_id": "micro-scanner",
+      "sector_id": "main-chamber",
+      "requires_user_action": false,
+      "event_data": {
+        "analysis_type": "uv_fluorescence",
+        "hidden_details": true
+      }
+    },
+    {
+      "trigger_at_seconds": 420,
+      "event_type": "detection",
+      "title": "Metal Artifacts Detected",
+      "description": "Metal objects detected in southern alcove. Possible ritual items.",
+      "severity": "success",
+      "agent_id": "micro-scanner",
+      "sector_id": "artifact-alcove-south",
+      "requires_user_action": false,
+      "event_data": {
+        "artifact_type": "metal_objects",
+        "suspected_use": "ritual"
+      }
+    },
+    {
+      "trigger_at_seconds": 480,
+      "event_type": "detection",
+      "title": "Structural Concern - Partial Collapse",
+      "description": "Partial collapse detected in side passage. Avoid direct entry. Document remotely only.",
+      "severity": "warning",
+      "agent_id": "drone-a",
+      "sector_id": "collapse-zone",
+      "requires_user_action": true,
+      "event_data": {
+        "hazard_type": "partial_collapse",
+        "recommendation": "remote_documentation_only"
+      }
+    },
+    {
+      "trigger_at_seconds": 540,
+      "event_type": "milestone",
+      "title": "Artifact Documentation Complete",
+      "description": "All accessible artifacts documented. Burial chamber remains to be explored.",
+      "severity": "info",
+      "agent_id": "micro-scanner",
+      "sector_id": "artifact-alcove-south",
+      "requires_user_action": false,
+      "event_data": {
+        "total_artifacts_documented": 23
+      }
+    }
+  ]
+}

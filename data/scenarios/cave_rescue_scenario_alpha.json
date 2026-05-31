@@ -1,0 +1,281 @@
+{
+  "scenario_id": "cave-rescue-alpha-01",
+  "name": "Cave Rescue Alpha - Standard Exploration",
+  "description": "Progressive cave mapping with relay deployment. Models GPS denial, SLAM navigation, rock signal attenuation, and narrow passage challenges.",
+  "use_case": "cave-rescue",
+  "digital_twin_site_slug": "migovec-primadona-demo",
+  "digital_twin_terrain_slug": "primadona-entrance-zone",
+  "origin_sector_id": "entrance",
+  "duration_seconds": 600,
+  "agent_routes": [
+    {
+      "agent_id": "base-station",
+      "agent_name": "Cave Entrance Relay",
+      "agent_role": "relay",
+      "deploy_at_seconds": 0,
+      "average_speed_m_per_s": 0,
+      "battery_drain_rate_percent_per_second": 0,
+      "sensors": ["WiFi Relay", "Radio Repeater"],
+      "behavior": "stationary_relay",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "entrance",
+          "action": "establish_base_relay",
+          "pause_duration_seconds": 600,
+          "notes": "Permanent base station at cave entrance"
+        }
+      ]
+    },
+    {
+      "agent_id": "drone-a",
+      "agent_name": "Cave Scout Drone",
+      "agent_role": "mapper",
+      "deploy_at_seconds": 30,
+      "average_speed_m_per_s": 0.5,
+      "battery_drain_rate_percent_per_second": 0.045,
+      "sensors": ["LiDAR", "IMU", "RGB Camera", "SLAM"],
+      "behavior": "progressive_mapping",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "entrance",
+          "action": "initial_scan",
+          "pause_duration_seconds": 20,
+          "notes": "Map entrance chamber"
+        },
+        {
+          "sequence_order": 2,
+          "sector_id": "passage-1",
+          "action": "map_passage",
+          "pause_duration_seconds": 30,
+          "notes": "Main passage mapping with SLAM"
+        },
+        {
+          "sequence_order": 3,
+          "sector_id": "junction-alpha",
+          "action": "junction_survey",
+          "pause_duration_seconds": 40,
+          "notes": "Survey junction and plan deep route"
+        },
+        {
+          "sequence_order": 4,
+          "sector_id": "chamber-1",
+          "action": "chamber_mapping",
+          "pause_duration_seconds": 45,
+          "notes": "Chamber One detailed scan"
+        },
+        {
+          "sequence_order": 5,
+          "sector_id": "squeeze-1",
+          "action": "narrow_navigation",
+          "pause_duration_seconds": 60,
+          "notes": "Navigate tight squeeze carefully"
+        }
+      ]
+    },
+    {
+      "agent_id": "drone-b",
+      "agent_name": "Micro Mapper",
+      "agent_role": "mapper",
+      "deploy_at_seconds": 90,
+      "average_speed_m_per_s": 0.3,
+      "battery_drain_rate_percent_per_second": 0.055,
+      "sensors": ["Mini Camera", "IMU"],
+      "behavior": "narrow_passage_specialist",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "entrance",
+          "action": "launch",
+          "pause_duration_seconds": 10,
+          "notes": "Deploy micro mapper"
+        },
+        {
+          "sequence_order": 2,
+          "sector_id": "passage-1",
+          "action": "explore",
+          "pause_duration_seconds": 20,
+          "notes": "Explore side passages"
+        },
+        {
+          "sequence_order": 3,
+          "sector_id": "junction-alpha",
+          "action": "lost_signal",
+          "pause_duration_seconds": 999,
+          "notes": "Signal lost in narrow section - asset remains"
+        }
+      ]
+    },
+    {
+      "agent_id": "relay-1",
+      "agent_name": "Junction Relay Drone",
+      "agent_role": "relay",
+      "deploy_at_seconds": 180,
+      "average_speed_m_per_s": 1.5,
+      "battery_drain_rate_percent_per_second": 0.025,
+      "sensors": ["Radio Repeater", "WiFi Relay"],
+      "behavior": "relay_deployment",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "entrance",
+          "action": "launch",
+          "pause_duration_seconds": 5,
+          "notes": "Launch from entrance"
+        },
+        {
+          "sequence_order": 2,
+          "sector_id": "junction-alpha",
+          "action": "establish_relay",
+          "pause_duration_seconds": 600,
+          "notes": "Land and become relay node"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "trigger_at_seconds": 30,
+      "event_type": "milestone",
+      "title": "Entrance Chamber Mapped",
+      "description": "Initial survey of entrance chamber complete. SLAM system initialized.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "entrance",
+      "requires_user_action": false,
+      "event_data": {
+        "map_coverage": "15%",
+        "confidence": "high"
+      }
+    },
+    {
+      "trigger_at_seconds": 90,
+      "event_type": "milestone",
+      "title": "Main Passage Explored",
+      "description": "Scout drone has mapped main passage. Proceeding to junction.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "passage-1",
+      "requires_user_action": false,
+      "event_data": {
+        "distance_from_entrance": "15m",
+        "depth": "-5m"
+      }
+    },
+    {
+      "trigger_at_seconds": 120,
+      "event_type": "detection",
+      "title": "Rock Attenuation Detected",
+      "description": "Signal strength degrading due to rock composition. Relay deployment recommended.",
+      "severity": "warning",
+      "agent_id": "drone-a",
+      "sector_id": "passage-1",
+      "requires_user_action": false,
+      "event_data": {
+        "signal_strength": "65%",
+        "attenuation_rate": "moderate"
+      }
+    },
+    {
+      "trigger_at_seconds": 180,
+      "event_type": "milestone",
+      "title": "Junction Alpha Reached",
+      "description": "Multiple passage options identified. Relay drone deploying to junction.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "junction-alpha",
+      "requires_user_action": false,
+      "event_data": {
+        "depth": "-12m",
+        "route_options": 3
+      }
+    },
+    {
+      "trigger_at_seconds": 240,
+      "event_type": "fault",
+      "title": "Micro Mapper Signal Lost",
+      "description": "Micro mapper has lost signal in narrow passage. Last known position recorded.",
+      "severity": "warning",
+      "agent_id": "drone-b",
+      "sector_id": "junction-alpha",
+      "requires_user_action": false,
+      "event_data": {
+        "last_signal": "240s",
+        "recovery_possible": true,
+        "nfc_available": true
+      }
+    },
+    {
+      "trigger_at_seconds": 270,
+      "event_type": "milestone",
+      "title": "Junction Relay Established",
+      "description": "Relay drone has landed at Junction Alpha. Signal chain strengthened.",
+      "severity": "success",
+      "agent_id": "relay-1",
+      "sector_id": "junction-alpha",
+      "requires_user_action": false,
+      "event_data": {
+        "relay_role": "mesh_node",
+        "signal_boost": "+40%"
+      }
+    },
+    {
+      "trigger_at_seconds": 300,
+      "event_type": "milestone",
+      "title": "Chamber One Mapped",
+      "description": "Large chamber discovered and mapped. No immediate hazards detected.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "chamber-1",
+      "requires_user_action": false,
+      "event_data": {
+        "chamber_volume": "approx 800m³",
+        "depth": "-15m"
+      }
+    },
+    {
+      "trigger_at_seconds": 360,
+      "event_type": "detection",
+      "title": "SLAM Drift Detected",
+      "description": "Cumulative SLAM error increasing in feature-poor passage. Position confidence degraded.",
+      "severity": "warning",
+      "agent_id": "drone-a",
+      "sector_id": "squeeze-1",
+      "requires_user_action": false,
+      "event_data": {
+        "drift_estimate": "0.8m",
+        "confidence": "moderate"
+      }
+    },
+    {
+      "trigger_at_seconds": 420,
+      "event_type": "detection",
+      "title": "Audio Anomaly - Possible Voice",
+      "description": "Microphone array detected sound pattern consistent with human voice from deeper passage.",
+      "severity": "critical",
+      "agent_id": "drone-a",
+      "sector_id": "squeeze-1",
+      "requires_user_action": true,
+      "event_data": {
+        "confidence": "0.62",
+        "bearing": "deeper_passage",
+        "requires_investigation": true
+      }
+    },
+    {
+      "trigger_at_seconds": 480,
+      "event_type": "milestone",
+      "title": "Deep Route Established",
+      "description": "Scout drone has established route to -18m depth through tight squeeze.",
+      "severity": "success",
+      "agent_id": "drone-a",
+      "sector_id": "squeeze-1",
+      "requires_user_action": false,
+      "event_data": {
+        "route_difficulty": "high",
+        "minimum_clearance": "0.4m"
+      }
+    }
+  ]
+}

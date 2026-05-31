@@ -1,0 +1,275 @@
+{
+  "scenario_id": "flooded-structure-alpha-01",
+  "name": "Flooded Structure Alpha - Cargo Vessel Inspection",
+  "description": "Amphibious inspection of partially flooded cargo vessel. Models water navigation, buoyancy challenges, corrosion risks, and air pocket detection.",
+  "use_case": "flooded-structure-inspection",
+  "digital_twin_site_slug": "liberty-cargo-vessel-demo",
+  "digital_twin_terrain_slug": "main-deck-holds",
+  "origin_sector_id": "hull-breach",
+  "duration_seconds": 600,
+  "agent_routes": [
+    {
+      "agent_id": "surface-station",
+      "agent_name": "Surface Command Station",
+      "agent_role": "relay",
+      "deploy_at_seconds": 0,
+      "average_speed_m_per_s": 0,
+      "battery_drain_rate_percent_per_second": 0,
+      "sensors": ["Radio", "GPS", "Weather Monitor"],
+      "behavior": "stationary_relay",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "hull-breach",
+          "action": "establish_surface_relay",
+          "pause_duration_seconds": 600,
+          "notes": "Surface station at hull breach"
+        }
+      ]
+    },
+    {
+      "agent_id": "rov-a",
+      "agent_name": "Primary ROV",
+      "agent_role": "mapper",
+      "deploy_at_seconds": 30,
+      "average_speed_m_per_s": 0.8,
+      "battery_drain_rate_percent_per_second": 0.04,
+      "sensors": ["Sonar", "Pressure", "Camera", "Water Quality"],
+      "behavior": "amphibious_exploration",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "hull-breach",
+          "action": "initial_survey",
+          "pause_duration_seconds": 20,
+          "notes": "Survey breach and water conditions"
+        },
+        {
+          "sequence_order": 2,
+          "sector_id": "passage-main-01",
+          "action": "map_corridor",
+          "pause_duration_seconds": 30,
+          "notes": "Map main corridor, check for obstructions"
+        },
+        {
+          "sequence_order": 3,
+          "sector_id": "cargo-hold-2",
+          "action": "inspect_hold",
+          "pause_duration_seconds": 45,
+          "notes": "Inspect partially flooded cargo hold"
+        },
+        {
+          "sequence_order": 4,
+          "sector_id": "engine-room",
+          "action": "deep_inspection",
+          "pause_duration_seconds": 60,
+          "notes": "Deep dive to engine room"
+        }
+      ]
+    },
+    {
+      "agent_id": "rov-b",
+      "agent_name": "Micro ROV",
+      "agent_role": "detector",
+      "deploy_at_seconds": 90,
+      "average_speed_m_per_s": 0.5,
+      "battery_drain_rate_percent_per_second": 0.05,
+      "sensors": ["Mini Camera", "Temperature", "Gas Detector"],
+      "behavior": "air_pocket_search",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "hull-breach",
+          "action": "launch",
+          "pause_duration_seconds": 10,
+          "notes": "Deploy micro ROV"
+        },
+        {
+          "sequence_order": 2,
+          "sector_id": "passage-main-01",
+          "action": "explore",
+          "pause_duration_seconds": 20,
+          "notes": "Search for air pockets"
+        },
+        {
+          "sequence_order": 3,
+          "sector_id": "crew-quarters-b",
+          "action": "investigate_air_pocket",
+          "pause_duration_seconds": 90,
+          "notes": "Investigate detected air pocket"
+        }
+      ]
+    },
+    {
+      "agent_id": "surface-relay",
+      "agent_name": "Surface Buoy Relay",
+      "agent_role": "relay",
+      "deploy_at_seconds": 180,
+      "average_speed_m_per_s": 0.3,
+      "battery_drain_rate_percent_per_second": 0.015,
+      "sensors": ["Radio Repeater", "GPS"],
+      "behavior": "floating_relay",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "hull-breach",
+          "action": "launch",
+          "pause_duration_seconds": 5,
+          "notes": "Deploy from surface"
+        },
+        {
+          "sequence_order": 2,
+          "sector_id": "cargo-hold-2",
+          "override_x_m": 22.0,
+          "override_y_m": 0.0,
+          "override_z_m": 0.5,
+          "action": "establish_relay",
+          "pause_duration_seconds": 600,
+          "notes": "Float at waterline above hold"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "trigger_at_seconds": 30,
+      "event_type": "milestone",
+      "title": "Hull Breach Surveyed",
+      "description": "Primary ROV has surveyed hull breach. Water clarity: moderate. Entry safe.",
+      "severity": "info",
+      "agent_id": "rov-a",
+      "sector_id": "hull-breach",
+      "requires_user_action": false,
+      "event_data": {
+        "water_clarity": "3m visibility",
+        "current": "minimal"
+      }
+    },
+    {
+      "trigger_at_seconds": 90,
+      "event_type": "milestone",
+      "title": "Main Corridor Mapped",
+      "description": "Main corridor clear. Proceeding to cargo hold inspection.",
+      "severity": "info",
+      "agent_id": "rov-a",
+      "sector_id": "passage-main-01",
+      "requires_user_action": false,
+      "event_data": {
+        "depth": "0m (at waterline)"
+      }
+    },
+    {
+      "trigger_at_seconds": 120,
+      "event_type": "detection",
+      "title": "Corrosion Detected",
+      "description": "Significant corrosion observed on structural members. Exercise caution.",
+      "severity": "warning",
+      "agent_id": "rov-a",
+      "sector_id": "cargo-hold-2",
+      "requires_user_action": false,
+      "event_data": {
+        "corrosion_severity": "moderate",
+        "structural_integrity": "uncertain"
+      }
+    },
+    {
+      "trigger_at_seconds": 180,
+      "event_type": "milestone",
+      "title": "Cargo Hold #2 Inspected",
+      "description": "Hold partially flooded. Some cargo containers intact but shifted.",
+      "severity": "info",
+      "agent_id": "rov-a",
+      "sector_id": "cargo-hold-2",
+      "requires_user_action": false,
+      "event_data": {
+        "water_level": "50% flooded",
+        "cargo_status": "shifted"
+      }
+    },
+    {
+      "trigger_at_seconds": 240,
+      "event_type": "detection",
+      "title": "Air Pocket Detected",
+      "description": "Micro ROV has located air pocket in crew quarters. Gas composition checking...",
+      "severity": "success",
+      "agent_id": "rov-b",
+      "sector_id": "crew-quarters-b",
+      "requires_user_action": false,
+      "event_data": {
+        "location": "Crew Quarters B",
+        "approximate_volume": "15m³",
+        "gas_analysis_pending": true
+      }
+    },
+    {
+      "trigger_at_seconds": 270,
+      "event_type": "milestone",
+      "title": "Surface Relay Deployed",
+      "description": "Floating relay buoy established. Signal chain strengthened.",
+      "severity": "success",
+      "agent_id": "surface-relay",
+      "sector_id": "cargo-hold-2",
+      "requires_user_action": false,
+      "event_data": {
+        "relay_type": "floating_buoy",
+        "signal_boost": "+35%"
+      }
+    },
+    {
+      "trigger_at_seconds": 300,
+      "event_type": "milestone",
+      "title": "Engine Room Reached",
+      "description": "Primary ROV descended to engine room at -4.5m depth. Full flood confirmed.",
+      "severity": "info",
+      "agent_id": "rov-a",
+      "sector_id": "engine-room",
+      "requires_user_action": false,
+      "event_data": {
+        "depth": "-4.5m",
+        "flood_status": "complete"
+      }
+    },
+    {
+      "trigger_at_seconds": 360,
+      "event_type": "detection",
+      "title": "Hazardous Material Warning",
+      "description": "Chemical signature detected. Possible fuel or hydraulic fluid leak.",
+      "severity": "warning",
+      "agent_id": "rov-a",
+      "sector_id": "engine-room",
+      "requires_user_action": false,
+      "event_data": {
+        "contaminant": "petroleum-based",
+        "concentration": "elevated"
+      }
+    },
+    {
+      "trigger_at_seconds": 420,
+      "event_type": "detection",
+      "title": "Air Pocket Analysis Complete",
+      "description": "Air composition in crew quarters: 18% O2, safe for temporary refuge.",
+      "severity": "success",
+      "agent_id": "rov-b",
+      "sector_id": "crew-quarters-b",
+      "requires_user_action": true,
+      "event_data": {
+        "oxygen": "18%",
+        "co2": "3%",
+        "habitability": "temporary_safe"
+      }
+    },
+    {
+      "trigger_at_seconds": 480,
+      "event_type": "milestone",
+      "title": "Deep Inspection Complete",
+      "description": "Primary ROV has completed engine room survey. Returning to shallower depth.",
+      "severity": "success",
+      "agent_id": "rov-a",
+      "sector_id": "engine-room",
+      "requires_user_action": false,
+      "event_data": {
+        "mission_phase": "deep_survey_complete"
+      }
+    }
+  ]
+}

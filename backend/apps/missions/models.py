@@ -195,3 +195,13 @@ class MissionSimulation(models.Model):
             elapsed += real_time_delta * self.speed_multiplier
         
         return elapsed
+
+
+# Import scenario models to register them with Django
+from .models_scenario import (  # noqa: F401, E402
+    MissionScenario,
+    AgentRoute,
+    RouteWaypoint,
+    ScenarioEvent,
+    UserMissionAction,
+)

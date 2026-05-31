@@ -48,11 +48,14 @@ export function initDetectionModalManager() {
     const customEvent = event as CustomEvent;
     const { detectionId, detectionType } = customEvent.detail;
     
+    console.log('Detection marker clicked:', detectionId, detectionType);
+    
     const detectionDetail = findDetectionDetail(detectionId, detectionType);
     
     if (detectionDetail) {
+      console.log('Found detection detail, dispatching show-detection-modal:', detectionDetail);
       // Dispatch event to open modal with detection details
-      window.dispatchEvent(new CustomEvent('detection-marker-clicked', {
+      window.dispatchEvent(new CustomEvent('show-detection-modal', {
         detail: {
           detection: detectionDetail
         }

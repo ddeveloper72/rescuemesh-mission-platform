@@ -26,6 +26,16 @@ interface MapConfig {
     siteSlug?: string;
     terrainMapSlug?: string;
   };
+  coordinateScaling?: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    scaleX: number;
+    scaleY: number;
+    offsetX: number;
+    offsetY: number;
+  };
 }
 
 interface Sector {
@@ -671,26 +681,39 @@ export function updateAgents(agents: Agent[], config: MapConfig, currentTime: nu
   agents.forEach(agent => {
     let pos: { x: number; y: number; stopped: boolean } | null = null;
 
-    // Try to find position from route with flexible matching
-    if (config.routes) {
-      const agentIdLower = agent.agent_id.toLowerCase();
-      const agentNameLower = agent.name.toLowerCase();
-      
-      const route = config.routes.find(r => {
-        const routeIdLower = r.agentId.toLowerCase();
-        return (
-          agentIdLower.includes(routeIdLower) || 
-          routeIdLower.includes(agentIdLower) ||
-          agentNameLower.includes(routeIdLower) ||
-          routeIdLower.includes(agentNameLower) ||
-          // Try word matching
-          agentNameLower.split(/\s+/).some(word => routeIdLower.includes(word)) ||
-          routeIdLower.split(/[-_\s]+/).some(word => agentNameLower.includes(word))
-        );
-      });
-      
-      if (route) {
-        pos = getAgentPositionAtTime(route, currentTime);
+    // For Digital Twin terrain, use agent's real position if available
+    if (config.terrainSource === 'django-digital-twin' && config.coordinateScaling && agent.position) {
+      const scaling = config.coordinateScaling;
+      // Convert from meters to SVG coordinates
+      const svgX = (agent.position.x - scaling.minX) * scaling.scaleX + scaling.offsetX;
+      const svgY = (agent.position.y - scaling.minY) * scaling.scaleY + scaling.offsetY;
+      pos = {
+        x: svgX,
+        y: svgY,
+        stopped: agent.state === 'landed_relay' || agent.state === 'sacrificed' || agent.state === 'failed',
+      };
+    } else {
+      // Try to find position from route with flexible matching
+      if (config.routes) {
+        const agentIdLower = agent.agent_id.toLowerCase();
+        const agentNameLower = agent.name.toLowerCase();
+        
+        const route = config.routes.find(r => {
+          const routeIdLower = r.agentId.toLowerCase();
+          return (
+            agentIdLower.includes(routeIdLower) || 
+            routeIdLower.includes(agentIdLower) ||
+            agentNameLower.includes(routeIdLower) ||
+            routeIdLower.includes(agentNameLower) ||
+            // Try word matching
+            agentNameLower.split(/\s+/).some(word => routeIdLower.includes(word)) ||
+            routeIdLower.split(/[-_\s]+/).some(word => agentNameLower.includes(word))
+          );
+        });
+        
+        if (route) {
+          pos = getAgentPositionAtTime(route, currentTime);
+        }
       }
     }
 
@@ -1020,6 +1043,7 @@ function convertViewModelToMapConfig(viewModel: TacticalMapViewModel): MapConfig
     detectionMarkers: viewModel.detectionMarkers,
     terrainSource: viewModel.terrainSource,
     terrainMeta: viewModel.terrainMeta,
+    coordinateScaling: viewModel.coordinateScaling,
   };
 }
 

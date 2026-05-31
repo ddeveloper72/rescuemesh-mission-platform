@@ -17,7 +17,12 @@ const { useCase, title = "Tactical Map" } = Astro.props;
 ---
 
 <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-  <h2 class="text-2xl font-bold mb-2">{title}</h2>
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="text-2xl font-bold">{title}</h2>
+    <div id="mission-clock-display" class="text-lg font-mono text-blue-400 bg-slate-900 px-3 py-1 rounded border border-slate-700">
+      <span id="mission-clock-time">00:00</span>
+    </div>
+  </div>
   <p class="text-xs text-slate-400 mb-4">
     <span class="inline-block mr-4">● Terrain generated from simulated LiDAR/depth/sonar returns</span>
     <span class="inline-block mr-4">● Sectors progressively reveal as agents map them</span>

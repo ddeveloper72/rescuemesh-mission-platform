@@ -24,8 +24,9 @@ export default function DetectionDetailModal() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // Listen for detection marker clicks
+    // Listen for detection modal show events
     const handleDetectionClick = (event: CustomEvent) => {
+      console.log('show-detection-modal event received:', event.detail);
       if (event.detail && event.detail.detection) {
         setDetection(event.detail.detection);
         setIsOpen(true);
@@ -33,10 +34,10 @@ export default function DetectionDetailModal() {
       }
     };
 
-    window.addEventListener('detection-marker-clicked', handleDetectionClick as EventListener);
+    window.addEventListener('show-detection-modal', handleDetectionClick as EventListener);
 
     return () => {
-      window.removeEventListener('detection-marker-clicked', handleDetectionClick as EventListener);
+      window.removeEventListener('show-detection-modal', handleDetectionClick as EventListener);
       // Clean up audio
       if (audioRef.current) {
         audioRef.current.pause();

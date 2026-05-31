@@ -246,11 +246,13 @@ const initialClock = {
 <script>
   import { initializeSimulation } from '../../../lib/simulation-manager';
   import { initializeTacticalMapWithDigitalTwin, updateTacticalMap } from '../../../lib/tactical-map-manager';
-  import { initDetectionModalManager } from '../../../lib/detection-modal-manager';
+  import { initDetectionModalManager, updateDetectionData } from '../../../lib/detection-modal-manager';
   import { initAgentModalManager, showAgentModal } from '../../../lib/agent-modal-manager';
   import { initializeRouteProfile, updateRouteProfile } from '../../../lib/route-profile-renderer';
   import { adaptToRouteProfile } from '../../../lib/tactical-map/routeProfileAdapter';
-  import { loadDigitalTwinMap } from '../../../lib/tactical-map/digitalTwinMapLoader';
+  import { getTerrainSectors, getTerrainPaths, getWaypoints } from '../../../lib/api';
+  import { getTerrainBinding } from '../../../lib/tactical-map/useCaseTerrainBindings';
+  import { renderInteractiveActions } from '../../../lib/recommended-actions-manager';
   
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
   const manager = initializeSimulation(MISSION_PK);
@@ -262,20 +264,35 @@ const initialClock = {
     
     // Initialize route profile with Digital Twin data
     try {
-      const dtResult = await loadDigitalTwinMap('cave-rescue');
-      if (dtResult.success && dtResult.terrainData) {
-        const { terrainMap, sectors, paths, waypoints } = dtResult.terrainData;
-        const routeProfileViewModel = adaptToRouteProfile(
-          sectors,
-          paths,
-          waypoints,
-          undefined, // Mission state will be added on first update
-          'Cave Entrance'
-        );
-        initializeRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
+      const binding = getTerrainBinding('cave-rescue');
+      if (binding && binding.terrainMapSlug) {
+        const [sectorsResult, pathsResult, waypointsResult] = await Promise.all([
+          getTerrainSectors(binding.terrainMapSlug),
+          getTerrainPaths(binding.terrainMapSlug),
+          getWaypoints(binding.terrainMapSlug)
+        ]);
+        
+        if (sectorsResult.success && sectorsResult.data) {
+          // Handle paginated response from Django REST Framework
+          const sectors = Array.isArray(sectorsResult.data) ? sectorsResult.data : (sectorsResult.data as any).results || [];
+          const paths = pathsResult.success ? (Array.isArray(pathsResult.data) ? pathsResult.data : (pathsResult.data as any).results || []) : [];
+          const waypoints = waypointsResult.success ? (Array.isArray(waypointsResult.data) ? waypointsResult.data : (waypointsResult.data as any).results || []) : [];
+          
+          const routeProfileViewModel = adaptToRouteProfile(
+            sectors,
+            paths,
+            waypoints,
+            undefined, // Mission state will be added on first update
+            'Cave Entrance'
+          );
+          initializeRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
+        }
       }
     } catch (err) {
-      console.warn('Route profile initialization failed:', err);
+      console.error('Route profile initialization failed:', err);
+      // Show error state
+      const loadingEl = document.getElementById('route-profile-loading');
+      if (loadingEl) loadingEl.textContent = 'Failed to load route profile';
     }
   
     // Initialize detection modal manager
@@ -301,6 +318,16 @@ const initialClock = {
       
       const state = this.getLastState();
       if (!state) return;
+      
+      // Update mission clock
+      const clockEl = document.getElementById('mission-clock-time');
+      if (clockEl && state.simulation_clock) {
+        const elapsed = state.simulation_clock.elapsed_seconds;
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = Math.floor(elapsed % 60);
+        clockEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+      
       // Update agents display
       const agentsContainer = document.getElementById('agents-container');
       if (agentsContainer && state.agents) {
@@ -395,20 +422,32 @@ const initialClock = {
       // Update route profile
       (async () => {
         try {
-          const dtResult = await loadDigitalTwinMap('cave-rescue');
-          if (dtResult.success && dtResult.terrainData) {
-            const { terrainMap, sectors, paths, waypoints } = dtResult.terrainData;
-            const routeProfileViewModel = adaptToRouteProfile(
-              sectors,
-              paths,
-              waypoints,
-              state, // Pass mission state for agent positions
-              'Cave Entrance'
-            );
-            updateRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
+          const binding = getTerrainBinding('cave-rescue');
+          if (binding && binding.terrainMapSlug) {
+            const [sectorsResult, pathsResult, waypointsResult] = await Promise.all([
+              getTerrainSectors(binding.terrainMapSlug),
+              getTerrainPaths(binding.terrainMapSlug),
+              getWaypoints(binding.terrainMapSlug)
+            ]);
+            
+            if (sectorsResult.success && sectorsResult.data) {
+              // Handle paginated response from Django REST Framework
+              const sectors = Array.isArray(sectorsResult.data) ? sectorsResult.data : (sectorsResult.data as any).results || [];
+              const paths = pathsResult.success ? (Array.isArray(pathsResult.data) ? pathsResult.data : (pathsResult.data as any).results || []) : [];
+              const waypoints = waypointsResult.success ? (Array.isArray(waypointsResult.data) ? waypointsResult.data : (waypointsResult.data as any).results || []) : [];
+              
+              const routeProfileViewModel = adaptToRouteProfile(
+                sectors,
+                paths,
+                waypoints,
+                state, // Pass mission state for agent positions
+                'Cave Entrance'
+              );
+              updateRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
+            }
           }
         } catch (err) {
-          console.warn('Route profile update failed:', err);
+          console.error('Route profile update failed:', err);
         }
       })();
       
@@ -488,55 +527,11 @@ const initialClock = {
           bannerContainer.innerHTML = '';
         }
         
-        // Render Recommended Actions
-        const actionsContainer = document.getElementById('recommended-actions-container');
-        if (actionsContainer && escalation.active && escalation.recommended_actions && escalation.recommended_actions.length > 0) {
-          const actionClasses = {
-            'critical': { container: 'bg-red-900/20 border-red-700', header: 'bg-red-900/40 border-red-700', title: 'text-red-200', icon: 'text-red-400', item: 'border-red-700/50 hover:bg-red-900/20' },
-            'urgent': { container: 'bg-orange-900/20 border-orange-700', header: 'bg-orange-900/40 border-orange-700', title: 'text-orange-200', icon: 'text-orange-400', item: 'border-orange-700/50 hover:bg-orange-900/20' },
-            'warning': { container: 'bg-yellow-900/20 border-yellow-700', header: 'bg-yellow-900/40 border-yellow-700', title: 'text-yellow-200', icon: 'text-yellow-400', item: 'border-yellow-700/50 hover:bg-yellow-900/20' },
-            'advisory': { container: 'bg-slate-800/50 border-slate-700', header: 'bg-slate-800 border-slate-700', title: 'text-slate-200', icon: 'text-slate-400', item: 'border-slate-700/50 hover:bg-slate-700/30' }
-          };
-          const aClasses = actionClasses[escalation.severity] || actionClasses.advisory;
-          
-          actionsContainer.innerHTML = `
-            <div class="rounded-lg border ${aClasses.container}">
-              <div class="px-4 py-3 border-b ${aClasses.header}">
-                <h3 class="font-semibold flex items-center gap-2 ${aClasses.title}">
-                  <svg class="w-5 h-5 ${aClasses.icon}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                  </svg>
-                  Recommended Actions
-                </h3>
-              </div>
-              <div class="p-4">
-                <ul class="space-y-2">
-                  ${escalation.recommended_actions.map((action, index) => `
-                    <li class="flex items-start gap-3 p-3 rounded border ${aClasses.item} transition-colors">
-                      <div class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                        escalation.severity === 'critical' || escalation.severity === 'urgent' 
-                          ? 'bg-red-700 text-red-100' 
-                          : escalation.severity === 'warning'
-                          ? 'bg-yellow-700 text-yellow-100'
-                          : 'bg-slate-700 text-slate-200'
-                      }">
-                        ${index + 1}
-                      </div>
-                      <div class="flex-grow text-sm text-slate-200 leading-relaxed pt-0.5">
-                        ${action}
-                      </div>
-                      ${index === 0 && (escalation.severity === 'critical' || escalation.severity === 'urgent') 
-                        ? '<div class="flex-shrink-0"><span class="text-xs px-2 py-1 rounded bg-red-700 text-red-100 font-semibold">PRIORITY</span></div>'
-                        : ''}
-                    </li>
-                  `).join('')}
-                </ul>
-              </div>
-            </div>
-          `;
-        } else if (actionsContainer) {
-          actionsContainer.innerHTML = '';
-        }
+        // Render Recommended Actions with interactive buttons
+        renderInteractiveActions(escalation, 'recommended-actions-container');
+        
+        // Update detection data for modal manager
+        updateDetectionData(state);
       }
       
       // Update debug panel

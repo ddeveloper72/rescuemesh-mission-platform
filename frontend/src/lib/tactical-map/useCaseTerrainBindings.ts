@@ -65,8 +65,10 @@ export const USE_CASE_TERRAIN_BINDINGS: Record<string, UseCaseTerrainBinding> = 
   
   'collapsed-building-search': {
     useCase: 'collapsed-building-search',
-    mode: 'local-fallback',
-    note: 'TODO: Create collapsed-building digital twin seed',
+    mode: 'django-digital-twin',
+    siteSlug: 'urban-collapse-alpha-demo',
+    terrainMapSlug: 'alpha-building-structure',
+    note: 'Synthetic collapsed building digital twin for urban search and rescue',
   },
 };
 

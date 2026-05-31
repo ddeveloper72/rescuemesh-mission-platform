@@ -1,0 +1,289 @@
+{
+  "scenario_id": "collapsed-building-alpha-01",
+  "name": "Collapsed Building Alpha - Standard Search",
+  "use_case": "collapsed-building-search",
+  "digital_twin_site_slug": "urban-collapse-alpha-demo",
+  "digital_twin_terrain_slug": "alpha-building-structure",
+  "estimated_duration_seconds": 600,
+  "origin_sector_id": "ground-entry",
+  "allow_agent_deployment": true,
+  "allow_agent_redirect": true,
+  "allow_agent_recall": true,
+  "description": "Standard collapsed building search scenario with 3 drones exploring a multi-floor structure. Includes thermal/audio detections and progressive battery degradation.",
+  "metadata": {
+    "difficulty": "medium",
+    "environment": "urban",
+    "hazards": ["structural_instability", "dust", "limited_visibility"]
+  },
+  
+  "agent_routes": [
+    {
+      "agent_id": "relay-1",
+      "agent_name": "Static Relay Node",
+      "agent_role": "relay",
+      "deploy_at_seconds": 0,
+      "sensors": [],
+      "average_speed_m_per_s": 0,
+      "battery_drain_rate_percent_per_second": 0,
+      "behavior": "static",
+      "metadata": {"powered": true},
+      "waypoints": [
+        {
+          "sequence_order": 0,
+          "sector_id": "ground-entry",
+          "action": "deploy-relay",
+          "pause_duration_seconds": 0
+        }
+      ]
+    },
+    {
+      "agent_id": "drone-a",
+      "agent_name": "Scout Drone A",
+      "agent_role": "mapper",
+      "deploy_at_seconds": 30,
+      "sensors": ["LiDAR", "Thermal", "RGB"],
+      "average_speed_m_per_s": 2.0,
+      "battery_drain_rate_percent_per_second": 0.05,
+      "behavior": "patrol",
+      "waypoints": [
+        {
+          "sequence_order": 0,
+          "sector_id": "ground-entry",
+          "action": "checkpoint",
+          "pause_duration_seconds": 0
+        },
+        {
+          "sequence_order": 1,
+          "sector_id": "ground-lobby",
+          "action": "explore",
+          "pause_duration_seconds": 15
+        },
+        {
+          "sequence_order": 2,
+          "sector_id": "ground-corridor-east",
+          "action": "explore",
+          "pause_duration_seconds": 20
+        },
+        {
+          "sequence_order": 3,
+          "sector_id": "floor-1-corridor",
+          "action": "explore",
+          "pause_duration_seconds": 25
+        },
+        {
+          "sequence_order": 4,
+          "sector_id": "floor-2-corridor-west",
+          "action": "explore",
+          "pause_duration_seconds": 30
+        }
+      ]
+    },
+    {
+      "agent_id": "drone-b",
+      "agent_name": "Thermal/Audio Drone",
+      "agent_role": "detector",
+      "deploy_at_seconds": 60,
+      "sensors": ["Thermal", "Microphone Array", "WiFi Scanner"],
+      "average_speed_m_per_s": 1.5,
+      "battery_drain_rate_percent_per_second": 0.067,
+      "behavior": "one-way",
+      "metadata": {"mission": "basement_search"},
+      "waypoints": [
+        {
+          "sequence_order": 0,
+          "sector_id": "ground-entry",
+          "action": "checkpoint",
+          "pause_duration_seconds": 0
+        },
+        {
+          "sequence_order": 1,
+          "sector_id": "ground-lobby",
+          "action": "scan",
+          "pause_duration_seconds": 30
+        },
+        {
+          "sequence_order": 2,
+          "sector_id": "basement-corridor",
+          "action": "deploy-relay",
+          "pause_duration_seconds": 0,
+          "metadata": {"reason": "battery_low_relay_needed"}
+        }
+      ]
+    },
+    {
+      "agent_id": "drone-c",
+      "agent_name": "Relay Drone",
+      "agent_role": "relay",
+      "deploy_at_seconds": 90,
+      "sensors": [],
+      "average_speed_m_per_s": 1.0,
+      "battery_drain_rate_percent_per_second": 0.056,
+      "behavior": "static",
+      "waypoints": [
+        {
+          "sequence_order": 0,
+          "sector_id": "ground-entry",
+          "action": "checkpoint",
+          "pause_duration_seconds": 0
+        },
+        {
+          "sequence_order": 1,
+          "sector_id": "ground-corridor-east",
+          "action": "deploy-relay",
+          "pause_duration_seconds": 0,
+          "override_z_m": 2.0,
+          "metadata": {"relay_position": "elevated"}
+        }
+      ]
+    }
+  ],
+  
+  "events": [
+    {
+      "trigger_at_seconds": 30,
+      "event_type": "sector-explored",
+      "agent_id": "drone-a",
+      "sector_id": "ground-lobby",
+      "title": "Ground Floor Lobby Explored",
+      "description": "Scout Drone A has mapped the ground floor lobby area",
+      "severity": "info",
+      "event_data": {
+        "confidence": 0.85,
+        "hazards_detected": false
+      }
+    },
+    {
+      "trigger_at_seconds": 90,
+      "event_type": "sector-explored",
+      "agent_id": "drone-a",
+      "sector_id": "ground-corridor-east",
+      "title": "East Corridor Mapped",
+      "description": "Scout Drone A has completed mapping the east corridor",
+      "severity": "info",
+      "event_data": {
+        "confidence": 0.78
+      }
+    },
+    {
+      "trigger_at_seconds": 180,
+      "event_type": "sector-explored",
+      "agent_id": "drone-a",
+      "sector_id": "floor-1-corridor",
+      "title": "First Floor Explored",
+      "description": "Scout Drone A has reached and mapped the first floor corridor",
+      "severity": "info",
+      "event_data": {
+        "confidence": 0.72,
+        "elevation_m": 3.5
+      }
+    },
+    {
+      "trigger_at_seconds": 240,
+      "event_type": "detection-audio",
+      "agent_id": "drone-b",
+      "sector_id": "basement-corridor",
+      "title": "Voice-like Audio Detected",
+      "description": "Thermal/Audio Drone detected voice-like sounds in basement corridor",
+      "severity": "warning",
+      "event_data": {
+        "detection_type": "voice",
+        "confidence": 0.58,
+        "frequency_range": "human_vocal",
+        "depth_m": 3.5
+      },
+      "requires_user_action": true,
+      "user_action_type": "acknowledge"
+    },
+    {
+      "trigger_at_seconds": 300,
+      "event_type": "sector-explored",
+      "agent_id": "drone-a",
+      "sector_id": "floor-2-corridor-west",
+      "title": "Second Floor West Corridor Mapped",
+      "description": "Scout Drone A has reached the second floor",
+      "severity": "info",
+      "event_data": {
+        "confidence": 0.68,
+        "elevation_m": 7.0
+      }
+    },
+    {
+      "trigger_at_seconds": 320,
+      "event_type": "detection-thermal",
+      "agent_id": "drone-b",
+      "sector_id": "basement-storage",
+      "title": "Thermal Anomaly Detected",
+      "description": "Possible heat signature detected in basement storage area",
+      "severity": "warning",
+      "event_data": {
+        "temperature_delta": 2.3,
+        "confidence": 0.45,
+        "depth_m": 3.5
+      }
+    },
+    {
+      "trigger_at_seconds": 360,
+      "event_type": "agent-landed-relay",
+      "agent_id": "drone-b",
+      "sector_id": "basement-corridor",
+      "title": "Drone B Landed as Relay",
+      "description": "Thermal/Audio Drone has landed in basement corridor to serve as communications relay",
+      "severity": "warning",
+      "event_data": {
+        "reason": "battery_below_return_threshold",
+        "remaining_battery": 15,
+        "relay_value": "high"
+      }
+    },
+    {
+      "trigger_at_seconds": 420,
+      "event_type": "failure-battery",
+      "agent_id": "drone-a",
+      "sector_id": "floor-2-corridor-west",
+      "title": "Scout Drone A Battery Degraded",
+      "description": "Scout Drone A showing accelerated battery drain, likely dust interference",
+      "severity": "warning",
+      "event_data": {
+        "battery_percent": 35,
+        "expected_battery": 55,
+        "drain_rate_increase": 1.6
+      },
+      "requires_user_action": true,
+      "user_action_type": "redirect-agent",
+      "metadata": {
+        "suggested_actions": ["return_to_base", "continue_priority_scan", "land_relay"]
+      }
+    },
+    {
+      "trigger_at_seconds": 480,
+      "event_type": "agent-sacrificed",
+      "agent_id": "drone-c",
+      "sector_id": "ground-corridor-east",
+      "title": "Relay Drone Sacrificed",
+      "description": "Relay Drone battery depleted, now serving as passive relay marker",
+      "severity": "critical",
+      "event_data": {
+        "battery_percent": 0,
+        "nfc_recovery_available": true,
+        "black_box_available": true
+      }
+    },
+    {
+      "trigger_at_seconds": 540,
+      "event_type": "escalation",
+      "title": "Mission Escalation: Return Threshold",
+      "description": "Multiple agents below safe return threshold. Recommend mission conclusion.",
+      "severity": "critical",
+      "event_data": {
+        "agents_below_threshold": 2,
+        "mesh_health": 68,
+        "detections_pending_review": 2
+      },
+      "requires_user_action": true,
+      "user_action_type": "custom",
+      "metadata": {
+        "options": ["continue_mission", "recall_all_agents", "deploy_fresh_agent"]
+      }
+    }
+  ]
+}

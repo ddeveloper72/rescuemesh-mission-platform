@@ -52,6 +52,8 @@ export function initializeRouteProfile(
  */
 function updateSummary(viewModel: RouteProfileViewModel, config: RenderConfig): void {
   const { summary } = viewModel;
+  
+  console.log('[RouteProfile] Updating summary:', summary);
 
   // Farthest distance
   const farthestEl = document.getElementById(`${config.containerId}-farthest-distance`);
@@ -158,6 +160,9 @@ function renderGrid(
   if (!gridGroup) return;
 
   gridGroup.innerHTML = '';
+  
+  // Calculate chart dimensions within this scope
+  const chartWidth = config.viewBoxWidth - config.paddingLeft - config.paddingRight;
 
   // Vertical grid lines (distance intervals)
   const distanceInterval = Math.max(100, Math.ceil(maxDistance / 8 / 100) * 100);

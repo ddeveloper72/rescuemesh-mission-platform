@@ -1,0 +1,209 @@
+{
+  "scenario_id": "industrial-inspection-alpha-01",
+  "name": "Industrial Inspection Alpha - Confined Space Survey",
+  "description": "Inspection of industrial confined spaces and underground utility corridors. Models gas detection, equipment inspection, and hazard zone mapping.",
+  "use_case": "industrial-inspection",
+  "digital_twin_site_slug": "industrial-confined-space-demo",
+  "digital_twin_terrain_slug": "processing-section-level-2",
+  "origin_sector_id": "access-shaft-01",
+  "duration_seconds": 600,
+  "agent_routes": [
+    {
+      "agent_id": "surface-command",
+      "agent_name": "Surface Command Post",
+      "agent_role": "relay",
+      "deploy_at_seconds": 0,
+      "average_speed_m_per_s": 0,
+      "battery_drain_rate_percent_per_second": 0,
+      "sensors": ["Radio", "Safety Monitor"],
+      "behavior": "stationary_relay",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "access-shaft-01",
+          "action": "establish_safety_command",
+          "pause_duration_seconds": 600,
+          "notes": "Surface safety monitoring"
+        }
+      ]
+    },
+    {
+      "agent_id": "drone-a",
+      "agent_name": "Primary Inspection Drone",
+      "agent_role": "mapper",
+      "deploy_at_seconds": 30,
+      "average_speed_m_per_s": 0.7,
+      "battery_drain_rate_percent_per_second": 0.042,
+      "sensors": ["Gas Detector", "Thermal", "LiDAR", "Camera"],
+      "behavior": "industrial_inspection",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "access-shaft-01",
+          "action": "descent_check",
+          "pause_duration_seconds": 15,
+          "notes": "Atmospheric check before descent"
+        },
+        {
+          "sequence_order": 2,
+          "sector_id": "utility-corridor-main",
+          "action": "corridor_survey",
+          "pause_duration_seconds": 40,
+          "notes": "Survey main utility corridor"
+        },
+        {
+          "sequence_order": 3,
+          "sector_id": "equipment-room-a",
+          "action": "equipment_inspection",
+          "pause_duration_seconds": 60,
+          "notes": "Inspect pumps and mechanical equipment"
+        },
+        {
+          "sequence_order": 4,
+          "sector_id": "pipe-corridor-01",
+          "action": "pipe_inspection",
+          "pause_duration_seconds": 50,
+          "notes": "Steam line and pipe integrity check"
+        }
+      ]
+    },
+    {
+      "agent_id": "gas-sensor",
+      "agent_name": "Deployable Gas Monitor",
+      "agent_role": "detector",
+      "deploy_at_seconds": 120,
+      "average_speed_m_per_s": 0.4,
+      "battery_drain_rate_percent_per_second": 0.02,
+      "sensors": ["Multi-Gas Detector", "O2", "LEL", "H2S", "CO"],
+      "behavior": "hazard_monitoring",
+      "waypoints": [
+        {
+          "sequence_order": 1,
+          "sector_id": "utility-corridor-main",
+          "action": "deploy",
+          "pause_duration_seconds": 10,
+          "notes": "Deploy from corridor"
+        },
+        {
+          "sequence_order": 2,
+          "sector_id": "hazard-zone-01",
+          "action": "monitor_hazard_zone",
+          "pause_duration_seconds": 600,
+          "notes": "Continuous gas monitoring"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "trigger_at_seconds": 30,
+      "event_type": "milestone",
+      "title": "Access Shaft Clear",
+      "description": "Atmospheric check complete. Safe to proceed. O2: 20.9%, LEL: 0%.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "access-shaft-01",
+      "requires_user_action": false,
+      "event_data": {
+        "o2_percent": 20.9,
+        "lel_percent": 0
+      }
+    },
+    {
+      "trigger_at_seconds": 90,
+      "event_type": "milestone",
+      "title": "Main Utility Corridor Mapped",
+      "description": "Corridor survey complete. Lighting inadequate, proceeding on drone illumination.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "utility-corridor-main",
+      "requires_user_action": false,
+      "event_data": {
+        "visibility": "poor",
+        "depth": "-8m"
+      }
+    },
+    {
+      "trigger_at_seconds": 150,
+      "event_type": "detection",
+      "title": "Elevated Temperature Detected",
+      "description": "Thermal signature in equipment room. Pump bearing temperature: 85°C.",
+      "severity": "warning",
+      "agent_id": "drone-a",
+      "sector_id": "equipment-room-a",
+      "requires_user_action": false,
+      "event_data": {
+        "temperature": "85C",
+        "equipment": "pump_bearing_3"
+      }
+    },
+    {
+      "trigger_at_seconds": 180,
+      "event_type": "milestone",
+      "title": "Gas Monitor Deployed",
+      "description": "Deployable gas sensor active in hazard zone. Continuous monitoring initiated.",
+      "severity": "success",
+      "agent_id": "gas-sensor",
+      "sector_id": "hazard-zone-01",
+      "requires_user_action": false,
+      "event_data": {
+        "monitor_type": "multi-gas"
+      }
+    },
+    {
+      "trigger_at_seconds": 240,
+      "event_type": "milestone",
+      "title": "Equipment Room Inspection Complete",
+      "description": "Pumps operational. Noted: bearing overheating on Unit 3. Maintenance recommended.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "equipment-room-a",
+      "requires_user_action": false,
+      "event_data": {
+        "inspection_result": "maintenance_required"
+      }
+    },
+    {
+      "trigger_at_seconds": 300,
+      "event_type": "detection",
+      "title": "H2S Detection Alert",
+      "description": "Low-level hydrogen sulfide detected in hazard zone. 5 ppm. Below permissible exposure limit but monitoring advised.",
+      "severity": "warning",
+      "agent_id": "gas-sensor",
+      "sector_id": "hazard-zone-01",
+      "requires_user_action": true,
+      "event_data": {
+        "h2s_ppm": 5,
+        "pel": 10,
+        "status": "below_limit"
+      }
+    },
+    {
+      "trigger_at_seconds": 360,
+      "event_type": "milestone",
+      "title": "Steam Pipe Inspection Complete",
+      "description": "Steam lines intact. No visible leaks or corrosion.",
+      "severity": "success",
+      "agent_id": "drone-a",
+      "sector_id": "pipe-corridor-01",
+      "requires_user_action": false,
+      "event_data": {
+        "inspection_result": "satisfactory"
+      }
+    },
+    {
+      "trigger_at_seconds": 420,
+      "event_type": "detection",
+      "title": "Confined Space Entry Required",
+      "description": "Narrow access void identified. Requires micro-drone or human entry with full PPE.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "confined-space-01",
+      "requires_user_action": true,
+      "event_data": {
+        "clearance": "0.6m",
+        "recommendation": "micro_drone_or_suited_entry"
+      }
+    }
+  ]
+}

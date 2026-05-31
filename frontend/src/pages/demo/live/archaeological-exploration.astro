@@ -204,6 +204,12 @@ const initialClock = {
 <script>
   import { initializeSimulation } from '../../../lib/simulation-manager';
   import { initializeTacticalMapWithDigitalTwin, updateTacticalMap } from '../../../lib/tactical-map-manager';
+  import { updateDetectionData } from '../../../lib/detection-modal-manager';
+  import { renderInteractiveActions } from '../../../lib/recommended-actions-manager';
+  import { initializeRouteProfile, updateRouteProfile } from '../../../lib/route-profile-renderer';
+  import { adaptToRouteProfile } from '../../../lib/tactical-map/routeProfileAdapter';
+  import { getTerrainSectors, getTerrainPaths, getWaypoints } from '../../../lib/api';
+  import { getTerrainBinding } from '../../../lib/tactical-map/useCaseTerrainBindings';
   
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
   const manager = initializeSimulation(MISSION_PK);
@@ -212,6 +218,38 @@ const initialClock = {
   let mapConfig: any;
   (async () => {
     mapConfig = await initializeTacticalMapWithDigitalTwin('archaeological-exploration');
+    
+    // Initialize route profile with Digital Twin data
+    try {
+      const binding = getTerrainBinding('archaeological-exploration');
+      if (binding && binding.terrainMapSlug) {
+        const [sectorsResult, pathsResult, waypointsResult] = await Promise.all([
+          getTerrainSectors(binding.terrainMapSlug),
+          getTerrainPaths(binding.terrainMapSlug),
+          getWaypoints(binding.terrainMapSlug)
+        ]);
+        
+        if (sectorsResult.success && sectorsResult.data) {
+          // Handle paginated response from Django REST Framework
+          const sectors = Array.isArray(sectorsResult.data) ? sectorsResult.data : (sectorsResult.data as any).results || [];
+          const paths = pathsResult.success ? (Array.isArray(pathsResult.data) ? pathsResult.data : (pathsResult.data as any).results || []) : [];
+          const waypoints = waypointsResult.success ? (Array.isArray(waypointsResult.data) ? waypointsResult.data : (waypointsResult.data as any).results || []) : [];
+          
+          const routeProfileViewModel = adaptToRouteProfile(
+            sectors,
+            paths,
+            waypoints,
+            undefined,
+            'Surface Entry'
+          );
+          initializeRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
+        }
+      }
+    } catch (err) {
+      console.error('Route profile initialization failed:', err);
+      const loadingEl = document.getElementById('route-profile-loading');
+      if (loadingEl) loadingEl.textContent = 'Failed to load route profile';
+    }
   })(); // End async IIFE
   
   // Enhanced UI update for archaeological exploration
@@ -222,6 +260,15 @@ const initialClock = {
       
       const state = this.getLastState();
       if (!state) return;
+      
+      // Update mission clock
+      const clockEl = document.getElementById('mission-clock-time');
+      if (clockEl && state.simulation_clock) {
+        const elapsed = state.simulation_clock.elapsed_seconds;
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = Math.floor(elapsed % 60);
+        clockEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
       
       // Update agents display
       const agentsContainer = document.getElementById('agents-container');
@@ -376,6 +423,41 @@ const initialClock = {
       
       // Update tactical map
       updateTacticalMap(state, mapConfig);
+      
+      // Update route profile
+      (async () => {
+        try {
+          const binding = getTerrainBinding('archaeological-exploration');
+          if (binding && binding.terrainMapSlug) {
+            const [sectorsResult, pathsResult, waypointsResult] = await Promise.all([
+              getTerrainSectors(binding.terrainMapSlug),
+              getTerrainPaths(binding.terrainMapSlug),
+              getWaypoints(binding.terrainMapSlug)
+            ]);
+            
+            if (sectorsResult.success && sectorsResult.data) {
+              // Handle paginated response from Django REST Framework
+              const sectors = Array.isArray(sectorsResult.data) ? sectorsResult.data : (sectorsResult.data as any).results || [];
+              const paths = pathsResult.success ? (Array.isArray(pathsResult.data) ? pathsResult.data : (pathsResult.data as any).results || []) : [];
+              const waypoints = waypointsResult.success ? (Array.isArray(waypointsResult.data) ? waypointsResult.data : (waypointsResult.data as any).results || []) : [];
+              
+              const routeProfileViewModel = adaptToRouteProfile(
+                sectors,
+                paths,
+                waypoints,
+                state,
+                'Surface Entry'
+              );
+              updateRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
+            }
+          }
+        } catch (err) {
+          console.error('Route profile update failed:', err);
+        }
+      })();
+      
+      // Update detection data for modal manager
+      updateDetectionData(state);
       
       // Update AI analysis
       if (state.ai_analysis) {

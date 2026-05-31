@@ -229,6 +229,70 @@ def simulate_collapsed_building(
     """
     Simulate Collapsed Building Search scenario.
     
+    **NOW USING SCENARIO ENGINE** - Data-driven simulation from database scenario.
+    
+    Scenario: collapsed-building-alpha-01
+    - Loaded from database via MissionScenario model
+    - Agent routes defined by RouteWaypoint sequences
+    - Timeline events defined by ScenarioEvent records
+    
+    To modify scenario behavior:
+    1. Edit data/scenarios/collapsed_building_scenario_alpha.json
+    2. Run: python manage.py seed_mission_scenarios --file collapsed_building_scenario_alpha.json --overwrite
+    3. No code changes needed
+    """
+    from .scenario_engine import generate_simulation_state_from_scenario
+    
+    try:
+        # Use scenario engine to generate simulation state
+        return generate_simulation_state_from_scenario(
+            mission_id=mission_id,
+            scenario_id='collapsed-building-alpha-01',
+            elapsed_seconds=elapsed_seconds,
+            speed_multiplier=speed_multiplier,
+            mission_name=mission_name,
+            status=status
+        )
+    except Exception as e:
+        # Fallback to basic state if scenario engine fails
+        import traceback
+        print(f"[Scenario Engine Error] {e}")
+        traceback.print_exc()
+        
+        # Return minimal valid state
+        return {
+            'mission': {
+                'mission_id': mission_id,
+                'name': mission_name,
+                'use_case': 'collapsed-building-search',
+                'status': status
+            },
+            'simulation_clock': {
+                'started_at': started_at.isoformat() if started_at else None,
+                'elapsed_seconds': round(elapsed_seconds, 1),
+                'speed_multiplier': speed_multiplier,
+                'is_running': status == 'running'
+            },
+            'error': str(e),
+            'agents': [],
+            'sectors': [],
+            'events': [],
+        }
+
+
+def simulate_collapsed_building_legacy(
+    mission_id: str,
+    mission_name: str,
+    elapsed_seconds: float,
+    speed_multiplier: float,
+    started_at: Optional[datetime],
+    status: str
+) -> Dict[str, Any]:
+    """
+    LEGACY: Original hardcoded collapsed building simulation.
+    
+    Kept for reference and fallback. Will be removed once scenario engine is stable.
+    
     Timeline:
     - 0-60s: Initial deployment and entry
     - 60-180s: Primary mapping phase
@@ -245,6 +309,7 @@ def simulate_collapsed_building(
     agents = []
     
     # Static relay node (always present at entry)
+    # Using Digital Twin coordinates: ground-entry at (0, 0, 0)
     agents.append({
         'agent_id': 'relay-1',
         'name': 'Static Relay Node',
@@ -252,8 +317,9 @@ def simulate_collapsed_building(
         'state': 'active',
         'battery_percent': 100,  # Powered
         'signal_strength': 95,
-        'location_label': 'Entry',
-        'position': {'x': 100, 'y': 240, 'z': 0},  # Entry sector position
+        'location_label': 'Ground Level Entry',
+        'sector': 'ground-entry',  # Digital Twin sector ID
+        'position': {'x': 0, 'y': 0, 'z': 0},  # Digital Twin: ground-entry
         'sensors': [],
         'nfc_recovery_available': False
     })
@@ -264,13 +330,42 @@ def simulate_collapsed_building(
         drone_a_signal = 72 + math.sin(elapsed_seconds / 30) * 8  # Fluctuates
         drone_a_state = 'healthy' if elapsed_seconds < 420 else 'degraded'
         
-        # Position based on time since deployment
+        # Position based on time since deployment (moving through building)
+        # Digital Twin coords: start at (0,0,0), move through ground floor, then explore upper floors
+        progress = (elapsed_seconds - 30) / 10  # 10 seconds per unit of progress
+        
         if elapsed_seconds < 90:
-            drone_a_loc = 'Entry'
+            drone_a_loc = 'Ground Floor Lobby'
+            drone_a_sector = 'ground-lobby'
+            # Move from entry (0,0,0) to lobby (8,0,0)
+            t = min(1.0, progress / 3)  # 30 seconds to traverse
+            x = 0 + (8 * t)
+            y = 0
+            z = 0
         elif elapsed_seconds < 180:
-            drone_a_loc = 'Corridor A'
+            drone_a_loc = 'East Corridor'
+            drone_a_sector = 'ground-corridor-east'
+            # Move from lobby (8,0,0) to east corridor (18,3,0)
+            t = min(1.0, (progress - 6) / 4)  # 40 seconds to traverse
+            x = 8 + (10 * t)
+            y = 0 + (3 * t)
+            z = 0
+        elif elapsed_seconds < 300:
+            drone_a_loc = 'First Floor Corridor'
+            drone_a_sector = 'floor-1-corridor'
+            # Move to first floor (12,0,3.5)
+            t = min(1.0, (progress - 15) / 5)  # 50 seconds to climb and traverse
+            x = 18 - (6 * t)
+            y = 3 - (3 * t)
+            z = 0 + (3.5 * t)
         else:
-            drone_a_loc = 'Void 1'
+            drone_a_loc = 'Second Floor West Corridor'
+            drone_a_sector = 'floor-2-corridor-west'
+            # Move to second floor (8,-5,7.0)
+            t = min(1.0, (progress - 27) / 5)
+            x = 12 - (4 * t)
+            y = 0 - (5 * t)
+            z = 3.5 + (3.5 * t)
         
         agents.append({
             'agent_id': 'drone-a',
@@ -280,10 +375,11 @@ def simulate_collapsed_building(
             'battery_percent': int(drone_a_battery),
             'signal_strength': int(drone_a_signal),
             'location_label': drone_a_loc,
+            'sector': drone_a_sector,
             'position': {
-                'x': 100 + ((elapsed_seconds - 30) / 10),
-                'y': 240,
-                'z': 3
+                'x': x,
+                'y': y,
+                'z': z
             },
             'sensors': ['LiDAR', 'Thermal', 'RGB'],
             'nfc_recovery_available': False
@@ -294,15 +390,35 @@ def simulate_collapsed_building(
         drone_b_battery = max(3, 100 - ((elapsed_seconds - 60) / 15))  # Start counting from deployment
         drone_b_signal = 68 - ((elapsed_seconds - 60) / 20) if elapsed_seconds < 360 else 45
         
+        # Digital Twin coords: slower exploration path
+        progress = (elapsed_seconds - 60) / 12  # 12 seconds per unit
+        
         if elapsed_seconds < 300:
             drone_b_state = 'healthy'
-            drone_b_location = 'Corridor A'
+            drone_b_location = 'Ground Floor Lobby'
+            drone_b_sector = 'ground-lobby'
+            # Move from entry (0,0,0) toward lobby center (8,0,0)
+            t = min(1.0, progress / 5)
+            x = 0 + (8 * t)
+            y = 0
+            z = 0.5  # Flying slightly above ground
         elif elapsed_seconds < 360:
             drone_b_state = 'degraded'
-            drone_b_location = 'Corridor B'
+            drone_b_location = 'Basement Corridor'
+            drone_b_sector = 'basement-corridor'
+            # Move toward basement corridor (12,-8,-3.5)
+            t = min(1.0, (progress - 20) / 3)
+            x = 8 + (4 * t)
+            y = 0 - (8 * t)
+            z = 0.5 - (4.0 * t)
         else:
             drone_b_state = 'landed_relay'
-            drone_b_location = 'Corridor B (relay)'
+            drone_b_location = 'Basement Corridor (relay)'
+            drone_b_sector = 'basement-corridor'
+            # Landed in basement corridor
+            x = 12
+            y = -8
+            z = -3.5
         
         agents.append({
             'agent_id': 'drone-b',
@@ -312,10 +428,11 @@ def simulate_collapsed_building(
             'battery_percent': int(drone_b_battery),
             'signal_strength': int(drone_b_signal),
             'location_label': drone_b_location,
+            'sector': drone_b_sector,
             'position': {
-                'x': 100 + ((elapsed_seconds - 60) / 12),
-                'y': 240,
-                'z': 1.5
+                'x': x,
+                'y': y,
+                'z': z
             },
             'sensors': ['Thermal', 'Microphone Array', 'WiFi Scanner'],
             'nfc_recovery_available': drone_b_state == 'landed_relay'
@@ -328,13 +445,29 @@ def simulate_collapsed_building(
         
         if elapsed_seconds < 240:
             drone_c_state = 'healthy'
-            drone_c_location = 'Corridor A'
+            drone_c_location = 'East Corridor'
+            drone_c_sector = 'ground-corridor-east'
+            # Digital Twin: move from entry toward east corridor (18,3,0)
+            progress = (elapsed_seconds - 90) / 150  # Slow deployment to relay position
+            x = 0 + (18 * min(1.0, progress))
+            y = 0 + (3 * min(1.0, progress))
+            z = 2  # Flying at relay height
         elif elapsed_seconds < 420:
             drone_c_state = 'healthy'
-            drone_c_location = 'Relay position'
+            drone_c_location = 'East Corridor (relay position)'
+            drone_c_sector = 'ground-corridor-east'
+            # Stationary relay at east corridor
+            x = 18
+            y = 3
+            z = 2
         else:
             drone_c_state = 'sacrificed'
-            drone_c_location = 'Relay position (sacrificed)'
+            drone_c_location = 'East Corridor (sacrificed relay)'
+            drone_c_sector = 'ground-corridor-east'
+            # Sacrificed relay position
+            x = 18
+            y = 3
+            z = 2
         
         agents.append({
             'agent_id': 'drone-c',
@@ -344,10 +477,11 @@ def simulate_collapsed_building(
             'battery_percent': int(drone_c_battery),
             'signal_strength': int(drone_c_signal),
             'location_label': drone_c_location,
+            'sector': drone_c_sector,
             'position': {
-                'x': 200,
-                'y': 240,
-                'z': 2
+                'x': x,
+                'y': y,
+                'z': z
             },
             'sensors': [],
             'nfc_recovery_available': drone_c_state == 'sacrificed'
@@ -796,7 +930,8 @@ def simulate_collapsed_building(
     
     # === MISSION DISTANCE INTELLIGENCE: 3D NAVIGATION MODEL ===
     # Define mission origin (entry point / base station)
-    origin_position = {'x': 100, 'y': 240, 'z': 0}
+    # Digital Twin coordinates: ground-entry at (0, 0, 0)
+    origin_position = {'x': 0, 'y': 0, 'z': 0}
     
     # Navigation model for GPS-denied environments
     # Uses local 3D coordinate system with mission north reference
@@ -829,51 +964,76 @@ def simulate_collapsed_building(
     }
     
     # Define detailed sector positions with 3D coordinates
-    # Collapsed building structure with basement void and upper floor voids
-    sectors_detailed = [
+    # Using Digital Twin collapsed building sectors
+    # Start with base sector definitions
+    sectors_base = [
         {
-            'sector_id': 'entry',
-            'label': 'Entry Point',
-            'centroid': {'x': 100, 'y': 240, 'z': 0},
-            'type': 'accessible'
+            'sector_id': 'ground-entry',
+            'label': 'Ground Level Entry',
+            'centroid': {'x': 0, 'y': 0, 'z': 0},
+            'type': 'accessible',
+            'exploration_start': 0  # Always visible from start
         },
         {
-            'sector_id': 'corridor-a',
-            'label': 'Corridor A',
-            'centroid': {'x': 130, 'y': 240, 'z': 0},
-            'type': 'accessible'
+            'sector_id': 'ground-lobby',
+            'label': 'Ground Floor Lobby',
+            'centroid': {'x': 8, 'y': 0, 'z': 0},
+            'type': 'accessible',
+            'exploration_start': 30  # Drone A enters at 30s
         },
         {
-            'sector_id': 'void-1',
-            'label': 'Void Space 1',
-            'centroid': {'x': 160, 'y': 230, 'z': -2},  # 2m below entry
-            'type': 'void'
+            'sector_id': 'ground-corridor-east',
+            'label': 'East Corridor',
+            'centroid': {'x': 18, 'y': 3, 'z': 0},
+            'type': 'accessible',
+            'exploration_start': 90  # Drone A/C reach around 90s
         },
         {
-            'sector_id': 'corridor-b',
-            'label': 'Corridor B',
-            'centroid': {'x': 180, 'y': 240, 'z': 0},
-            'type': 'accessible'
+            'sector_id': 'basement-corridor',
+            'label': 'Basement Corridor',
+            'centroid': {'x': 12, 'y': -8, 'z': -3.5},  # 3.5m below entry
+            'type': 'accessible',
+            'exploration_start': 300  # Drone B descends at 300s
         },
         {
-            'sector_id': 'void-2',
-            'label': 'Void Space 2',
-            'centroid': {'x': 200, 'y': 220, 'z': -4},  # 4m below entry
-            'type': 'void'
+            'sector_id': 'basement-storage',
+            'label': 'Basement Storage',
+            'centroid': {'x': 18, 'y': -10, 'z': -3.5},  # 3.5m below entry
+            'type': 'accessible',
+            'exploration_start': 420  # Not explored yet in this demo
         },
         {
-            'sector_id': 'collapsed-stairwell',
-            'label': 'Collapsed Stairwell',
-            'centroid': {'x': 220, 'y': 250, 'z': -3},
-            'type': 'blocked'
+            'sector_id': 'floor-1-corridor',
+            'label': 'First Floor Corridor',
+            'centroid': {'x': 12, 'y': 0, 'z': 3.5},  # 3.5m above entry
+            'type': 'accessible',
+            'exploration_start': 180  # Drone A ascends at 180s
         },
         {
-            'sector_id': 'upper-void',
-            'label': 'Upper Void',
-            'centroid': {'x': 150, 'y': 220, 'z': 3},  # 3m above entry
-            'type': 'void'
+            'sector_id': 'floor-2-corridor-west',
+            'label': 'Second Floor West Corridor',
+            'centroid': {'x': 8, 'y': -5, 'z': 7.0},  # 7m above entry
+            'type': 'accessible',
+            'exploration_start': 300  # Drone A reaches at 300s
         }
     ]
+    
+    # Calculate sector confidence based on exploration progress
+    sectors_detailed = []
+    for sector_base in sectors_base:
+        sector = sector_base.copy()
+        
+        # Calculate confidence based on elapsed time since exploration started
+        if elapsed_seconds >= sector_base['exploration_start']:
+            time_explored = elapsed_seconds - sector_base['exploration_start']
+            # Confidence builds up over 30 seconds of exploration
+            confidence = min(1.0, 0.3 + (time_explored / 30) * 0.7)
+        else:
+            # Not yet explored - zero confidence
+            confidence = 0.0
+        
+        sector['confidence'] = round(confidence, 2)
+        sectors_detailed.append(sector)
     
     # Calculate distance, bearing, and elevation for each sector
     for sector in sectors_detailed:
@@ -906,31 +1066,31 @@ def simulate_collapsed_building(
         })
     
     # Define path segments with 3D distance and slope
-    # These represent traversable routes between sectors
+    # These represent traversable routes between sectors (Digital Twin building paths)
     path_segments = [
         {
-            'from_sector_id': 'entry',
-            'to_sector_id': 'corridor-a',
-            'from_position': {'x': 100, 'y': 240, 'z': 0},
-            'to_position': {'x': 130, 'y': 240, 'z': 0}
+            'from_sector_id': 'ground-entry',
+            'to_sector_id': 'ground-lobby',
+            'from_position': {'x': 0, 'y': 0, 'z': 0},
+            'to_position': {'x': 8, 'y': 0, 'z': 0}
         },
         {
-            'from_sector_id': 'corridor-a',
-            'to_sector_id': 'void-1',
-            'from_position': {'x': 130, 'y': 240, 'z': 0},
-            'to_position': {'x': 160, 'y': 230, 'z': -2}
+            'from_sector_id': 'ground-lobby',
+            'to_sector_id': 'ground-corridor-east',
+            'from_position': {'x': 8, 'y': 0, 'z': 0},
+            'to_position': {'x': 18, 'y': 3, 'z': 0}
         },
         {
-            'from_sector_id': 'void-1',
-            'to_sector_id': 'corridor-b',
-            'from_position': {'x': 160, 'y': 230, 'z': -2},
-            'to_position': {'x': 180, 'y': 240, 'z': 0}
+            'from_sector_id': 'ground-lobby',
+            'to_sector_id': 'basement-corridor',
+            'from_position': {'x': 8, 'y': 0, 'z': 0},
+            'to_position': {'x': 12, 'y': -8, 'z': -3.5}
         },
         {
-            'from_sector_id': 'corridor-b',
-            'to_sector_id': 'void-2',
-            'from_position': {'x': 180, 'y': 240, 'z': 0},
-            'to_position': {'x': 200, 'y': 220, 'z': -4}
+            'from_sector_id': 'ground-corridor-east',
+            'to_sector_id': 'floor-1-corridor',
+            'from_position': {'x': 18, 'y': 3, 'z': 0},
+            'to_position': {'x': 12, 'y': 0, 'z': 3.5}
         }
     ]
     
@@ -1017,9 +1177,15 @@ def simulate_collapsed_building(
         return_route_distance = distance_3d  # Simplified - would use actual route in real system
         estimated_return_time = estimate_return_time(return_route_distance, average_speed_m_per_s=2.0)
         
+        # Route distance from origin (for route profile positioning)
+        # This is the cumulative distance along the route path
+        # For now using 2D distance as approximation - real system would track actual path
+        route_distance_from_origin_m = distance_2d
+        
         # Add navigation intelligence fields
         agent['navigation'] = {
             'distance_from_origin_m': round(distance_2d, 1),
+            'route_distance_from_origin_m': round(route_distance_from_origin_m, 1),
             'straight_line_3d_distance_from_origin_m': round(distance_3d, 1),
             'bearing_from_origin_deg': round(bearing_deg, 1) if distance_2d > 1 else None,
             'bearing_from_origin_cardinal': bearing_cardinal if distance_2d > 1 else None,
@@ -1037,14 +1203,14 @@ def simulate_collapsed_building(
     
     # Enhance audio detections with 3D position data
     for detection in audio_detections:
-        # Get position based on location label
+        # Get position based on location label (Digital Twin coordinates)
         # In real system, this would come from agent position at detection time
         if 'Void Space 2' in detection['location_label']:
-            detection_pos = {'x': 200, 'y': 220, 'z': -4}
+            detection_pos = {'x': 18, 'y': -10, 'z': -3.5}  # basement-storage
         elif 'Void Space 1' in detection['location_label']:
-            detection_pos = {'x': 160, 'y': 230, 'z': -2}
+            detection_pos = {'x': 12, 'y': -8, 'z': -3.5}  # basement-corridor
         else:
-            detection_pos = {'x': 180, 'y': 240, 'z': 0}
+            detection_pos = {'x': 8, 'y': 0, 'z': 0}  # ground-lobby
         
         # Calculate distance and bearing
         distance_2d = calculate_distance_2d(origin_position, detection_pos)
@@ -1226,6 +1392,69 @@ def simulate_cave_rescue(
 ) -> Dict[str, Any]:
     """
     Simulate Cave Rescue scenario.
+    
+    **NOW USING SCENARIO ENGINE** - Data-driven simulation from database scenario.
+    
+    Scenario: cave-rescue-alpha-01
+    - Loaded from database via MissionScenario model
+    - Uses Migovec Primadona Digital Twin coordinates
+    - Agent routes through entrance, passage, junction, chambers
+    
+    To modify scenario behavior:
+    1. Edit data/scenarios/cave_rescue_scenario_alpha.json
+    2. Run: python manage.py seed_mission_scenarios --file cave_rescue_scenario_alpha.json --overwrite
+    3. No code changes needed
+    """
+    from .scenario_engine import generate_simulation_state_from_scenario
+    
+    try:
+        # Use scenario engine to generate simulation state
+        return generate_simulation_state_from_scenario(
+            mission_id=mission_id,
+            scenario_id='cave-rescue-alpha-01',
+            elapsed_seconds=elapsed_seconds,
+            speed_multiplier=speed_multiplier,
+            mission_name=mission_name,
+            status=status
+        )
+    except Exception as e:
+        # Fallback to minimal state if scenario engine fails
+        import traceback
+        print(f"[Scenario Engine Error] {e}")
+        traceback.print_exc()
+        
+        return {
+            'mission': {
+                'mission_id': mission_id,
+                'name': mission_name,
+                'use_case': 'cave-rescue',
+                'status': status
+            },
+            'simulation_clock': {
+                'started_at': started_at.isoformat() if started_at else None,
+                'elapsed_seconds': round(elapsed_seconds, 1),
+                'speed_multiplier': speed_multiplier,
+                'is_running': status == 'running'
+            },
+            'error': str(e),
+            'agents': [],
+            'sectors': [],
+            'events': [],
+        }
+
+
+def simulate_cave_rescue_legacy(
+    mission_id: str,
+    mission_name: str,
+    elapsed_seconds: float,
+    speed_multiplier: float,
+    started_at: Optional[datetime],
+    status: str
+) -> Dict[str, Any]:
+    """
+    LEGACY: Original hardcoded cave rescue simulation.
+    
+    Kept for reference and fallback. Will be removed once scenario engine is stable.
     
     Models cave passage mapping, GPS denial, rock attenuation, relay chain.
     Timeline includes narrow passage navigation, SLAM drift, humidity readings.
@@ -1879,6 +2108,69 @@ def simulate_flooded_structure(
     """
     Simulate Flooded Structure scenario.
     
+    **NOW USING SCENARIO ENGINE** - Data-driven simulation from database scenario.
+    
+    Scenario: flooded-structure-alpha-01
+    - Loaded from database via MissionScenario model
+    - Uses Liberty Cargo Vessel Digital Twin coordinates
+    - ROV routes through hull breach, corridors, cargo holds, engine room
+    
+    To modify scenario behavior:
+    1. Edit data/scenarios/flooded_structure_scenario_alpha.json
+    2. Run: python manage.py seed_mission_scenarios --file flooded_structure_scenario_alpha.json --overwrite
+    3. No code changes needed
+    """
+    from .scenario_engine import generate_simulation_state_from_scenario
+    
+    try:
+        # Use scenario engine to generate simulation state
+        return generate_simulation_state_from_scenario(
+            mission_id=mission_id,
+            scenario_id='flooded-structure-alpha-01',
+            elapsed_seconds=elapsed_seconds,
+            speed_multiplier=speed_multiplier,
+            mission_name=mission_name,
+            status=status
+        )
+    except Exception as e:
+        # Fallback to minimal state if scenario engine fails
+        import traceback
+        print(f"[Scenario Engine Error] {e}")
+        traceback.print_exc()
+        
+        return {
+            'mission': {
+                'mission_id': mission_id,
+                'name': mission_name,
+                'use_case': 'flooded-structure-inspection',
+                'status': status
+            },
+            'simulation_clock': {
+                'started_at': started_at.isoformat() if started_at else None,
+                'elapsed_seconds': round(elapsed_seconds, 1),
+                'speed_multiplier': speed_multiplier,
+                'is_running': status == 'running'
+            },
+            'error': str(e),
+            'agents': [],
+            'sectors': [],
+            'events': [],
+        }
+
+
+def simulate_flooded_structure_legacy(
+    mission_id: str,
+    mission_name: str,
+    elapsed_seconds: float,
+    speed_multiplier: float,
+    started_at: Optional[datetime],
+    status: str
+) -> Dict[str, Any]:
+    """
+    LEGACY: Original hardcoded flooded structure simulation.
+    
+    Kept for reference and fallback. Will be removed once scenario engine is stable.
+    
     Models amphibious inspection, water depth mapping, submerged obstructions.
     Timeline includes signal degradation through water, environmental hazards.
     """
@@ -2502,6 +2794,69 @@ def simulate_industrial_inspection(
 ) -> Dict[str, Any]:
     """
     Simulate Industrial Inspection scenario.
+    
+    **NOW USING SCENARIO ENGINE** - Data-driven simulation from database scenario.
+    
+    Scenario: industrial-inspection-alpha-01
+    - Loaded from database via MissionScenario model
+    - Uses Industrial Confined Space Digital Twin coordinates
+    - Drone routes through access shaft, utility corridors, equipment rooms
+    
+    To modify scenario behavior:
+    1. Edit data/scenarios/industrial_inspection_scenario_alpha.json
+    2. Run: python manage.py seed_mission_scenarios --file industrial_inspection_scenario_alpha.json --overwrite
+    3. No code changes needed
+    """
+    from .scenario_engine import generate_simulation_state_from_scenario
+    
+    try:
+        # Use scenario engine to generate simulation state
+        return generate_simulation_state_from_scenario(
+            mission_id=mission_id,
+            scenario_id='industrial-inspection-alpha-01',
+            elapsed_seconds=elapsed_seconds,
+            speed_multiplier=speed_multiplier,
+            mission_name=mission_name,
+            status=status
+        )
+    except Exception as e:
+        # Fallback to minimal state if scenario engine fails
+        import traceback
+        print(f"[Scenario Engine Error] {e}")
+        traceback.print_exc()
+        
+        return {
+            'mission': {
+                'mission_id': mission_id,
+                'name': mission_name,
+                'use_case': 'industrial-inspection',
+                'status': status
+            },
+            'simulation_clock': {
+                'started_at': started_at.isoformat() if started_at else None,
+                'elapsed_seconds': round(elapsed_seconds, 1),
+                'speed_multiplier': speed_multiplier,
+                'is_running': status == 'running'
+            },
+            'error': str(e),
+            'agents': [],
+            'sectors': [],
+            'events': [],
+        }
+
+
+def simulate_industrial_inspection_legacy(
+    mission_id: str,
+    mission_name: str,
+    elapsed_seconds: float,
+    speed_multiplier: float,
+    started_at: Optional[datetime],
+    status: str
+) -> Dict[str, Any]:
+    """
+    LEGACY: Original hardcoded industrial inspection simulation.
+    
+    Kept for reference and fallback. Will be removed once scenario engine is stable.
     
     Models confined space inspection, thermal hotspots, gas detection, defect identification.
     Timeline includes equipment inspection, hazard detection, structural integrity checks.
@@ -3334,6 +3689,69 @@ def simulate_archaeological_exploration(
 ) -> Dict[str, Any]:
     """
     Simulate Archaeological Exploration scenario.
+    
+    **NOW USING SCENARIO ENGINE** - Data-driven simulation from database scenario.
+    
+    Scenario: archaeological-exploration-alpha-01
+    - Loaded from database via MissionScenario model
+    - Uses Underground Heritage Chamber Digital Twin coordinates
+    - Drone routes through access tunnel, antechamber, ceremonial chambers, alcoves
+    
+    To modify scenario behavior:
+    1. Edit data/scenarios/archaeological_exploration_scenario_alpha.json
+    2. Run: python manage.py seed_mission_scenarios --file archaeological_exploration_scenario_alpha.json --overwrite
+    3. No code changes needed
+    """
+    from .scenario_engine import generate_simulation_state_from_scenario
+    
+    try:
+        # Use scenario engine to generate simulation state
+        return generate_simulation_state_from_scenario(
+            mission_id=mission_id,
+            scenario_id='archaeological-exploration-alpha-01',
+            elapsed_seconds=elapsed_seconds,
+            speed_multiplier=speed_multiplier,
+            mission_name=mission_name,
+            status=status
+        )
+    except Exception as e:
+        # Fallback to minimal state if scenario engine fails
+        import traceback
+        print(f"[Scenario Engine Error] {e}")
+        traceback.print_exc()
+        
+        return {
+            'mission': {
+                'mission_id': mission_id,
+                'name': mission_name,
+                'use_case': 'archaeological-exploration',
+                'status': status
+            },
+            'simulation_clock': {
+                'started_at': started_at.isoformat() if started_at else None,
+                'elapsed_seconds': round(elapsed_seconds, 1),
+                'speed_multiplier': speed_multiplier,
+                'is_running': status == 'running'
+            },
+            'error': str(e),
+            'agents': [],
+            'sectors': [],
+            'events': [],
+        }
+
+
+def simulate_archaeological_exploration_legacy(
+    mission_id: str,
+    mission_name: str,
+    elapsed_seconds: float,
+    speed_multiplier: float,
+    started_at: Optional[datetime],
+    status: str
+) -> Dict[str, Any]:
+    """
+    LEGACY: Original hardcoded archaeological exploration simulation.
+    
+    Kept for reference and fallback. Will be removed once scenario engine is stable.
     
     Non-destructive heritage site mapping with progressive chamber discovery,
     fragile surface detection, environmental monitoring, and preservation-focused
