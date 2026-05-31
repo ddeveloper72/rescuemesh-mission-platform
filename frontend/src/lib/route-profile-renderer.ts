@@ -350,21 +350,38 @@ function renderAgentPoints(
     const x = xScale(point.routeDistanceM);
     const y = yScale(point.zM);
 
+    // Determine agent color based on state (matching tactical map styling)
+    let agentColor = '#10b981'; // green-500 for active/healthy
+    let strokeColor = '#047857'; // green-700 for stroke
+    if (point.status === 'degraded' || point.status === 'intermittent') {
+      agentColor = '#eab308'; // yellow-500
+      strokeColor = '#a16207'; // yellow-700
+    } else if (point.status === 'failed' || point.status === 'lost') {
+      agentColor = '#ef4444'; // red-500
+      strokeColor = '#991b1b'; // red-800
+    } else if (point.status === 'landed_relay' || point.status === 'sacrificed') {
+      agentColor = '#a855f7'; // purple-500
+      strokeColor = '#6d28d9'; // purple-700
+    }
+
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('cx', x.toString());
     circle.setAttribute('cy', y.toString());
     circle.setAttribute('r', '6');
+    circle.setAttribute('fill', agentColor);
+    circle.setAttribute('stroke', strokeColor);
+    circle.setAttribute('stroke-width', '1.5');
     circle.setAttribute('class', `route-point route-point-${point.type}`);
     circle.setAttribute('data-tooltip', point.tooltip || point.label);
     circle.setAttribute('data-point-id', point.id);
     
     agentsGroup.appendChild(circle);
 
-    // Label
+    // Label with color matching agent state (like tactical map)
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     text.setAttribute('x', (x + 10).toString());
     text.setAttribute('y', (y - 8).toString());
-    text.setAttribute('fill', '#e2e8f0');
+    text.setAttribute('fill', agentColor);
     text.setAttribute('font-size', '10');
     text.setAttribute('font-weight', 'bold');
     text.textContent = point.label;
