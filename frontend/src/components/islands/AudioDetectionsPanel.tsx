@@ -143,7 +143,7 @@ export default function AudioDetectionsPanel({ missionId, audioDetections = [] }
     };
 
     // Dispatch event for modal to pick up
-    window.dispatchEvent(new CustomEvent('detection-marker-clicked', {
+    window.dispatchEvent(new CustomEvent('show-detection-modal', {
       detail: { detection: detectionDetail }
     }));
   };

@@ -83,6 +83,7 @@ export default function DistanceLinkBudgetPanel() {
       setNavigationModel(state.navigation_model || null);
     };
 
+    // Listen for updates from simulation manager
     window.addEventListener('audio-detections-update', handleUpdate as EventListener);
 
     return () => {
@@ -91,8 +92,9 @@ export default function DistanceLinkBudgetPanel() {
   }, []);
 
   // Filter agents with navigation data (exclude base relay unless it has interesting data)
+  // Changed to show all agents, not just those with navigation
   const activeAgents = agentsData.filter(
-    (agent) => agent.navigation && agent.agent_id !== 'relay-1'
+    (agent) => agent.agent_id !== 'relay-1' && agent.state !== 'failed' && agent.state !== 'sacrificed'
   );
 
   // Get critical detections (high confidence or high risk)
@@ -136,9 +138,6 @@ export default function DistanceLinkBudgetPanel() {
 
         {activeAgents.map((agent) => {
           const nav = agent.navigation;
-          if (!nav) return null;
-
-          const hasValidBearing = nav.bearing_from_origin_deg !== null && nav.bearing_from_origin_deg !== undefined;
 
           return (
             <div
@@ -163,23 +162,27 @@ export default function DistanceLinkBudgetPanel() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                {/* Distance & Bearing */}
-                <div>
-                  <div className="text-xs text-slate-400">From Base</div>
-                  <div className="text-white font-mono">
-                    {nav.distance_from_origin_m?.toFixed(1)} m
-                  </div>
-                </div>
-
-                {hasValidBearing && (
-                  <div>
-                    <div className="text-xs text-slate-400">Bearing</div>
-                    <div className="text-white font-mono">
-                      {nav.bearing_from_origin_deg?.toFixed(0)}° {nav.bearing_from_origin_cardinal}
+              {!nav ? (
+                <div className="text-xs text-slate-400 italic">Navigation data pending...</div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    {/* Distance & Bearing */}
+                    <div>
+                      <div className="text-xs text-slate-400">From Base</div>
+                      <div className="text-white font-mono">
+                        {(nav.distance_from_origin_m || nav.straight_line_3d_distance_from_origin_m || 0).toFixed(1)} m
+                      </div>
                     </div>
-                  </div>
-                )}
+
+                    {(nav.bearing_from_origin_deg !== null && nav.bearing_from_origin_deg !== undefined) && (
+                      <div>
+                        <div className="text-xs text-slate-400">Bearing</div>
+                        <div className="text-white font-mono">
+                          {nav.bearing_from_origin_deg?.toFixed(0)}° {nav.bearing_from_origin_cardinal}
+                        </div>
+                      </div>
+                    )}
 
                 {/* Elevation / Depth */}
                 <div>
@@ -253,6 +256,8 @@ export default function DistanceLinkBudgetPanel() {
                 <div className="mt-2 text-xs text-slate-400 italic">
                   {nav.vertical_profile_label}
                 </div>
+              )}
+              </>
               )}
             </div>
           );
