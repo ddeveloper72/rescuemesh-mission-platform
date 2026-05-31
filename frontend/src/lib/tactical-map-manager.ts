@@ -496,21 +496,21 @@ function getAgentPositionAtTime(route: TacticalAgentRoute, time: number): { x: n
 export function renderSectors(
   config: MapConfig,
   currentTime: number,
-  terrainReconstruction?: { sectors: any[] }
+  simulationSectors?: any[]
 ) {
   const sectorsGroup = document.getElementById('map-sectors');
   if (!sectorsGroup) return;
 
   sectorsGroup.innerHTML = config.sectors.map(sector => {
-    // Try to find terrain reconstruction state for this sector
+    // Try to find simulation state for this sector
     let sectorState = null;
-    if (terrainReconstruction) {
-      sectorState = terrainReconstruction.sectors.find(
+    if (simulationSectors) {
+      sectorState = simulationSectors.find(
         (s: any) => s.sector_id === sector.id
       );
     }
 
-    // Use terrain reconstruction if available, otherwise fallback to revealAt timing
+    // Use simulation sector confidence if available, otherwise fallback to revealAt timing
     let fillColor = 'rgba(71, 85, 105, 0.3)'; // slate-600 default
     let strokeColor = 'rgba(148, 163, 184, 0.5)'; // slate-400
     let opacity = 0.15;
@@ -519,50 +519,45 @@ export function renderSectors(
     let strokeWidth = 2;
     
     if (sectorState) {
-      // Use terrain reconstruction state
-      const status = sectorState.status;
+      // Use simulation sector state
       const confidence = sectorState.confidence || 0;
       
-      if (status === 'unknown') {
-        opacity = 0.05;
-        labelOpacity = 0.15;
-        label = '???';
-      } else if (status === 'detected') {
+      // Only show sector if confidence > 0 (explored)
+      if (confidence === 0) {
+        opacity = 0.0;  // Completely hide unexplored sectors
+        labelOpacity = 0.0;
+        label = '';
+      } else if (confidence < 0.5) {
         opacity = 0.3;
         labelOpacity = 0.5;
-        label = `${sector.label} (${confidence}%)`;
+        label = `${sector.label} (${Math.round(confidence * 100)}%)`;
         strokeColor = 'rgba(148, 163, 184, 0.7)';
         strokeWidth = 1;
-      } else if (status === 'partially_mapped') {
-        opacity = 0.5;
+      } else if (confidence < 0.8) {
+        opacity = 0.6;
         labelOpacity = 0.7;
-        label = `${sector.label} (${confidence}%)`;
+        label = `${sector.label} (${Math.round(confidence * 100)}%)`;
         strokeWidth = 2;
-      } else if (status === 'mapped') {
-        opacity = 0.8;
+      } else {
+        opacity = 0.9;
         labelOpacity = 1.0;
         label = sector.label;
         strokeWidth = 2;
-      } else if (status === 'high_confidence') {
-        opacity = 1.0;
-        labelOpacity = 1.0;
-        label = sector.label;
-        strokeWidth = 3;
-        strokeColor = 'rgba(148, 163, 184, 0.9)';
-      } else if (status === 'hazardous') {
-        opacity = 1.0;
-        labelOpacity = 1.0;
-        label = `[!] ${sector.label}`;
-        fillColor = 'rgba(133, 77, 14, 0.4)';
-        strokeColor = 'rgba(252, 211, 77, 0.8)';
-        strokeWidth = 3;
-      } else if (status === 'blocked') {
-        opacity = 1.0;
-        labelOpacity = 1.0;
-        label = `[X] ${sector.label}`;
-        fillColor = 'rgba(153, 27, 27, 0.4)';
-        strokeColor = 'rgba(252, 165, 165, 0.8)';
-        strokeWidth = 3;
+      }
+      
+      // Apply sector type styling
+      if (sector.type === 'blocked') {
+        fillColor = 'rgba(153, 27, 27, 0.3)';
+        strokeColor = 'rgba(252, 165, 165, 0.5)';
+      } else if (sector.type === 'void') {
+        fillColor = 'rgba(88, 28, 135, 0.3)';
+        strokeColor = 'rgba(216, 180, 254, 0.5)';
+      } else if (sector.type === 'water') {
+        fillColor = 'rgba(12, 74, 110, 0.3)';
+        strokeColor = 'rgba(103, 232, 249, 0.5)';
+      } else if (sector.type === 'hazard') {
+        fillColor = 'rgba(133, 77, 14, 0.3)';
+        strokeColor = 'rgba(252, 211, 77, 0.5)';
       }
     } else {
       // Fallback to revealAt timing
@@ -1102,8 +1097,8 @@ export function updateTacticalMap(state: MissionSimulationState, config: MapConf
   // Get current elapsed time from mission state
   const currentTime = state.simulation_clock?.elapsed_seconds || 0;
   
-  // Update sectors with progressive reveal and terrain reconstruction
-  renderSectors(config, currentTime, state.terrain_reconstruction);
+  // Update sectors with progressive reveal using simulation state
+  renderSectors(config, currentTime, state.sectors);
   
   // Update agents with route-based positioning
   updateAgents(state.agents, config, currentTime);

@@ -213,9 +213,13 @@ def get_waypoint_position(
     # Use sector centroid
     sector = terrain_sectors.get(waypoint.sector_id)
     if sector:
+        # Position agent at center of sector, not at origin
+        center_x = sector.x_m + (sector.width_m / 2.0 if sector.width_m else 0.0)
+        center_y = sector.y_m + (sector.height_m / 2.0 if sector.height_m else 0.0)
+        # Z uses sector's base z_m (for now, could add vertical centering later)
         return {
-            'x': sector.x_m,
-            'y': sector.y_m,
+            'x': center_x,
+            'y': center_y,
             'z': sector.z_m,
         }
     
@@ -377,12 +381,43 @@ def generate_simulation_state_from_scenario(
     
     # Build sectors list with confidence
     sectors_detailed = []
-    explored_sector_ids = set(agent['sector'] for agent in agents)
+    currently_occupied_sector_ids = set(agent['sector'] for agent in agents)
+    
+    # Build cumulative set of ALL sectors visited during mission (not just current)
+    explored_sector_ids = set()
+    for route in scenario.agent_routes.all():
+        if elapsed_seconds < route.deploy_at_seconds:
+            continue  # Agent not deployed yet
+            
+        time_on_route = elapsed_seconds - route.deploy_at_seconds
+        waypoints = list(route.waypoints.all().order_by('sequence_order'))
+        
+        # Add all waypoint sectors that agent has reached
+        cumulative_time = 0.0
+        for i, waypoint in enumerate(waypoints):
+            # Add travel time from previous waypoint
+            if i > 0:
+                prev_waypoint = waypoints[i - 1]
+                distance = calculate_waypoint_distance(prev_waypoint, waypoint, terrain_sectors)
+                travel_time = distance / route.average_speed_m_per_s if route.average_speed_m_per_s > 0 else 0
+                cumulative_time += travel_time
+            
+            # Check if agent has reached this waypoint
+            if time_on_route >= cumulative_time:
+                explored_sector_ids.add(waypoint.sector_id)
+            
+            cumulative_time += waypoint.pause_duration_seconds
+            
+            # If agent hasn't reached departure time, stop
+            if time_on_route < cumulative_time:
+                break
     
     for sector_id, sector in terrain_sectors.items():
         # Calculate confidence based on exploration
-        if sector_id in explored_sector_ids:
+        if sector_id in currently_occupied_sector_ids:
             confidence = 0.85  # Currently being explored
+        elif sector_id in explored_sector_ids:
+            confidence = 1.0  # Previously explored (fully mapped)
         elif sector_id == scenario.origin_sector_id:
             confidence = 1.0  # Origin always known
         else:
@@ -448,6 +483,12 @@ def generate_simulation_state_from_scenario(
         'map': {
             'coverage_percent': len(explored_sector_ids) / len(terrain_sectors) * 100 if terrain_sectors else 0,
             'confidence': 0.75,  # Simplified
+            'total_points': len(explored_sector_ids) * 1000,  # Approximate point count
+        },
+        'sensors': {
+            'thermal_anomalies': [],  # TODO: Extract from scenario events
+            'audio_events': [],  # TODO: Extract from scenario events
+            'gas_readings': [],  # TODO: Extract from scenario events
         },
         'events': timeline_events,
         'audio_detections': [],  # TODO: Extract from scenario events
