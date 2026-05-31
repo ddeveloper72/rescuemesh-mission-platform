@@ -560,10 +560,11 @@ export function renderSectors(
         strokeColor = 'rgba(252, 211, 77, 0.5)';
       }
     } else {
-      // Fallback to revealAt timing
-      opacity = currentTime >= sector.revealAt ? 1.0 : 0.15;
-      labelOpacity = currentTime >= sector.revealAt ? 1.0 : 0.3;
-      label = currentTime >= sector.revealAt ? sector.label : '???';
+      // Fallback: hide sectors until simulation state provides confidence
+      // This prevents showing the full map before agents have explored
+      opacity = currentTime >= sector.revealAt ? 1.0 : 0.0;
+      labelOpacity = currentTime >= sector.revealAt ? 1.0 : 0.0;
+      label = currentTime >= sector.revealAt ? sector.label : '';
       
       if (sector.type === 'blocked') {
         fillColor = 'rgba(153, 27, 27, 0.3)';
@@ -845,7 +846,7 @@ function attachAgentMarkerClickHandlers(agents: Agent[]) {
 
 /**
  * Render network connection lines between agents
- * Shows relay/mesh network topology
+ * Shows complete relay chain topology from origin through intermediate relays
  */
 export function renderNetworkConnections(agents: Agent[], config: MapConfig) {
   const networkGroup = document.getElementById('map-network');
@@ -884,51 +885,112 @@ export function renderNetworkConnections(agents: Agent[], config: MapConfig) {
     return;
   }
 
-  // Draw connections between agents
-  // Simple approach: connect each agent to the nearest other agent (forming a mesh)
-  // Or connect all agents to relay nodes
-  const relays = agentsWithPositions.filter(a => 
-    a.agent.state === 'landed_relay' || a.agent.role === 'relay'
+  // Identify origin (entrance) - typically at sector entrance or lowest agent_id
+  const entrance = agentsWithPositions.find(a => 
+    a.agent.location_label?.toLowerCase().includes('entrance')
   );
-  const activeAgents = agentsWithPositions.filter(a => 
-    a.agent.state !== 'landed_relay' && a.agent.state !== 'sacrificed'
-  );
+  const origin = entrance || agentsWithPositions[0];
 
-  // Strategy 1: Connect active agents to nearest relay or origin
-  const origin = agentsWithPositions[0]; // First agent is often static relay at origin
+  // Separate into relays (including entrance) and active agents
+  const relayNodes = agentsWithPositions.filter(a => 
+    a.agent.state === 'landed_relay' || 
+    a.agent.role === 'relay' ||
+    a.agent.location_label?.toLowerCase().includes('entrance')
+  );
   
-  activeAgents.forEach(({ agent, x, y }) => {
-    // Find nearest relay or origin
-    let nearestX = origin.x;
-    let nearestY = origin.y;
-    let minDist = Math.hypot(x - origin.x, y - origin.y);
-    
-    relays.forEach(({ x: rx, y: ry }) => {
-      const dist = Math.hypot(x - rx, y - ry);
-      if (dist < minDist) {
-        minDist = dist;
-        nearestX = rx;
-        nearestY = ry;
-      }
-    });
+  // Ensure origin is in relay nodes
+  if (!relayNodes.find(r => r === origin)) {
+    relayNodes.unshift(origin);
+  }
 
-    // Draw connection line
-    const signal = agent.signal_strength || 85;
-    const opacity = signal / 100 * 0.6;
-    const color = signal > 70 ? '#10b981' : signal > 40 ? '#eab308' : '#ef4444';
+  const activeAgents = agentsWithPositions.filter(a => 
+    a.agent.state !== 'landed_relay' && 
+    a.agent.state !== 'sacrificed' &&
+    !a.agent.location_label?.toLowerCase().includes('entrance')
+  );
+
+  // Draw connections from each agent back to origin through relay chain
+  const drawnConnections = new Set<string>(); // Track to avoid duplicates
+
+  const drawConnection = (fromX: number, fromY: number, toX: number, toY: number, signal: number, label: string) => {
+    const connectionKey = `${fromX},${fromY}-${toX},${toY}`;
+    if (drawnConnections.has(connectionKey)) return; // Skip duplicates
+    drawnConnections.add(connectionKey);
+
+    const opacity = (signal / 100) * 0.7;
+    const color = signal > 70 ? '#10b981' : signal > 40 ? '#eab308' : signal === 0 ? '#64748b' : '#ef4444';
     
     elements.push(`
       <line
-        x1="${nearestX}"
-        y1="${nearestY}"
-        x2="${x}"
-        y2="${y}"
+        x1="${fromX}"
+        y1="${fromY}"
+        x2="${toX}"
+        y2="${toY}"
         stroke="${color}"
-        stroke-width="1.5"
+        stroke-width="2"
         stroke-opacity="${opacity}"
-        stroke-dasharray="4,4"
-      />
+        stroke-dasharray="5,5"
+      >
+        <title>${label}</title>
+      </line>
     `);
+  };
+
+  // Connect active agents to nearest relay
+  activeAgents.forEach(({ agent, x, y }) => {
+    // Find nearest relay node (could be origin or intermediate relay)
+    let nearest = origin;
+    let minDist = Math.hypot(x - origin.x, y - origin.y);
+    
+    relayNodes.forEach(relay => {
+      const dist = Math.hypot(x - relay.x, y - relay.y);
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = relay;
+      }
+    });
+
+    // Draw connection to nearest relay
+    const signal = agent.signal_strength || 0;
+    drawConnection(
+      x, y,
+      nearest.x, nearest.y,
+      signal,
+      `${agent.name} → ${nearest.agent.name} (Signal: ${signal}%)`
+    );
+  });
+
+  // Connect relay chain - each relay to next closest relay toward origin
+  relayNodes.forEach(relay => {
+    if (relay === origin) return; // Origin doesn't connect to anything (it's the root)
+
+    // Find nearest relay that's closer to origin (creates chain back to entrance)
+    const relayDistToOrigin = Math.hypot(relay.x - origin.x, relay.y - origin.y);
+    
+    let nearest = origin;
+    let minDist = relayDistToOrigin;
+    
+    relayNodes.forEach(candidateRelay => {
+      if (candidateRelay === relay) return; // Skip self
+      
+      const distToCandidate = Math.hypot(relay.x - candidateRelay.x, relay.y - candidateRelay.y);
+      const candidateDistToOrigin = Math.hypot(candidateRelay.x - origin.x, candidateRelay.y - origin.y);
+      
+      // Connect to relay that's closer to origin and reasonably near
+      if (candidateDistToOrigin < relayDistToOrigin && distToCandidate < minDist) {
+        minDist = distToCandidate;
+        nearest = candidateRelay;
+      }
+    });
+
+    // Draw relay-to-relay connection
+    const signal = relay.agent.signal_strength || 0;
+    drawConnection(
+      relay.x, relay.y,
+      nearest.x, nearest.y,
+      signal,
+      `Relay: ${relay.agent.name} → ${nearest.agent.name} (Signal: ${signal}%)`
+    );
   });
 
   networkGroup.innerHTML = elements.join('');
@@ -963,6 +1025,7 @@ export function renderSensorDetections(
       timestamp_seconds?: number;
     }>;
   },
+  config: MapConfig,
   currentTime: number
 ) {
   const markersGroup = document.getElementById('map-detections');
@@ -973,14 +1036,21 @@ export function renderSensorDetections(
 
   const markers: string[] = [];
 
+  // Get coordinate scaling for proper position transformation
+  const scaling = config.coordinateScaling;
+  if (!scaling) {
+    console.warn('No coordinate scaling available for sensor detections');
+    return;
+  }
+
   // Render thermal detections
   if (sensors.thermal_anomalies && sensors.thermal_anomalies.length > 0) {
     sensors.thermal_anomalies.forEach(detection => {
       if (!detection.position) return;
 
-      // Convert position to SVG coordinates
-      const svgX = detection.position.x_m * 8; // 800/100 = 8 pixels per meter
-      const svgY = detection.position.y_m * 4.5; // 450/100 = 4.5 pixels per meter
+      // Convert position to SVG coordinates using proper scaling (handles negative coordinates)
+      const svgX = (detection.position.x_m - scaling.minX) * scaling.scaleX + scaling.offsetX;
+      const svgY = (detection.position.y_m - scaling.minY) * scaling.scaleY + scaling.offsetY;
 
       // Check if detection is recent (within last 60 seconds)
       const detectionAge = currentTime - (detection.timestamp_seconds || 0);
@@ -1024,9 +1094,9 @@ export function renderSensorDetections(
     sensors.audio_events.forEach(detection => {
       if (!detection.position) return;
 
-      // Convert position to SVG coordinates
-      const svgX = detection.position.x_m * 8;
-      const svgY = detection.position.y_m * 4.5;
+      // Convert position to SVG coordinates using proper scaling (handles negative coordinates)
+      const svgX = (detection.position.x_m - scaling.minX) * scaling.scaleX + scaling.offsetX;
+      const svgY = (detection.position.y_m - scaling.minY) * scaling.scaleY + scaling.offsetY;
 
       // Check if detection is recent
       const detectionAge = currentTime - (detection.timestamp_seconds || 0);
@@ -1333,7 +1403,7 @@ export function updateTacticalMap(state: MissionSimulationState, config: MapConf
   
   // Render live sensor detections (persistent, even after agent failure)
   if (state.sensors) {
-    renderSensorDetections(state.sensors, currentTime);
+    renderSensorDetections(state.sensors, config, currentTime);
   }
   
   // Update static detection markers (from config)

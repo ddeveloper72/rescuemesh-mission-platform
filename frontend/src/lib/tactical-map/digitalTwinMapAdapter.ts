@@ -318,14 +318,8 @@ export function adaptDigitalTwinToTacticalMap(
   // Calculate coordinate scaling
   const scaling = calculateScaling(sectors, viewBoxWidth, viewBoxHeight);
 
-  // Filter out unexplored sectors (confidence === 0)
-  // Only show sectors that have been explored by agents
-  const exploredSectors = sectors.filter(sector => 
-    sector.confidence === undefined || sector.confidence > 0
-  );
-
-  // Transform sectors
-  const tacticalSectors: TacticalSector[] = exploredSectors.map((sector, index) => {
+  // Transform ALL sectors (don't filter - simulation state controls visibility)
+  const tacticalSectors: TacticalSector[] = sectors.map((sector, index) => {
     const svgPos = toSVGCoordinates(sector.x_m, sector.y_m, scaling);
     const width = (sector.width_m || 10) * scaling.scaleX;
     const height = Math.abs((sector.height_m || 10) * scaling.scaleY);
@@ -340,7 +334,7 @@ export function adaptDigitalTwinToTacticalMap(
       width,
       height,
       type: mapSectorType(sector.sector_type),
-      revealAt: 0, // Sector is already explored when it appears
+      revealAt: 9999, // Never reveal by time - only by simulation state confidence
       confidenceAtReveal: sector.confidence,
       metadata: sector.metadata,
       ...depthElevation,

@@ -330,14 +330,20 @@ export class SimulationManager {
     // Update agents
     this.updateAgents(state.agents);
     
-    // Update network
-    this.updateNetwork(state.network);
+    // Update network (optional - may not exist in all scenarios)
+    if (state.network) {
+      this.updateNetwork(state.network);
+    }
     
-    // Update map
-    this.updateMap(state.map);
+    // Update map (optional - may not exist in all scenarios)
+    if (state.map) {
+      this.updateMap(state.map);
+    }
     
-    // Update sensors
-    this.updateSensors(state.sensors);
+    // Update sensors (optional - may not exist in all scenarios)
+    if (state.sensors) {
+      this.updateSensors(state.sensors);
+    }
     
     // Update events
     this.updateEvents(state.events);
@@ -345,10 +351,15 @@ export class SimulationManager {
     // Update AI analysis
     this.updateAI(state.ai_analysis);
     
-    // Dispatch audio detections event for AudioDetectionsPanel (React island)
-    if (state.audio_detections) {
+    // Dispatch audio detections event for DistanceLinkBudgetPanel (React island)
+    // Include full state with agents and navigation_model
+    if (state.audio_detections || state.agents) {
       window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.AUDIO_DETECTIONS_UPDATE, {
-        detail: { audioDetections: state.audio_detections }
+        detail: {
+          agents: state.agents || [],
+          audio_detections: state.audio_detections || [],
+          navigation_model: state.navigation_model,
+        }
       }));
     }
     
@@ -442,6 +453,8 @@ export class SimulationManager {
    * @private
    */
   private updateNetwork(network: MissionSimulationState['network']): void {
+    if (!network) return;
+    
     const meshHealthEl = getElementByIdSafe(SELECTORS.MESH_HEALTH);
     if (meshHealthEl) {
       meshHealthEl.textContent = `${network.mesh_health}%`;
@@ -562,6 +575,8 @@ export class SimulationManager {
    * @private
    */
   private updateMap(map: MissionSimulationState['map']): void {
+    if (!map) return;
+    
     const coverageEl = getElementByIdSafe(SELECTORS.MAP_COVERAGE);
     if (coverageEl) {
       const coverage = typeof map.coverage_percent === 'number' ? map.coverage_percent.toFixed(1) : map.coverage_percent;
@@ -584,13 +599,15 @@ export class SimulationManager {
    * @private
    */
   private updateSensors(sensors: MissionSimulationState['sensors']): void {
+    if (!sensors) return;
+    
     const thermalCountEl = getElementByIdSafe(SELECTORS.THERMAL_COUNT);
-    if (thermalCountEl) {
+    if (thermalCountEl && sensors.thermal_anomalies) {
       thermalCountEl.textContent = sensors.thermal_anomalies.length.toString();
     }
     
     const audioCountEl = getElementByIdSafe(SELECTORS.AUDIO_COUNT);
-    if (audioCountEl) {
+    if (audioCountEl && sensors.audio_events) {
       audioCountEl.textContent = sensors.audio_events.length.toString();
     }
   }
