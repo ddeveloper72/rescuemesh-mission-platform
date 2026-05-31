@@ -487,6 +487,21 @@ def generate_simulation_state_from_scenario(
         else:
             agent_state = 'healthy'
         
+        # Calculate signal strength based on agent state and role
+        if agent_state == 'sacrificed':
+            # Sacrificed agents have no active radio transmission
+            # Only NFC black-box recovery available
+            signal_strength = 0
+        elif agent_state == 'degraded':
+            # Degraded agents have weakened signal
+            signal_strength = 50
+        elif route.agent_role == 'relay':
+            # Relay nodes maintain strong signal as their primary function
+            signal_strength = 95
+        else:
+            # Healthy mapper/scout agents
+            signal_strength = 85
+        
         # Get current sector
         sector_id = get_agent_sector_id(agent_position, terrain_sectors)
         current_sector = terrain_sectors.get(sector_id)
@@ -499,7 +514,7 @@ def generate_simulation_state_from_scenario(
             'role': route.agent_role,
             'state': agent_state,
             'battery_percent': int(agent_position['battery_percent']),
-            'signal_strength': 85,  # Simplified for now
+            'signal_strength': signal_strength,
             'location_label': location_label,
             'sector': sector_id,
             'position': {
