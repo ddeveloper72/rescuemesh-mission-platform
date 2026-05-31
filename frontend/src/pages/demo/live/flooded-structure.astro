@@ -7,6 +7,7 @@ import MediaFeedsPanel from '../../../components/islands/MediaFeedsPanel';
 import AudioDetectionsPanel from '../../../components/islands/AudioDetectionsPanel';
 import DetectionDetailModal from '../../../components/islands/DetectionDetailModal';
 import AgentDetailModal from '../../../components/demo/AgentDetailModal.astro';
+import RouteProfile from '../../../components/demo/RouteProfile.astro';
 import DistanceLinkBudgetPanel from '../../../components/islands/DistanceLinkBudgetPanel';
 
 const MISSION_PK = '2c6ccd68-85f6-49ac-b28d-6f5358bc6a68';
@@ -71,6 +72,11 @@ const initialClock = {
       <!-- Tactical Map -->
       <div id="tactical-map-container" class="mb-8">
         <TacticalMap useCase={USE_CASE} />
+      </div>
+
+      <!-- Route Profile -->
+      <div id="route-profile-container" class="mb-8">
+        <RouteProfile containerId="route-profile" title="Route Profile — Depth View" />
       </div>
 
       <!-- Dashboard Grid -->

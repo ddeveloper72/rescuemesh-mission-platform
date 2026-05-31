@@ -4,6 +4,7 @@ import SimulationControls from '../../../components/demo/SimulationControls.astr
 import TacticalMap from '../../../components/demo/TacticalMap.astro';
 import DataSourceBadge from '../../../components/demo/DataSourceBadge.astro';
 import MediaFeedsPanel from '../../../components/islands/MediaFeedsPanel';
+import RouteProfile from '../../../components/demo/RouteProfile.astro';
 
 const MISSION_PK = 'demo-archaeological-exploration';
 const USE_CASE = 'archaeological-exploration';
@@ -70,6 +71,11 @@ const initialClock = {
       <!-- Tactical Map -->
       <div class="mb-8">
         <TacticalMap useCase={USE_CASE} />
+      </div>
+
+      <!-- Route Profile -->
+      <div id="route-profile-container" class="mb-8">
+        <RouteProfile containerId="route-profile" title="Route Profile — Chamber Depths" />
       </div>
 
       <!-- Dashboard Grid -->

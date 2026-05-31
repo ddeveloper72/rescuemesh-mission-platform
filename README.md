@@ -463,6 +463,42 @@ The frontend tactical maps now support three rendering modes:
 - `frontend/src/lib/tactical-map/digitalTwinMapLoader.ts` - Async loader with caching
 - `frontend/src/lib/tactical-map/useCaseTerrainBindings.ts` - Use case → site mappings
 
+### Plan View and Route Profile
+
+RescueMesh provides two complementary views to help operators understand mission progress:
+
+1. **Plan View (Tactical Map)** - Top-down horizontal view
+   - Shows where agents, sectors, and detections are located spatially
+   - X/Y positioning in metres from local origin
+   - Sector boundaries, paths, and relay networks
+   - Real-time agent movement and status
+
+2. **Route Profile (Side View)** - Vertical profile along route distance
+   - X-axis: Route distance from entry point (metres)
+   - Y-axis: Elevation/depth relative to origin (metres)
+   - Shows how far agents have travelled into the mission
+   - Visualizes vertical hazards (steep descents, depth below surface)
+   - Displays relay gaps and return distance
+   - Summary statistics: farthest agent, max depth, return risk, contact continuity
+
+**Why both views?**
+- The tactical map alone doesn't show how deep/high agents are or how far they've travelled
+- The route profile makes it obvious when agents are 500 m, 1 km, or 2 km into a cave
+- Together they provide complete situational awareness for mission control
+
+**Use Case Examples:**
+- Cave Rescue: Shows cave depth progression and distance from entrance
+- Flooded Structure: Visualizes waterline and submerged zones
+- Industrial Inspection: Shows platform levels and elevation changes
+- Archaeological Exploration: Displays chamber depths and vertical access routes
+
+**Route Profile Features:**
+- Interactive tooltips on hover (agent position, sector details)
+- Color-coded risk segments (high-risk descents, relay-supported areas)
+- Reference line at entry level (z=0)
+- Automatic scaling based on terrain data
+- Summary panel: farthest distance, max depth, return risk, contact status
+
 ### API Endpoints
 
 ```

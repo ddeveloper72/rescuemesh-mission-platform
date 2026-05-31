@@ -10,6 +10,7 @@ import AudioDetectionsPanel from '../../../components/islands/AudioDetectionsPan
 import DetectionDetailModal from '../../../components/islands/DetectionDetailModal';
 import AgentDetailModal from '../../../components/demo/AgentDetailModal.astro';
 import DistanceLinkBudgetPanel from '../../../components/islands/DistanceLinkBudgetPanel';
+import RouteProfile from '../../../components/demo/RouteProfile.astro';
 
 const MISSION_PK = '063218cf-7662-4675-8337-edabd204b793';
 const USE_CASE = 'cave-rescue';
@@ -79,6 +80,11 @@ const initialClock = {
       <!-- Tactical Map -->
       <div id="tactical-map-container" class="mb-8">
         <TacticalMap useCase={USE_CASE} />
+      </div>
+
+      <!-- Route Profile -->
+      <div id="route-profile-container" class="mb-8">
+        <RouteProfile containerId="route-profile" title="Route Profile — Side View" />
       </div>
 
       <!-- Dashboard Grid -->
@@ -242,6 +248,9 @@ const initialClock = {
   import { initializeTacticalMapWithDigitalTwin, updateTacticalMap } from '../../../lib/tactical-map-manager';
   import { initDetectionModalManager } from '../../../lib/detection-modal-manager';
   import { initAgentModalManager, showAgentModal } from '../../../lib/agent-modal-manager';
+  import { initializeRouteProfile, updateRouteProfile } from '../../../lib/route-profile-renderer';
+  import { adaptToRouteProfile } from '../../../lib/tactical-map/routeProfileAdapter';
+  import { loadDigitalTwinMap } from '../../../lib/tactical-map/digitalTwinMapLoader';
   
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
   const manager = initializeSimulation(MISSION_PK);
@@ -250,6 +259,24 @@ const initialClock = {
   let mapConfig: any;
   (async () => {
     mapConfig = await initializeTacticalMapWithDigitalTwin('cave-rescue');
+    
+    // Initialize route profile with Digital Twin data
+    try {
+      const dtResult = await loadDigitalTwinMap('cave-rescue');
+      if (dtResult.success && dtResult.terrainData) {
+        const { terrainMap, sectors, paths, waypoints } = dtResult.terrainData;
+        const routeProfileViewModel = adaptToRouteProfile(
+          sectors,
+          paths,
+          waypoints,
+          undefined, // Mission state will be added on first update
+          'Cave Entrance'
+        );
+        initializeRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
+      }
+    } catch (err) {
+      console.warn('Route profile initialization failed:', err);
+    }
   
     // Initialize detection modal manager
     initDetectionModalManager();
@@ -364,6 +391,26 @@ const initialClock = {
       
       // Update tactical map
       updateTacticalMap(state, mapConfig);
+      
+      // Update route profile
+      (async () => {
+        try {
+          const dtResult = await loadDigitalTwinMap('cave-rescue');
+          if (dtResult.success && dtResult.terrainData) {
+            const { terrainMap, sectors, paths, waypoints } = dtResult.terrainData;
+            const routeProfileViewModel = adaptToRouteProfile(
+              sectors,
+              paths,
+              waypoints,
+              state, // Pass mission state for agent positions
+              'Cave Entrance'
+            );
+            updateRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
+          }
+        } catch (err) {
+          console.warn('Route profile update failed:', err);
+        }
+      })();
       
       // Update media feeds - dispatch custom event for React component
       if (state.media_feeds) {

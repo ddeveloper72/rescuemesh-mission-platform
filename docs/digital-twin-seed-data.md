@@ -680,6 +680,40 @@ GET /api/v1/mapping/waypoints/?route_group=primary-route
 - `frontend/src/lib/tactical-map/digitalTwinMapAdapter.ts` - Coordinate transformation
 - `frontend/src/lib/tactical-map/digitalTwinMapLoader.ts` - Async loader with caching
 - `frontend/src/lib/tactical-map/useCaseTerrainBindings.ts` - Use case mappings
+- `frontend/src/lib/tactical-map/routeProfileAdapter.ts` - Route profile data transformation
+- `frontend/src/lib/route-profile-renderer.ts` - SVG profile chart renderer
+- `frontend/src/components/demo/RouteProfile.astro` - Route profile component
+
+### Plan View and Route Profile
+
+**Two Complementary Views:**
+
+1. **Plan View (Tactical Map)** - Top-down horizontal positioning
+   - Shows X/Y spatial layout of sectors, agents, detections
+   - Visualizes relay networks and sector boundaries
+   - Real-time agent movement and status updates
+
+2. **Route Profile (Side View)** - Vertical profile along route distance
+   - X-axis: Route distance from entry point (metres)
+   - Y-axis: Elevation/depth relative to origin (metres)
+   - Shows mission progression depth and farthest reach
+   - Visualizes vertical hazards and relay gaps
+   - Summary statistics: max depth, return risk, contact continuity
+
+**Route Profile Data Flow:**
+```
+Digital Twin (x_m, y_m, z_m, depth_m, elevation_m)
+  → routeProfileAdapter.adaptToRouteProfile()
+  → RouteProfileViewModel (points, segments, summary)
+  → route-profile-renderer.initializeRouteProfile()
+  → SVG chart with interactive tooltips
+```
+
+**Coordinate Transformation:**
+- Horizontal: Cumulative route distance from origin
+- Vertical: z_m relative to entry level (z=0)
+- Positive z = elevation above entry
+- Negative z = depth below entry
 
 **Testing:** Visit `/demo/live/cave-rescue` etc. to see Digital Twin integration with green "Django Digital Twin" badge.
 

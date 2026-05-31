@@ -1,0 +1,199 @@
+---
+/**
+ * Route Profile Component
+ * 
+ * SVG-based side-view profile showing mission progress along route distance vs depth/elevation.
+ * Complements the top-down tactical map.
+ * 
+ * Props:
+ * - containerId: DOM ID for the profile container
+ * - title: Panel title (default: "Route Profile")
+ * - height: SVG height in pixels (default: 280)
+ */
+
+interface Props {
+  containerId?: string;
+  title?: string;
+  height?: number;
+}
+
+const { 
+  containerId = 'route-profile', 
+  title = 'Route Profile',
+  height = 280
+} = Astro.props;
+---
+
+<div id={containerId} class="route-profile-panel bg-slate-800 rounded-lg border border-slate-700 p-4">
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="text-base font-semibold text-slate-200">{title}</h3>
+    <div id={`${containerId}-badge`} class="text-xs px-2 py-1 rounded bg-slate-700 text-slate-300">
+      Side View
+    </div>
+  </div>
+
+  <!-- Summary Stats -->
+  <div id={`${containerId}-summary`} class="mb-3 p-2 bg-slate-900 rounded text-xs text-slate-300 border border-slate-700">
+    <div class="flex flex-wrap gap-3">
+      <div>
+        <span class="text-slate-500">Farthest:</span>
+        <span id={`${containerId}-farthest-distance`} class="text-blue-400 ml-1">— m</span>
+      </div>
+      <div>
+        <span class="text-slate-500">Max depth:</span>
+        <span id={`${containerId}-max-depth`} class="text-orange-400 ml-1">— m</span>
+      </div>
+      <div>
+        <span class="text-slate-500">Return:</span>
+        <span id={`${containerId}-return-risk`} class="ml-1">—</span>
+      </div>
+      <div>
+        <span class="text-slate-500">Contact:</span>
+        <span id={`${containerId}-contact-risk`} class="ml-1">—</span>
+      </div>
+    </div>
+    <div id={`${containerId}-farthest-agent`} class="mt-2 text-slate-400 hidden"></div>
+  </div>
+
+  <!-- SVG Profile Chart -->
+  <div class="route-profile-container">
+    <svg 
+      id={`${containerId}-svg`} 
+      width="100%" 
+      height={height}
+      viewBox="0 0 800 280"
+      class="bg-slate-900 rounded"
+    >
+      <!-- Grid lines (drawn dynamically) -->
+      <g id={`${containerId}-grid`}></g>
+      
+      <!-- Route segments (drawn dynamically) -->
+      <g id={`${containerId}-segments`}></g>
+      
+      <!-- Ground/waterline reference (drawn dynamically) -->
+      <g id={`${containerId}-reference`}></g>
+      
+      <!-- Sector points (drawn dynamically) -->
+      <g id={`${containerId}-sectors`}></g>
+      
+      <!-- Agent markers (drawn dynamically) -->
+      <g id={`${containerId}-agents`}></g>
+      
+      <!-- Labels (drawn dynamically) -->
+      <g id={`${containerId}-labels`}></g>
+      
+      <!-- Axes -->
+      <g id={`${containerId}-axes`}>
+        <!-- X-axis -->
+        <line x1="60" y1="240" x2="760" y2="240" stroke="#475569" stroke-width="1" />
+        <text x="410" y="270" fill="#94a3b8" text-anchor="middle" font-size="11">Route Distance (m)</text>
+        
+        <!-- Y-axis -->
+        <line x1="60" y1="20" x2="60" y2="240" stroke="#475569" stroke-width="1" />
+        <text x="30" y="15" fill="#94a3b8" text-anchor="middle" font-size="11" transform="rotate(-90, 30, 140)">Elevation / Depth (m)</text>
+      </g>
+      
+      <!-- Tooltip (hidden by default) -->
+      <g id={`${containerId}-tooltip`} style="display: none;">
+        <rect x="0" y="0" width="180" height="60" fill="#1e293b" stroke="#475569" rx="4" />
+        <text id={`${containerId}-tooltip-text`} x="8" y="20" fill="#e2e8f0" font-size="11"></text>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Loading / No Data State -->
+  <div id={`${containerId}-loading`} class="text-center py-8 text-slate-500 text-sm">
+    Loading route profile...
+  </div>
+</div>
+
+<style>
+  .route-profile-panel {
+    min-height: 350px;
+  }
+
+  .route-profile-container {
+    position: relative;
+  }
+
+  /* Point markers */
+  .route-point {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .route-point:hover {
+    transform: scale(1.2);
+  }
+
+  .route-point-sector {
+    fill: #3b82f6;
+    stroke: #1e40af;
+  }
+
+  .route-point-agent {
+    fill: #10b981;
+    stroke: #047857;
+  }
+
+  .route-point-relay {
+    fill: #8b5cf6;
+    stroke: #6d28d9;
+  }
+
+  .route-point-hazard {
+    fill: #ef4444;
+    stroke: #991b1b;
+  }
+
+  .route-point-detection {
+    fill: #f59e0b;
+    stroke: #b45309;
+  }
+
+  .route-point-origin {
+    fill: #64748b;
+    stroke: #334155;
+  }
+
+  /* Segment lines */
+  .route-segment {
+    stroke-width: 2;
+    fill: none;
+  }
+
+  .route-segment-mapped {
+    stroke: #3b82f6;
+    stroke-opacity: 0.6;
+  }
+
+  .route-segment-high-risk {
+    stroke: #ef4444;
+    stroke-opacity: 0.8;
+    stroke-dasharray: 4 2;
+  }
+
+  .route-segment-moderate-risk {
+    stroke: #f59e0b;
+    stroke-opacity: 0.7;
+  }
+
+  /* Reference lines */
+  .route-reference-waterline {
+    stroke: #06b6d4;
+    stroke-width: 2;
+    stroke-dasharray: 6 3;
+    stroke-opacity: 0.5;
+  }
+
+  .route-reference-ground {
+    stroke: #64748b;
+    stroke-width: 1;
+    stroke-opacity: 0.3;
+  }
+</style>
+
+<script define:vars={{ containerId }}>
+  // Export container ID for external rendering scripts
+  window.routeProfileContainerId = containerId;
+</script>
