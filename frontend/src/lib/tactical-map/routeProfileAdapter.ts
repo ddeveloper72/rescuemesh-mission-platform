@@ -198,8 +198,6 @@ export function adaptToRouteProfile(
   const segments: RouteProfileSegment[] = [];
 
   let maxRouteDistanceM = 0;
-  let minZM = 0;
-  let maxZM = 0;
   let maxDepthM = 0;
   let maxElevationM = 0;
 
@@ -230,15 +228,13 @@ export function adaptToRouteProfile(
     sector.confidence === undefined || sector.confidence > 0
   );
 
-  // Add sector points
+  // Add sector points (but don't use them for scale calculation yet)
   for (const sector of exploredSectors) {
     const routeDistanceM = routeDistances.get(sector.id) || 0;
     const { depthM, elevationM } = calculateDepthElevation(sector);
     const zM = sector.z_m;
 
     maxRouteDistanceM = Math.max(maxRouteDistanceM, routeDistanceM);
-    minZM = Math.min(minZM, zM);
-    maxZM = Math.max(maxZM, zM);
     maxDepthM = Math.max(maxDepthM, depthM);
     maxElevationM = Math.max(maxElevationM, elevationM);
 
@@ -287,6 +283,9 @@ export function adaptToRouteProfile(
   let deepestDetectionM = 0;
   let longestRelayGapM = 0;
 
+  // Track agent Z positions for dynamic scale calculation
+  const agentZPositions: number[] = [0]; // Always include ground level (origin)
+
   if (missionState && missionState.agents) {
     for (const agent of missionState.agents) {
       // Find sector agent is in
@@ -302,6 +301,9 @@ export function adaptToRouteProfile(
         const routeDistanceM = routeDistances.get(agentSector.id) || 0;
         const { depthM, elevationM } = calculateDepthElevation(agentSector);
         const zM = agentSector.z_m;
+
+        // Track agent Z position for scale calculation
+        agentZPositions.push(zM);
 
         if (routeDistanceM > farthestAgentDistanceM) {
           farthestAgentDistanceM = routeDistanceM;
@@ -326,6 +328,18 @@ export function adaptToRouteProfile(
     }
   }
 
+  // Calculate dynamic scale based on ACTUAL agent positions (not full terrain data)
+  // This reveals depth/height progressively as agents explore
+  const actualMinZ = Math.min(...agentZPositions);
+  const actualMaxZ = Math.max(...agentZPositions);
+  
+  // Add 20% padding for visual clarity
+  const zRange = Math.max(Math.abs(actualMaxZ - actualMinZ), 10); // Minimum 10m range
+  const padding = zRange * 0.2;
+  
+  const minZM = Math.floor(actualMinZ - padding);
+  const maxZM = Math.ceil(actualMaxZ + padding);
+
   // TODO: Add detection markers, hazard markers from mission state
 
   // Calculate summary
@@ -348,7 +362,9 @@ export function adaptToRouteProfile(
     maxDepthM,
     maxElevationM,
     missionStateProvided: !!missionState,
-    agentCount: missionState?.agents?.length || 0
+    agentCount: missionState?.agents?.length || 0,
+    dynamicScale: { minZM, maxZM },
+    agentZPositions: agentZPositions.length
   });
 
   return {
