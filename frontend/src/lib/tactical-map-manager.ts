@@ -844,6 +844,97 @@ function attachAgentMarkerClickHandlers(agents: Agent[]) {
 }
 
 /**
+ * Render network connection lines between agents
+ * Shows relay/mesh network topology
+ */
+export function renderNetworkConnections(agents: Agent[], config: MapConfig) {
+  const networkGroup = document.getElementById('map-network');
+  if (!networkGroup) return;
+
+  const elements: string[] = [];
+
+  // Build list of agents with positions
+  const agentsWithPositions: Array<{ agent: Agent; x: number; y: number }> = [];
+  
+  agents.forEach(agent => {
+    // Get agent position from config
+    if (config.terrainSource === 'django-digital-twin' && config.coordinateScaling && agent.position) {
+      const scaling = config.coordinateScaling;
+      const svgX = (agent.position.x - scaling.minX) * scaling.scaleX + scaling.offsetX;
+      const svgY = (agent.position.y - scaling.minY) * scaling.scaleY + scaling.offsetY;
+      agentsWithPositions.push({ agent, x: svgX, y: svgY });
+    } else {
+      // Try to find position from sector
+      const location = agent.location_label.toLowerCase();
+      const sector = config.sectors.find(s => 
+        location.includes(s.id) || location.includes(s.label.toLowerCase())
+      );
+      
+      if (sector) {
+        const x = sector.x + sector.width / 2;
+        const y = sector.y + sector.height / 2;
+        agentsWithPositions.push({ agent, x, y });
+      }
+    }
+  });
+
+  if (agentsWithPositions.length < 2) {
+    // No connections to draw
+    networkGroup.innerHTML = '';
+    return;
+  }
+
+  // Draw connections between agents
+  // Simple approach: connect each agent to the nearest other agent (forming a mesh)
+  // Or connect all agents to relay nodes
+  const relays = agentsWithPositions.filter(a => 
+    a.agent.state === 'landed_relay' || a.agent.role === 'relay'
+  );
+  const activeAgents = agentsWithPositions.filter(a => 
+    a.agent.state !== 'landed_relay' && a.agent.state !== 'sacrificed'
+  );
+
+  // Strategy 1: Connect active agents to nearest relay or origin
+  const origin = agentsWithPositions[0]; // First agent is often static relay at origin
+  
+  activeAgents.forEach(({ agent, x, y }) => {
+    // Find nearest relay or origin
+    let nearestX = origin.x;
+    let nearestY = origin.y;
+    let minDist = Math.hypot(x - origin.x, y - origin.y);
+    
+    relays.forEach(({ x: rx, y: ry }) => {
+      const dist = Math.hypot(x - rx, y - ry);
+      if (dist < minDist) {
+        minDist = dist;
+        nearestX = rx;
+        nearestY = ry;
+      }
+    });
+
+    // Draw connection line
+    const signal = agent.signal_strength || 85;
+    const opacity = signal / 100 * 0.6;
+    const color = signal > 70 ? '#10b981' : signal > 40 ? '#eab308' : '#ef4444';
+    
+    elements.push(`
+      <line
+        x1="${nearestX}"
+        y1="${nearestY}"
+        x2="${x}"
+        y2="${y}"
+        stroke="${color}"
+        stroke-width="1.5"
+        stroke-opacity="${opacity}"
+        stroke-dasharray="4,4"
+      />
+    `);
+  });
+
+  networkGroup.innerHTML = elements.join('');
+}
+
+/**
  * Render detection markers (thermal, gas, etc.) - only after their appear time
  */
 export function renderDetectionMarkers(config: MapConfig, currentTime: number) {
@@ -1102,6 +1193,9 @@ export function updateTacticalMap(state: MissionSimulationState, config: MapConf
   
   // Update agents with route-based positioning
   updateAgents(state.agents, config, currentTime);
+  
+  // Render network connections between agents
+  renderNetworkConnections(state.agents, config);
   
   // Update detection markers
   renderDetectionMarkers(config, currentTime);

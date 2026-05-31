@@ -290,8 +290,10 @@ export function adaptToRouteProfile(
   if (missionState && missionState.agents) {
     for (const agent of missionState.agents) {
       // Find sector agent is in
+      // agent.sector contains sector_id (string like "ground-entry"), not UUID
       const agentSector = sectors.find(s => 
-        agent.sector === s.id || 
+        agent.sector === s.sector_id || 
+        agent.sector === s.id ||
         agent.sector === s.name ||
         (s.metadata?.aliases && (s.metadata.aliases as string[]).includes(agent.sector))
       );
