@@ -164,8 +164,18 @@ function renderGrid(
   // Calculate chart dimensions within this scope
   const chartWidth = config.viewBoxWidth - config.paddingLeft - config.paddingRight;
 
-  // Vertical grid lines (distance intervals)
-  const distanceInterval = Math.max(100, Math.ceil(maxDistance / 8 / 100) * 100);
+  // Vertical grid lines (distance intervals) - adaptive based on mission range
+  let distanceInterval: number;
+  if (maxDistance <= 150) {
+    distanceInterval = 10;  // 10m intervals for short missions (0-150m)
+  } else if (maxDistance <= 300) {
+    distanceInterval = 20;  // 20m intervals for medium missions (150-300m)
+  } else if (maxDistance <= 600) {
+    distanceInterval = 50;  // 50m intervals for long missions (300-600m)
+  } else {
+    distanceInterval = 100; // 100m intervals for very long missions (600m+)
+  }
+  
   for (let d = 0; d <= maxDistance; d += distanceInterval) {
     const x = xScale(d);
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
