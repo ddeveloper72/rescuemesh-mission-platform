@@ -142,15 +142,42 @@ const initialClock = {
           <h2 class="text-2xl font-bold mb-4">Cave Map Status</h2>
           <div class="space-y-3">
             <div class="flex justify-between">
-              <span class="text-slate-400" title="Percentage of sectors explored">Sectors Mapped:</span>
+              <div class="flex items-center gap-1.5 group relative">
+                <span class="text-slate-400">Sectors Mapped:</span>
+                <svg class="w-4 h-4 text-slate-500 cursor-help" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+                <div class="absolute left-0 bottom-full mb-2 w-64 p-3 bg-slate-900 border border-slate-600 rounded-lg text-xs text-slate-300 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 shadow-xl">
+                  <p class="font-semibold text-slate-100 mb-1">Sectors Mapped</p>
+                  <p>Percentage of terrain sectors that have been explored by agents. Shows mission progress toward complete coverage.</p>
+                </div>
+              </div>
               <span id="map-coverage" class="font-semibold">--</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-slate-400">SLAM Confidence:</span>
+              <div class="flex items-center gap-1.5 group relative">
+                <span class="text-slate-400">SLAM Confidence:</span>
+                <svg class="w-4 h-4 text-slate-500 cursor-help" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+                <div class="absolute left-0 bottom-full mb-2 w-64 p-3 bg-slate-900 border border-slate-600 rounded-lg text-xs text-slate-300 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 shadow-xl">
+                  <p class="font-semibold text-slate-100 mb-1">SLAM Confidence</p>
+                  <p>Reliability of the Simultaneous Localization and Mapping system. Can degrade due to dust, feature-poor passages, or accumulated positioning error.</p>
+                </div>
+              </div>
               <span id="map-confidence" class="font-semibold">--</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-slate-400">Total Points:</span>
+              <div class="flex items-center gap-1.5 group relative">
+                <span class="text-slate-400">Total Points:</span>
+                <svg class="w-4 h-4 text-slate-500 cursor-help" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+                <div class="absolute left-0 bottom-full mb-2 w-64 p-3 bg-slate-900 border border-slate-600 rounded-lg text-xs text-slate-300 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 shadow-xl">
+                  <p class="font-semibold text-slate-100 mb-1">Total Points</p>
+                  <p>Approximate LiDAR point cloud density captured during mapping (~1,000 points per explored sector). Represents the 3D measurement data collected.</p>
+                </div>
+              </div>
               <span id="map-points" class="font-semibold">--</span>
             </div>
           </div>
