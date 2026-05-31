@@ -201,11 +201,11 @@ const initialClock = {
           <div class="space-y-3">
             <div class="flex justify-between items-center">
               <span class="text-slate-400">Oxygen (O₂):</span>
-              <span id="o2-reading" class="font-semibold text-slate-500">--</span>
+              <span id="o2-reading" class="font-semibold text-slate-500 text-sm italic">No sensor deployed</span>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-slate-400">Carbon Dioxide (CO₂):</span>
-              <span id="co2-reading" class="font-semibold text-slate-500">--</span>
+              <span id="co2-reading" class="font-semibold text-slate-500 text-sm italic">No sensor deployed</span>
             </div>
           </div>
         </div>
@@ -295,6 +295,9 @@ const initialClock = {
   // Initialize simulation manager
   const manager = initializeSimulation(MISSION_PK);
   
+  // Cache terrain data (loaded once, never changes during mission)
+  let cachedTerrainData: { sectors: any[], paths: any[], waypoints: any[] } | null = null;
+  
   // Initialize tactical map with Digital Twin terrain (async)
   let mapConfig: any;
   (async () => {
@@ -315,6 +318,9 @@ const initialClock = {
           const sectors = Array.isArray(sectorsResult.data) ? sectorsResult.data : (sectorsResult.data as any).results || [];
           const paths = pathsResult.success ? (Array.isArray(pathsResult.data) ? pathsResult.data : (pathsResult.data as any).results || []) : [];
           const waypoints = waypointsResult.success ? (Array.isArray(waypointsResult.data) ? waypointsResult.data : (waypointsResult.data as any).results || []) : [];
+          
+          // CACHE terrain data to avoid reloading on every poll
+          cachedTerrainData = { sectors, paths, waypoints };
           
           const routeProfileViewModel = adaptToRouteProfile(
             sectors,
@@ -427,37 +433,21 @@ const initialClock = {
       // Update tactical map
       updateTacticalMap(state, mapConfig);
       
-      // Update route profile
-      (async () => {
+      // Update route profile (use CACHED terrain data - no need to reload from API!)
+      if (cachedTerrainData) {
         try {
-          const binding = getTerrainBinding('collapsed-building-search');
-          if (binding && binding.terrainMapSlug) {
-            const [sectorsResult, pathsResult, waypointsResult] = await Promise.all([
-              getTerrainSectors(binding.terrainMapSlug),
-              getTerrainPaths(binding.terrainMapSlug),
-              getWaypoints(binding.terrainMapSlug)
-            ]);
-            
-            if (sectorsResult.success && sectorsResult.data) {
-              // Handle paginated response from Django REST Framework
-              const sectors = Array.isArray(sectorsResult.data) ? sectorsResult.data : (sectorsResult.data as any).results || [];
-              const paths = pathsResult.success ? (Array.isArray(pathsResult.data) ? pathsResult.data : (pathsResult.data as any).results || []) : [];
-              const waypoints = waypointsResult.success ? (Array.isArray(waypointsResult.data) ? waypointsResult.data : (waypointsResult.data as any).results || []) : [];
-              
-              const routeProfileViewModel = adaptToRouteProfile(
-                sectors,
-                paths,
-                waypoints,
-                state,
-                'Ground Level Entry'
-              );
-              updateRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
-            }
-          }
+          const routeProfileViewModel = adaptToRouteProfile(
+            cachedTerrainData.sectors,
+            cachedTerrainData.paths,
+            cachedTerrainData.waypoints,
+            state, // Only the state changes each poll
+            'Ground Level Entry'
+          );
+          updateRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
         } catch (err) {
           console.error('Route profile update failed:', err);
         }
-      })();
+      }
       
       // Update detection data for modal manager
       updateDetectionData(state);
