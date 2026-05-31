@@ -199,8 +199,8 @@ export function getArchaeologicalExplorationMapConfig(): MapConfig {
   ];
 
   const detectionMarkers: DetectionMarker[] = [
-    { id: 'artefact-wall', type: 'artefact', x: 300, y: 180, appearsAt: 240, label: 'Possible wall marking', icon: 'A' },
-    { id: 'artefact-floor', type: 'artefact', x: 450, y: 250, appearsAt: 420, label: 'Possible ceramic fragment', icon: 'A' },
+    { id: 'artefact-wall', type: 'thermal', x: 300, y: 180, appearsAt: 240, label: 'Possible wall marking', icon: 'A' },
+    { id: 'artefact-floor', type: 'thermal', x: 450, y: 250, appearsAt: 420, label: 'Possible ceramic fragment', icon: 'A' },
   ];
 
   return {

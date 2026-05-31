@@ -226,8 +226,9 @@ const initialClock = {
   const manager = initializeSimulation(MISSION_PK);
   
   // Initialize tactical map with Digital Twin terrain (async)
+  let mapConfig: any;
   (async () => {
-    const mapConfig = await initializeTacticalMapWithDigitalTwin('flooded-structure');
+    mapConfig = await initializeTacticalMapWithDigitalTwin('flooded-structure');
   
     // Initialize detection modal manager
     initDetectionModalManager();

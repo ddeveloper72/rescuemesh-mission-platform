@@ -246,8 +246,9 @@ const initialClock = {
   const manager = initializeSimulation(MISSION_PK);
   
   // Initialize tactical map with Digital Twin terrain (async)
+  let mapConfig: any;
   (async () => {
-    const mapConfig = await initializeTacticalMapWithDigitalTwin('industrial-inspection');
+    mapConfig = await initializeTacticalMapWithDigitalTwin('industrial-inspection');
   
     // Initialize detection modal manager
     initDetectionModalManager();
