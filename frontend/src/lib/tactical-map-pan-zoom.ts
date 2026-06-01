@@ -1,28 +1,71 @@
 /**
  * Tactical Map Pan/Zoom Controller
  * 
- * Adds interactive pan and zoom capabilities to SVG tactical maps.
- * Similar to Google Maps: drag to pan, scroll to zoom, reset view button.
+ * Provides interactive pan (drag) and zoom capabilities for SVG tactical maps,
+ * similar to modern web mapping interfaces (Google Maps, Leaflet, etc.).
+ * 
+ * **Key Features:**
+ * - Mouse drag to pan the map view
+ * - Mouse wheel to zoom in/out at cursor position
+ * - Programmatic zoom controls (zoom in/out buttons)
+ * - Reset view to default state
+ * - Configurable zoom limits (minScale, maxScale)
+ * - Smooth transform updates via SVG transforms
+ * 
+ * **Critical Implementation Detail: Document-Level Event Handlers**
+ * 
+ * The drag functionality uses document-level event listeners for mousemove and mouseup,
+ * rather than element-level listeners. This pattern is essential because:
+ * 
+ * 1. **DOM Update Resilience:** When the SVG content is dynamically updated (e.g., mission
+ *    state polling every 2 seconds), element-level listeners can be detached and lost.
+ *    Document-level listeners persist across DOM updates.
+ * 
+ * 2. **Cursor Tracking:** Document-level listeners continue tracking the mouse even when
+ *    the cursor moves outside the SVG boundaries during a drag operation.
+ * 
+ * 3. **Clean State Management:** Handlers are attached on mousedown and removed on mouseup,
+ *    ensuring no memory leaks or duplicate handlers.
+ * 
+ * This pattern enables smooth panning even during live mission updates.
+ * 
+ * @module tactical-map-pan-zoom
  */
 
 interface PanZoomState {
-  x: number;
-  y: number;
-  scale: number;
-  minScale: number;
-  maxScale: number;
+  x: number;        // X translation in viewBox units
+  y: number;        // Y translation in viewBox units
+  scale: number;    // Zoom scale factor (1.0 = 100%)
+  minScale: number; // Minimum allowed zoom (e.g., 0.5 = 50%)
+  maxScale: number; // Maximum allowed zoom (e.g., 4.0 = 400%)
 }
 
 interface PanZoomController {
-  enable: () => void;
-  disable: () => void;
-  reset: () => void;
-  getState: () => PanZoomState;
-  setState: (state: Partial<PanZoomState>) => void;
+  enable: () => void;                              // Attach event listeners
+  disable: () => void;                             // Detach event listeners
+  reset: () => void;                               // Reset to default view
+  getState: () => PanZoomState;                    // Get current transform state
+  setState: (state: Partial<PanZoomState>) => void; // Programmatically set state
 }
 
 /**
- * Create a pan/zoom controller for an SVG element
+ * Create a pan/zoom controller for an SVG tactical map element.
+ * 
+ * @param svgElement - The root SVG element to control
+ * @param contentGroupId - ID of the SVG group element to transform (default: 'map-content')
+ * @param options - Configuration options for zoom limits and speed
+ * @returns Controller object with enable/disable/reset methods
+ * 
+ * @example
+ * ```typescript
+ * const svg = document.getElementById('tactical-map-svg') as SVGSVGElement;
+ * const controller = createPanZoomController(svg, 'map-content', {
+ *   minScale: 0.5,
+ *   maxScale: 5.0,
+ *   zoomSpeed: 0.15
+ * });
+ * controller.enable();
+ * ```
  */
 export function createPanZoomController(
   svgElement: SVGSVGElement,
@@ -124,7 +167,19 @@ export function createPanZoomController(
   }
 
   /**
-   * Handle mouse down - start drag
+   * Handle mouse down event - initiate drag operation.
+   * 
+   * This handler:
+   * 1. Records the starting cursor position and current transform state
+   * 2. Attaches mousemove/mouseup handlers to the DOCUMENT (not the SVG element)
+   * 3. Changes cursor to 'grabbing' for visual feedback
+   * 
+   * **Why document-level handlers?**
+   * - Survives DOM updates during live mission state polling
+   * - Tracks cursor even when it leaves the SVG boundaries
+   * - Clean attachment/detachment on mouse down/up cycle
+   * 
+   * @param event - Mouse down event (only responds to left click)
    */
   function handleMouseDown(event: MouseEvent) {
     if (event.button !== 0) return; // Only left click
@@ -137,7 +192,8 @@ export function createPanZoomController(
     
     svgElement.style.cursor = 'grabbing';
     
-    // Attach move/up handlers to document for better drag behavior
+    // CRITICAL: Attach handlers to document, not SVG element
+    // This ensures they persist across DOM updates and track cursor outside SVG
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
     
@@ -145,7 +201,12 @@ export function createPanZoomController(
   }
 
   /**
-   * Handle mouse move - drag
+   * Handle mouse move event - update map position during drag.
+   * 
+   * Calculates the delta from drag start position and applies it to the
+   * transform, accounting for viewBox coordinate system and current zoom level.
+   * 
+   * @param event - Mouse move event
    */
   function handleMouseMove(event: MouseEvent) {
     if (!isDragging) return;
@@ -153,6 +214,7 @@ export function createPanZoomController(
     const rect = svgElement.getBoundingClientRect();
     const viewBox = svgElement.viewBox.baseVal;
     
+    // Convert screen-space pixel delta to viewBox coordinate delta
     const dx = ((event.clientX - dragStartX) / rect.width) * viewBox.width;
     const dy = ((event.clientY - dragStartY) / rect.height) * viewBox.height;
     
@@ -164,7 +226,16 @@ export function createPanZoomController(
   }
 
   /**
-   * Handle mouse up - end drag
+   * Handle mouse up event - end drag operation.
+   * 
+   * Cleans up the drag state by:
+   * 1. Resetting the isDragging flag
+   * 2. Restoring cursor to 'grab' (hover state)
+   * 3. Removing document-level event handlers to prevent memory leaks
+   * 
+   * This ensures clean state management and no orphaned event listeners.
+   * 
+   * @param event - Mouse up event
    */
   function handleMouseUp() {
     if (isDragging) {

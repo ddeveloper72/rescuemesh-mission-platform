@@ -493,24 +493,56 @@ function getAgentPositionAtTime(route: TacticalAgentRoute, time: number): { x: n
 /**
  * Detect label collision and suggest offset
  */
-// Store label positions for collision detection across the entire map
+/**
+ * Cached label bounds for collision detection across the entire tactical map.
+ * This cache is rebuilt on each render cycle to track all label positions
+ * and prevent overlapping labels in dense areas.
+ */
 interface LabelBounds {
-  sectorId: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  label: string;
+  sectorId: string;    // Unique sector identifier
+  x: number;           // Label bounding box X coordinate
+  y: number;           // Label bounding box Y coordinate
+  width: number;       // Label bounding box width in pixels
+  height: number;      // Label bounding box height in pixels
+  label: string;       // Label text content
 }
 
 let labelBoundsCache: LabelBounds[] = [];
 
+/**
+ * Calculate optimal label offset position to avoid collisions with other labels and sectors.
+ * 
+ * This function implements an intelligent label placement algorithm that:
+ * 1. Evaluates 8 candidate positions around the sector (N, NE, E, SE, S, SW, W, NW, Center)
+ * 2. Assigns collision scores based on:
+ *    - Position priority (center preferred, then cardinal, then diagonal)
+ *    - Overlap area with existing labels (heavy penalty)
+ *    - Proximity to other labels (moderate penalty)
+ *    - Overlap with other sector boundaries (moderate penalty)
+ * 3. Selects the position with the lowest collision score
+ * 4. Caches the chosen position to inform subsequent label placements
+ * 
+ * @param sector - The tactical sector to place a label for
+ * @param allSectors - Array of all sectors on the map (for boundary collision detection)
+ * @param labelOpacity - Opacity value (0-1); returns zero offset if label is invisible
+ * @param label - The text content of the label (used for dimension estimation)
+ * @returns Object containing offsetX and offsetY in map coordinates
+ * 
+ * @remarks
+ * Label dimensions are estimated at ~7px per character width and 16px height.
+ * The algorithm uses a scoring system where lower scores indicate better positions:
+ * - Base score = position priority (1-9)
+ * - Overlap penalty = overlap_area * 10
+ * - Proximity penalty = (40 - distance) / 4 for distances < 40px
+ * - Sector overlap penalty = overlap_area * 5
+ */
 function calculateLabelOffset(
   sector: TacticalSector,
   allSectors: TacticalSector[],
   labelOpacity: number,
   label: string
 ): { offsetX: number; offsetY: number } {
+  // Skip calculation entirely if label is invisible
   if (labelOpacity === 0) return { offsetX: 0, offsetY: 0 };
   
   const centerX = sector.x + sector.width / 2;
@@ -536,12 +568,12 @@ function calculateLabelOffset(
   
   let bestPosition = { offsetX: 0, offsetY: 0, collisionScore: Infinity };
   
-  // Try each candidate position
+  // Evaluate each candidate position to find the one with minimum collisions
   for (const [offsetX, offsetY, priority] of candidatePositions) {
     const labelX = centerX + offsetX;
     const labelY = centerY + offsetY;
     
-    // Calculate bounding box for this label position
+    // Calculate bounding box for this label position (centered on labelX, labelY)
     const labelBounds = {
       x: labelX - labelWidth / 2,
       y: labelY - labelHeight / 2,
@@ -549,36 +581,38 @@ function calculateLabelOffset(
       height: labelHeight,
     };
     
-    // Calculate collision score
-    let collisionScore = priority as number; // Base score is position priority
+    // Initialize collision score with position priority (1=center is best, 9=NW is worst)
+    let collisionScore = priority as number;
     
-    // Check collision with existing labels in cache
+    // Phase 1: Check for collisions with existing labels already placed on the map
     for (const existingLabel of labelBoundsCache) {
-      if (existingLabel.sectorId === sector.id) continue; // Skip self
+      if (existingLabel.sectorId === sector.id) continue; // Skip self-collision
       
+      // Heavy penalty for any overlap with existing labels
       const overlap = calculateRectangleOverlap(labelBounds, existingLabel);
       if (overlap > 0) {
-        collisionScore += overlap * 10; // Heavy penalty for overlap
+        collisionScore += overlap * 10; // 10 points per square pixel of overlap
       }
       
-      // Also penalize proximity even without overlap
+      // Proximity penalty: discourage placing labels too close together even without overlap
+      // This maintains visual spacing and improves readability
       const distance = Math.sqrt(
         Math.pow(labelBounds.x + labelBounds.width / 2 - (existingLabel.x + existingLabel.width / 2), 2) +
         Math.pow(labelBounds.y + labelBounds.height / 2 - (existingLabel.y + existingLabel.height / 2), 2)
       );
       if (distance < 40) {
-        collisionScore += (40 - distance) / 4; // Proximity penalty
+        collisionScore += (40 - distance) / 4; // Penalty scales with closeness
       }
     }
     
-    // Check collision with other sector centers
+    // Phase 2: Check for collisions with other sector boundaries
     for (const otherSector of allSectors) {
-      if (otherSector.id === sector.id) continue;
+      if (otherSector.id === sector.id) continue; // Skip self
       
       const otherCenterX = otherSector.x + otherSector.width / 2;
       const otherCenterY = otherSector.y + otherSector.height / 2;
       
-      // Check if label overlaps other sector's area
+      // Avoid placing labels directly on top of other sectors
       const sectorBounds = {
         x: otherSector.x,
         y: otherSector.y,
@@ -588,11 +622,11 @@ function calculateLabelOffset(
       
       const overlap = calculateRectangleOverlap(labelBounds, sectorBounds);
       if (overlap > 0) {
-        collisionScore += overlap * 5; // Moderate penalty for overlapping sectors
+        collisionScore += overlap * 5; // Moderate penalty (5 points per square pixel)
       }
     }
     
-    // Update best position if this is better
+    // Update best position if this candidate has a lower collision score
     if (collisionScore < bestPosition.collisionScore) {
       bestPosition = {
         offsetX: offsetX as number,
@@ -601,13 +635,15 @@ function calculateLabelOffset(
       };
     }
     
-    // Early exit if we found a perfect position (center with no collisions)
+    // Performance optimization: if center position has no collisions, use it immediately
+    // (collision score of 1 means only the base priority, no penalties)
     if (collisionScore === 1 && offsetX === 0 && offsetY === 0) {
       break;
     }
   }
   
-  // Store this label's bounds in cache for future collision checks
+  // Cache this label's final position for subsequent collision checks
+  // Labels are rendered in sector order, so earlier labels inform later placements
   const finalLabelX = centerX + bestPosition.offsetX;
   const finalLabelY = centerY + bestPosition.offsetY;
   labelBoundsCache.push({
@@ -623,19 +659,44 @@ function calculateLabelOffset(
 }
 
 /**
- * Calculate overlap area between two rectangles
+ * Calculate the overlapping area between two rectangles using intersection logic.
+ * 
+ * This helper function is used by the label placement algorithm to detect and quantify
+ * collisions between label bounding boxes and other UI elements (labels, sectors).
+ * 
+ * @param rect1 - First rectangle with {x, y, width, height} properties
+ * @param rect2 - Second rectangle with {x, y, width, height} properties
+ * @returns The area of overlap in square pixels, or 0 if rectangles don't intersect
+ * 
+ * @remarks
+ * Uses the standard rectangle intersection algorithm:
+ * 1. Find the maximum of left edges (x1)
+ * 2. Find the maximum of top edges (y1)
+ * 3. Find the minimum of right edges (x2)
+ * 4. Find the minimum of bottom edges (y2)
+ * 5. If x2 <= x1 or y2 <= y1, rectangles don't overlap (return 0)
+ * 6. Otherwise, overlap area = (x2 - x1) * (y2 - y1)
+ * 
+ * @example
+ * const overlap = calculateRectangleOverlap(
+ *   { x: 0, y: 0, width: 100, height: 50 },
+ *   { x: 50, y: 25, width: 100, height: 50 }
+ * ); // Returns 1250 (50px × 25px overlap area)
  */
 function calculateRectangleOverlap(
   rect1: { x: number; y: number; width: number; height: number },
   rect2: { x: number; y: number; width: number; height: number }
 ): number {
+  // Find the intersection boundaries
   const x1 = Math.max(rect1.x, rect2.x);
   const y1 = Math.max(rect1.y, rect2.y);
   const x2 = Math.min(rect1.x + rect1.width, rect2.x + rect2.width);
   const y2 = Math.min(rect1.y + rect1.height, rect2.y + rect2.height);
   
-  if (x2 <= x1 || y2 <= y1) return 0; // No overlap
+  // No overlap if intersection has zero or negative dimensions
+  if (x2 <= x1 || y2 <= y1) return 0;
   
+  // Calculate and return overlap area
   return (x2 - x1) * (y2 - y1);
 }
 
@@ -995,7 +1056,12 @@ export function updateAgents(agents: Agent[], config: MapConfig, currentTime: nu
 }
 
 /**
- * Attach click handlers to agent markers for detailed information display
+ * Attach click handlers to agent markers for detailed information display.
+ * 
+ * Enables interactive exploration of agent details by dispatching custom events
+ * when agent markers are clicked on the tactical map.
+ * 
+ * @param agents - Array of all agents in the mission
  */
 function attachAgentMarkerClickHandlers(agents: Agent[]) {
   const markers = document.querySelectorAll('.agent-marker');
@@ -1019,8 +1085,38 @@ function attachAgentMarkerClickHandlers(agents: Agent[]) {
 }
 
 /**
- * Render network connection lines between agents
- * Shows complete relay chain topology from origin through intermediate relays
+ * Render network connection lines between agents showing the relay chain topology.
+ * 
+ * This function visualizes the communications network by drawing lines between agents,
+ * establishing the relay chain from the origin (entrance) through intermediate relays
+ * to active field agents. 
+ * 
+ * **Critical Feature: Active-Only Routing**
+ * The network rendering implements intelligent routing that:
+ * - Only shows connections through ACTIVE/HEALTHY relay nodes
+ * - Excludes sacrificed, failed, or degraded relays from the network path
+ * - Dynamically recalculates routes when relays fail
+ * - Reflects operational reality: dead relays cannot relay signals
+ * 
+ * **Network Path Selection:**
+ * 1. Identifies the origin point (entrance/base station)
+ * 2. Separates agents into active relays vs. field agents
+ * 3. For each field agent, finds the nearest ACTIVE relay
+ * 4. Draws connections through the active relay chain only
+ * 5. Applies signal strength-based color coding to connections
+ * 
+ * @param agents - Array of all agents in the mission with position and state data
+ * @param config - Map configuration including coordinate scaling for digital twin mode
+ * 
+ * @remarks
+ * Connection colors indicate signal strength:
+ * - Green (85-100%): Strong, reliable connection
+ * - Yellow (50-84%): Moderate signal quality
+ * - Red (<50%): Weak or degraded connection
+ * 
+ * Line styles:
+ * - Solid lines: Direct agent-to-relay connections
+ * - Dashed lines: Relay-to-relay backbone connections
  */
 export function renderNetworkConnections(agents: Agent[], config: MapConfig) {
   const networkGroup = document.getElementById('map-network');
