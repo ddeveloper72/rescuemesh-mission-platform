@@ -25,7 +25,9 @@ echo "🔍 Checking if database needs initialization..."
 MISSION_COUNT=$(python manage.py shell -c "
 from apps.missions.models import Mission
 print(Mission.objects.count())
-" 2>/dev/null || echo "0")
+" 2>&1 | tail -n 1 | tr -d '\r\n' || echo "0")
+
+echo "✅ Database status: $MISSION_COUNT missions found"
 
 if [ "$MISSION_COUNT" = "0" ]; then
   echo "📥 Loading initial data..."
@@ -44,10 +46,13 @@ if [ "$MISSION_COUNT" = "0" ]; then
     python manage.py seed_digital_twins || echo "  ⚠️  Digital twin seeding skipped or failed"
   fi
   
-  # Load mission scenarios (if available)
-  if [ -d /data/scenarios ]; then
-    echo "  - Loading mission scenarios..."
-    python manage.py seed_mission_scenarios || echo "  ⚠️  Scenario seeding skipped or failed"
+  # Load mission scenarios (required for simulations)
+  echo "  - Loading mission scenarios..."
+  if python manage.py seed_mission_scenarios --all; then
+    echo "    ✓ Scenarios loaded successfully"
+  else
+    echo "    ⚠️  Scenario seeding failed - simulations may not work"
+    echo "    💡 Retry: docker exec rescuemesh_backend python manage.py seed_mission_scenarios --all"
   fi
   
   echo "✅ Initial data loading completed"
