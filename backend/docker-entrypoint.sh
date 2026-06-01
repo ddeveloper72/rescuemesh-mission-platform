@@ -70,8 +70,8 @@ else:
 fi
 
 # Reset stale simulations (important for container restarts)
-echo "🔄 Resetting stale simulations..."
-python manage.py reset_stale_simulations --max-age-minutes=30 || echo "  ⚠️  Simulation reset skipped or failed"
+echo "🔄 Resetting all simulations to fresh state..."
+python manage.py reset_stale_simulations --reset-all || echo "  ⚠️  Simulation reset skipped or failed"
 
 echo "==============================================="
 echo "🚀 Starting Django development server..."
