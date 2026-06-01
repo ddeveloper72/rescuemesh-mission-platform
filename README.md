@@ -895,7 +895,7 @@ MIT License - See [LICENSE](LICENSE) file for details
 ## Contact
 
 For questions, suggestions, or collaboration:
-- [About me](https://ddeveloper72.github.io/)
+- [About me - Duncan Falconer](https://ddeveloper72.github.io/)
 - [LinkedIn](https://www.linkedin.com/in/duncanfalconer/)
 - [GitHub](https://github.com/ddeveloper72)
 - [GitHub Issues](https://github.com/ddeveloper72/rescuemesh-mission-platform/issues)
