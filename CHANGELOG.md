@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Network connections were invisible due to 0% opacity on sacrificed agents
 - Compass/north indicator moving with pan/zoom (now fixed to viewport)
 - Label overlap on closely spaced sectors
+- Pan/zoom drag operations interrupted by animation updates (moved event handlers to document level)
 
 ### Technical
 - New module: `tactical-map-pan-zoom.ts` for interactive map controls

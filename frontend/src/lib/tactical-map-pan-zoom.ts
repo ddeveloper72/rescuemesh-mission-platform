@@ -136,6 +136,11 @@ export function createPanZoomController(
     dragStartTranslateY = state.y;
     
     svgElement.style.cursor = 'grabbing';
+    
+    // Attach move/up handlers to document for better drag behavior
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
     event.preventDefault();
   }
 
@@ -155,6 +160,7 @@ export function createPanZoomController(
     state.y = dragStartTranslateY + dy;
     
     applyTransform();
+    event.preventDefault();
   }
 
   /**
@@ -164,6 +170,10 @@ export function createPanZoomController(
     if (isDragging) {
       isDragging = false;
       svgElement.style.cursor = 'grab';
+      
+      // Remove document-level handlers
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
     }
   }
 
@@ -217,8 +227,6 @@ export function createPanZoomController(
     
     svgElement.addEventListener('wheel', handleWheel, { passive: false });
     svgElement.addEventListener('mousedown', handleMouseDown);
-    svgElement.addEventListener('mousemove', handleMouseMove);
-    svgElement.addEventListener('mouseup', handleMouseUp);
     svgElement.addEventListener('mouseleave', handleMouseUp);
     
     svgElement.addEventListener('touchstart', handleTouchStart, { passive: false });
@@ -235,10 +243,15 @@ export function createPanZoomController(
   function disable() {
     svgElement.style.cursor = '';
     
+    // Clean up any active drag
+    if (isDragging) {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      isDragging = false;
+    }
+    
     svgElement.removeEventListener('wheel', handleWheel);
     svgElement.removeEventListener('mousedown', handleMouseDown);
-    svgElement.removeEventListener('mousemove', handleMouseMove);
-    svgElement.removeEventListener('mouseup', handleMouseUp);
     svgElement.removeEventListener('mouseleave', handleMouseUp);
     
     svgElement.removeEventListener('touchstart', handleTouchStart);
