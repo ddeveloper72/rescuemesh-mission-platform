@@ -600,8 +600,9 @@ function calculateLabelOffset(
         Math.pow(labelBounds.x + labelBounds.width / 2 - (existingLabel.x + existingLabel.width / 2), 2) +
         Math.pow(labelBounds.y + labelBounds.height / 2 - (existingLabel.y + existingLabel.height / 2), 2)
       );
-      if (distance < 40) {
-        collisionScore += (40 - distance) / 4; // Penalty scales with closeness
+      // Increased minimum distance from 40 to 60 pixels for better readability
+      if (distance < 60) {
+        collisionScore += (60 - distance) / 3; // Higher penalty for closer labels
       }
     }
     
