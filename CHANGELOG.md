@@ -33,6 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic selection of position with minimum overlap
   - Proximity penalties to maintain visual spacing
   - Significantly reduces label overlap in dense map areas
+- Technology Reference Pack documentation
+  - Comprehensive documentation of external technologies and standards that inform RescueMesh
+  - Categorizes technologies as: implemented, simulated, future candidate, or background/inspiration
+  - Covers robotics (ROS 2, Gazebo, PX4, ArduPilot, MCAP), sensor standards (OGC SensorThings, W3C SSN/SOSA), digital twins (Cesium 3D Tiles, GeoJSON), communications (WebRTC, NFC, RFID, mesh networking), underwater systems (acoustic/optical), rescue sensing (thermal, night vision, seismic/acoustic, hydrophones)
+  - Documents safety and ethical boundaries for simulation-first platform
+  - Provides guidance for contributors on technology integration and status classification
 
 ### Changed
 - Tactical map rendering now uses SVG transform groups for pan/zoom

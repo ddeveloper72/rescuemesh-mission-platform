@@ -750,6 +750,19 @@ For real-world deployment:
 - Privacy review required
 - Safety testing required
 
+## Technology Reference Pack
+
+RescueMesh is informed by established robotics, geospatial, sensor, rescue, and communications technologies while remaining a lightweight simulation-first demonstrator. The platform draws inspiration from industry standards and proven approaches including ROS 2 (Robot Operating System), OGC SensorThings API, Cesium 3D Tiles, underwater acoustic/optical communications, thermal imaging, and mesh networking protocols.
+
+The **[Technology Reference Pack](docs/reference-pack.md)** documents:
+- What technologies influence RescueMesh design
+- Which are currently implemented vs simulated vs future candidates
+- How RescueMesh relates to robotics, sensor standards, and geospatial systems
+- Safety boundaries and ethical considerations
+- Future integration paths for real hardware and standards-based interoperability
+
+This reference helps contributors understand the broader context of mission platform development and shows how RescueMesh could integrate with real autonomous systems when proper governance, safety testing, and operational protocols are in place.
+
 ## Contributing
 
 Contributions are welcome! Please:
