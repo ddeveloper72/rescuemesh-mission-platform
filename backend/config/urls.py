@@ -5,6 +5,9 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
 
+# Import health check views
+from apps.missions.views_health import health_check, readiness_check
+
 # Create a router for API endpoints
 router = routers.DefaultRouter()
 
@@ -16,6 +19,10 @@ router.register(r'agent-role-templates', usecase_views.AgentRoleTemplateViewSet,
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include([
+        # Health check endpoints
+        path('health/', health_check, name='health-check'),
+        path('ready/', readiness_check, name='readiness-check'),
+        # API routes
         path('', include(router.urls)),
         path('missions/', include('apps.missions.urls')),
         path('agents/', include('apps.agents.urls')),
