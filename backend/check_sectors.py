@@ -46,4 +46,3 @@ if response.status_code == 200:
             print(f"  - {s.get('sector_id')}: confidence={s.get('confidence')}, label={s.get('label')}")
 else:
     print(f"Error {response.status_code}: {response.text[:200]}")
-
