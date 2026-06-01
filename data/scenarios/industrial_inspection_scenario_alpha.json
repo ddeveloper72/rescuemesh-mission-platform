@@ -31,7 +31,7 @@
       "agent_id": "drone-a",
       "agent_name": "Primary Inspection Drone",
       "agent_role": "mapper",
-      "deploy_at_seconds": 30,
+      "deploy_at_seconds": 5,
       "average_speed_m_per_s": 0.7,
       "battery_drain_rate_percent_per_second": 0.042,
       "sensors": ["Gas Detector", "Thermal", "LiDAR", "Camera"],
@@ -71,7 +71,7 @@
       "agent_id": "gas-sensor",
       "agent_name": "Deployable Gas Monitor",
       "agent_role": "detector",
-      "deploy_at_seconds": 120,
+      "deploy_at_seconds": 15,
       "average_speed_m_per_s": 0.4,
       "battery_drain_rate_percent_per_second": 0.02,
       "sensors": ["Multi-Gas Detector", "O2", "LEL", "H2S", "CO"],
@@ -107,6 +107,42 @@
       "event_data": {
         "o2_percent": 20.9,
         "lel_percent": 0
+      }
+    },
+    {
+      "trigger_at_seconds": 30,
+      "event_type": "sensor_reading",
+      "title": "Oxygen (O₂)",
+      "description": "Normal oxygen concentration detected",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "access-shaft-01",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_type": "oxygen",
+        "display_name": "Oxygen (O₂)",
+        "value": 20.9,
+        "unit": "%",
+        "status": "normal",
+        "confidence": 95
+      }
+    },
+    {
+      "trigger_at_seconds": 60,
+      "event_type": "sensor_reading",
+      "title": "Carbon Dioxide (CO₂)",
+      "description": "CO2 levels within normal range",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "utility-corridor-main",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_type": "carbon_dioxide",
+        "display_name": "Carbon Dioxide (CO₂)",
+        "value": 520,
+        "unit": "ppm",
+        "status": "normal",
+        "confidence": 92
       }
     },
     {
@@ -151,6 +187,24 @@
       }
     },
     {
+      "trigger_at_seconds": 180,
+      "event_type": "sensor_reading",
+      "title": "Methane (CH₄)",
+      "description": "Low methane concentration detected",
+      "severity": "info",
+      "agent_id": "gas-sensor",
+      "sector_id": "hazard-zone-01",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_type": "methane",
+        "display_name": "Methane (CH₄)",
+        "value": 85,
+        "unit": "ppm",
+        "status": "normal",
+        "confidence": 88
+      }
+    },
+    {
       "trigger_at_seconds": 240,
       "event_type": "milestone",
       "title": "Equipment Room Inspection Complete",
@@ -161,6 +215,24 @@
       "requires_user_action": false,
       "event_data": {
         "inspection_result": "maintenance_required"
+      }
+    },
+    {
+      "trigger_at_seconds": 240,
+      "event_type": "sensor_reading",
+      "title": "Hydrogen (H₂)",
+      "description": "Trace hydrogen detected",
+      "severity": "info",
+      "agent_id": "gas-sensor",
+      "sector_id": "pipe-corridor-01",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_type": "hydrogen",
+        "display_name": "Hydrogen (H₂)",
+        "value": 45,
+        "unit": "ppm",
+        "status": "normal",
+        "confidence": 85
       }
     },
     {

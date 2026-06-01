@@ -462,6 +462,54 @@ def extract_audio_detections(
     return detections
 
 
+def extract_environmental_readings(
+    events: List[ScenarioEvent],
+    elapsed_seconds: float,
+    terrain_sectors: Dict[str, TerrainSector],
+    agents: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """
+    Extract environmental sensor readings from scenario events.
+    
+    Looks for sensor_reading events and formats them for display.
+    """
+    readings = []
+    
+    for event in events:
+        if event.event_type == 'sensor_reading' and event.trigger_at_seconds <= elapsed_seconds:
+            # Get location from sector or agent
+            location_label = 'Unknown'
+            if event.sector_id and event.sector_id in terrain_sectors:
+                location_label = terrain_sectors[event.sector_id].label
+            elif event.agent_id:
+                agent = next((a for a in agents if a['agent_id'] == event.agent_id), None)
+                if agent:
+                    location_label = agent.get('location_label', 'Unknown')
+            
+            # Extract sensor data from event_data
+            sensor_type = event.event_data.get('sensor_type', 'unknown')
+            value = event.event_data.get('value', 0)
+            unit = event.event_data.get('unit', '')
+            status = event.event_data.get('status', 'normal')
+            display_name = event.event_data.get('display_name', event.title)
+            
+            reading = {
+                'sensor_type': sensor_type,
+                'display_name': display_name,
+                'value': value,
+                'unit': unit,
+                'status': status,
+                'location_label': location_label,
+                'confidence': int(event.event_data.get('confidence', 90)),
+                'detected_at': int(event.trigger_at_seconds),
+                'timestamp': format_time(event.trigger_at_seconds),
+                'location': location_label
+            }
+            readings.append(reading)
+    
+    return readings
+
+
 def generate_simulation_state_from_scenario(
     mission_id: str,
     scenario_id: str,
@@ -663,6 +711,7 @@ def generate_simulation_state_from_scenario(
     # Extract sensor detections from triggered events
     thermal_anomalies = extract_thermal_detections(events, elapsed_seconds, terrain_sectors, agents)
     audio_events_data = extract_audio_detections(events, elapsed_seconds, terrain_sectors, agents)
+    environmental_readings = extract_environmental_readings(events, elapsed_seconds, terrain_sectors, agents)
     
     # Build complete simulation state
     return {
@@ -703,6 +752,7 @@ def generate_simulation_state_from_scenario(
             'thermal_anomalies': thermal_anomalies,
             'audio_events': audio_events_data,
             'gas_readings': [],  # TODO: Extract from scenario events
+            'environmental_readings': environmental_readings,
         },
         'events': timeline_events,
         'audio_detections': audio_events_data,  # Same data, different format expected by some components
