@@ -70,3 +70,11 @@ Thumbs.db
 .coverage
 htmlcov/
 .pytest_cache/
+
+# Docker
+docker-compose.override.yml
+.docker/
+secrets/
+*.sql
+*.sql.gz
+postgres_data/
