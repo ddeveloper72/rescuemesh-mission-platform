@@ -211,9 +211,9 @@
       "trigger_at_seconds": 320,
       "event_type": "detection-thermal",
       "agent_id": "drone-b",
-      "sector_id": "basement-storage",
+      "sector_id": "basement-corridor",
       "title": "Thermal Anomaly Detected",
-      "description": "Possible heat signature detected in basement storage area",
+      "description": "Possible heat signature detected in basement corridor",
       "severity": "warning",
       "event_data": {
         "temperature_delta": 2.3,
