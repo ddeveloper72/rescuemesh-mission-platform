@@ -27,7 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Handles extreme aspect ratios (>4:1 or <0.25:1)
   - Independent X/Y scaling for wide/tall terrains
   - Vertical centering in viewport
-- Label collision detection and auto-spacing for sector labels
+- Smart multi-direction label placement system
+  - Tries 8 positions around each sector (N, NE, E, SE, S, SW, W, NW)
+  - Collision detection with other labels and sector boundaries
+  - Automatic selection of position with minimum overlap
+  - Proximity penalties to maintain visual spacing
+  - Significantly reduces label overlap in dense map areas
 
 ### Changed
 - Tactical map rendering now uses SVG transform groups for pan/zoom

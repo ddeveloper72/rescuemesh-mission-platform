@@ -493,36 +493,150 @@ function getAgentPositionAtTime(route: TacticalAgentRoute, time: number): { x: n
 /**
  * Detect label collision and suggest offset
  */
+// Store label positions for collision detection across the entire map
+interface LabelBounds {
+  sectorId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+}
+
+let labelBoundsCache: LabelBounds[] = [];
+
 function calculateLabelOffset(
   sector: TacticalSector,
   allSectors: TacticalSector[],
-  labelOpacity: number
-): { offsetY: number } {
-  if (labelOpacity === 0) return { offsetY: 0 };
+  labelOpacity: number,
+  label: string
+): { offsetX: number; offsetY: number } {
+  if (labelOpacity === 0) return { offsetX: 0, offsetY: 0 };
   
   const centerX = sector.x + sector.width / 2;
   const centerY = sector.y + sector.height / 2;
-  const collisionThreshold = 60; // pixels
   
-  // Check for nearby sectors
-  const nearbySectors = allSectors.filter(other => {
-    if (other.id === sector.id) return false;
-    const otherCenterX = other.x + other.width / 2;
-    const otherCenterY = other.y + other.height / 2;
-    const distance = Math.sqrt(
-      Math.pow(centerX - otherCenterX, 2) + 
-      Math.pow(centerY - otherCenterY, 2)
-    );
-    return distance < collisionThreshold;
-  });
+  // Estimate label dimensions (roughly 7px per character width, 16px height)
+  const labelWidth = label.length * 7;
+  const labelHeight = 16;
   
-  // If there are nearby sectors, offset label downward
-  if (nearbySectors.length > 0) {
-    // Offset by half height + small margin
-    return { offsetY: sector.height / 2 + 12 };
+  // Define 8 candidate positions around the sector center
+  // Format: [offsetX, offsetY, priority] - priority lower is better
+  const candidatePositions = [
+    [0, 0, 1],                              // Center (default, highest priority)
+    [0, -sector.height / 2 - 20, 2],       // North
+    [0, sector.height / 2 + 20, 3],        // South
+    [sector.width / 2 + 20, 0, 4],         // East
+    [-sector.width / 2 - 20, 0, 5],        // West
+    [sector.width / 2 + 15, -sector.height / 2 - 15, 6],   // NE
+    [sector.width / 2 + 15, sector.height / 2 + 15, 7],    // SE
+    [-sector.width / 2 - 15, sector.height / 2 + 15, 8],   // SW
+    [-sector.width / 2 - 15, -sector.height / 2 - 15, 9],  // NW
+  ];
+  
+  let bestPosition = { offsetX: 0, offsetY: 0, collisionScore: Infinity };
+  
+  // Try each candidate position
+  for (const [offsetX, offsetY, priority] of candidatePositions) {
+    const labelX = centerX + offsetX;
+    const labelY = centerY + offsetY;
+    
+    // Calculate bounding box for this label position
+    const labelBounds = {
+      x: labelX - labelWidth / 2,
+      y: labelY - labelHeight / 2,
+      width: labelWidth,
+      height: labelHeight,
+    };
+    
+    // Calculate collision score
+    let collisionScore = priority as number; // Base score is position priority
+    
+    // Check collision with existing labels in cache
+    for (const existingLabel of labelBoundsCache) {
+      if (existingLabel.sectorId === sector.id) continue; // Skip self
+      
+      const overlap = calculateRectangleOverlap(labelBounds, existingLabel);
+      if (overlap > 0) {
+        collisionScore += overlap * 10; // Heavy penalty for overlap
+      }
+      
+      // Also penalize proximity even without overlap
+      const distance = Math.sqrt(
+        Math.pow(labelBounds.x + labelBounds.width / 2 - (existingLabel.x + existingLabel.width / 2), 2) +
+        Math.pow(labelBounds.y + labelBounds.height / 2 - (existingLabel.y + existingLabel.height / 2), 2)
+      );
+      if (distance < 40) {
+        collisionScore += (40 - distance) / 4; // Proximity penalty
+      }
+    }
+    
+    // Check collision with other sector centers
+    for (const otherSector of allSectors) {
+      if (otherSector.id === sector.id) continue;
+      
+      const otherCenterX = otherSector.x + otherSector.width / 2;
+      const otherCenterY = otherSector.y + otherSector.height / 2;
+      
+      // Check if label overlaps other sector's area
+      const sectorBounds = {
+        x: otherSector.x,
+        y: otherSector.y,
+        width: otherSector.width,
+        height: otherSector.height,
+      };
+      
+      const overlap = calculateRectangleOverlap(labelBounds, sectorBounds);
+      if (overlap > 0) {
+        collisionScore += overlap * 5; // Moderate penalty for overlapping sectors
+      }
+    }
+    
+    // Update best position if this is better
+    if (collisionScore < bestPosition.collisionScore) {
+      bestPosition = {
+        offsetX: offsetX as number,
+        offsetY: offsetY as number,
+        collisionScore,
+      };
+    }
+    
+    // Early exit if we found a perfect position (center with no collisions)
+    if (collisionScore === 1 && offsetX === 0 && offsetY === 0) {
+      break;
+    }
   }
   
-  return { offsetY: 0 };
+  // Store this label's bounds in cache for future collision checks
+  const finalLabelX = centerX + bestPosition.offsetX;
+  const finalLabelY = centerY + bestPosition.offsetY;
+  labelBoundsCache.push({
+    sectorId: sector.id,
+    x: finalLabelX - labelWidth / 2,
+    y: finalLabelY - labelHeight / 2,
+    width: labelWidth,
+    height: labelHeight,
+    label,
+  });
+  
+  return { offsetX: bestPosition.offsetX, offsetY: bestPosition.offsetY };
+}
+
+/**
+ * Calculate overlap area between two rectangles
+ */
+function calculateRectangleOverlap(
+  rect1: { x: number; y: number; width: number; height: number },
+  rect2: { x: number; y: number; width: number; height: number }
+): number {
+  const x1 = Math.max(rect1.x, rect2.x);
+  const y1 = Math.max(rect1.y, rect2.y);
+  const x2 = Math.min(rect1.x + rect1.width, rect2.x + rect2.width);
+  const y2 = Math.min(rect1.y + rect1.height, rect2.y + rect2.height);
+  
+  if (x2 <= x1 || y2 <= y1) return 0; // No overlap
+  
+  return (x2 - x1) * (y2 - y1);
 }
 
 /**
@@ -535,6 +649,9 @@ export function renderSectors(
 ) {
   const sectorsGroup = document.getElementById('map-sectors');
   if (!sectorsGroup) return;
+
+  // Clear label cache at the start of each render
+  labelBoundsCache = [];
 
   sectorsGroup.innerHTML = config.sectors.map(sector => {
     // Try to find simulation state for this sector
@@ -617,7 +734,7 @@ export function renderSectors(
     }
 
     // Calculate label offset to prevent collisions
-    const labelOffset = calculateLabelOffset(sector, config.sectors, labelOpacity);
+    const labelOffset = calculateLabelOffset(sector, config.sectors, labelOpacity, label);
 
     // Build depth/elevation label if available
     let depthLabel = '';
@@ -625,7 +742,7 @@ export function renderSectors(
       const depthText = sector.elevationLabel || sector.depthLabel || '';
       depthLabel = `
         <text 
-          x="${sector.x + sector.width / 2}" 
+          x="${sector.x + sector.width / 2 + labelOffset.offsetX}" 
           y="${sector.y + sector.height / 2 + labelOffset.offsetY + 14}"
           text-anchor="middle"
           dominant-baseline="middle"
@@ -652,7 +769,7 @@ export function renderSectors(
         opacity="${opacity}"
       />
       <text 
-        x="${sector.x + sector.width / 2}" 
+        x="${sector.x + sector.width / 2 + labelOffset.offsetX}" 
         y="${sector.y + sector.height / 2 + labelOffset.offsetY}"
         text-anchor="middle"
         dominant-baseline="middle"
