@@ -5,8 +5,23 @@
  * Falls back to local data if Django API is unavailable.
  */
 
-// API base URL from environment or default to local development
-const API_BASE_URL = import.meta.env.PUBLIC_DJANGO_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
+// API base URL - different for server-side (Docker) vs client-side (browser)
+// Server-side (Astro SSR): Use Docker service name 'backend'
+// Client-side (browser): Use localhost (Docker port forwarding)
+const getApiBaseUrl = (): string => {
+  const envUrl = import.meta.env.PUBLIC_DJANGO_API_BASE_URL;
+  
+  // If running server-side (SSR), use the environment variable
+  if (typeof window === 'undefined') {
+    return envUrl || 'http://backend:8000/api/v1';
+  }
+  
+  // If running client-side (browser), always use localhost
+  // This works because Docker forwards port 8000 to the host
+  return 'http://localhost:8000/api/v1';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 /**
  * API endpoint definitions

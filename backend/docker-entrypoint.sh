@@ -69,6 +69,10 @@ else:
 " || echo "  ⚠️  Failed to create superuser"
 fi
 
+# Reset stale simulations (important for container restarts)
+echo "🔄 Resetting stale simulations..."
+python manage.py reset_stale_simulations --max-age-minutes=30 || echo "  ⚠️  Simulation reset skipped or failed"
+
 echo "==============================================="
 echo "🚀 Starting Django development server..."
 echo "==============================================="
