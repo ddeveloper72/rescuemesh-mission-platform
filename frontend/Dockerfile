@@ -11,7 +11,10 @@ RUN npm ci
 # Copy application code
 COPY . .
 
+# Build the static site for production
+RUN npm run build
+
 EXPOSE 4321
 
-# Development server with host binding for Docker
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Serve the production build
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0"]
