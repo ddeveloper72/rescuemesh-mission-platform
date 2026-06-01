@@ -510,6 +510,259 @@ def extract_environmental_readings(
     return readings
 
 
+def extract_lighting_state(
+    events: List[ScenarioEvent],
+    elapsed_seconds: float,
+    agents: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """
+    Extract current lighting mode and state from scenario events.
+    
+    Returns the most recent lighting_mode_change event for each agent.
+    """
+    lighting_states = {}
+    
+    for event in events:
+        if event.event_type == 'lighting_mode_change' and event.trigger_at_seconds <= elapsed_seconds:
+            if event.agent_id:
+                lighting_states[event.agent_id] = {
+                    'agent_id': event.agent_id,
+                    'current_mode': event.event_data.get('new_mode', 'low_light_rgb'),
+                    'previous_mode': event.event_data.get('previous_mode', 'low_light_rgb'),
+                    'light_active': event.event_data.get('light_active', False),
+                    'light_intensity_percent': event.event_data.get('light_intensity_percent', 0),
+                    'battery_cost_percent_per_second': event.event_data.get('battery_impact', 0),
+                    'image_confidence': event.event_data.get('image_confidence', 0.5),
+                    'confidence_penalty_factors': event.event_data.get('confidence_penalty_factors', {}),
+                    'changed_at_seconds': event.trigger_at_seconds,
+                    'reason': event.event_data.get('reason', 'operator_command'),
+                }
+    
+    return lighting_states
+
+
+def extract_seismic_detections(
+    events: List[ScenarioEvent],
+    elapsed_seconds: float,
+    terrain_sectors: Dict[str, TerrainSector]
+) -> List[Dict[str, Any]]:
+    """
+    Extract seismic/acoustic ground sensor detections from scenario events.
+    
+    Returns list of seismic sensor nodes and their detections.
+    """
+    sensors = {}
+    detections = []
+    
+    for event in events:
+        if event.trigger_at_seconds > elapsed_seconds:
+            continue
+        
+        if event.event_type == 'seismic_sensor_deployed':
+            sensor_id = event.event_data.get('sensor_id', f"seismic-{event.id}")
+            sector = terrain_sectors.get(event.sector_id) if event.sector_id else None
+            
+            sensors[sensor_id] = {
+                'sensor_id': sensor_id,
+                'state': 'listening',
+                'location': sector.label if sector else event.sector_id or 'Unknown',
+                'sector_id': event.sector_id,
+                'position': {
+                    'x_m': sector.x_m if sector else 0,
+                    'y_m': sector.y_m if sector else 0,
+                    'z_m': sector.z_m if sector else 0,
+                },
+                'deployed_at_seconds': event.trigger_at_seconds,
+                'background_noise_level': event.event_data.get('background_noise_level', 0.35),
+                'detection_threshold': event.event_data.get('detection_threshold', 0.50),
+                'detections': [],
+            }
+        
+        elif event.event_type == 'seismic_detection':
+            sensor_id = event.event_data.get('sensor_id', 'seismic-unknown')
+            sector = terrain_sectors.get(event.sector_id) if event.sector_id else None
+            
+            detection = {
+                'id': f"seismic-det-{event.id}",
+                'sensor_id': sensor_id,
+                'detected_at_seconds': event.trigger_at_seconds,
+                'timestamp': format_time(event.trigger_at_seconds),
+                'location': sector.label if sector else event.sector_id or 'Unknown',
+                'type': event.event_data.get('type', 'unknown'),
+                'confidence': event.event_data.get('confidence', 0.5),
+                'pattern': event.event_data.get('pattern', ''),
+                'frequency_hz': event.event_data.get('frequency_hz', 0),
+                'human_cue_probability': event.event_data.get('human_cue_probability', 0),
+                'classification': event.event_data.get('classification', 'unknown'),
+                'requires_human_review': event.event_data.get('requires_human_review', False),
+                'description': event.description or event.title,
+            }
+            detections.append(detection)
+            
+            # Add to sensor's detection list if sensor exists
+            if sensor_id in sensors:
+                sensors[sensor_id]['detections'].append(detection)
+    
+    return {
+        'sensors': list(sensors.values()),
+        'detections': detections,
+    }
+
+
+def extract_hydrophone_detections(
+    events: List[ScenarioEvent],
+    elapsed_seconds: float,
+    terrain_sectors: Dict[str, TerrainSector]
+) -> List[Dict[str, Any]]:
+    """
+    Extract hydrophone/water acoustic detections from scenario events.
+    
+    Returns list of hydrophone sensors and their detections.
+    """
+    hydrophones = {}
+    detections = []
+    
+    for event in events:
+        if event.trigger_at_seconds > elapsed_seconds:
+            continue
+        
+        if event.event_type == 'hydrophone_deployed':
+            sensor_id = event.event_data.get('sensor_id', f"hydrophone-{event.id}")
+            sector = terrain_sectors.get(event.sector_id) if event.sector_id else None
+            
+            hydrophones[sensor_id] = {
+                'sensor_id': sensor_id,
+                'state': event.event_data.get('state', 'deployed_submerged'),
+                'location': sector.label if sector else event.sector_id or 'Unknown',
+                'sector_id': event.sector_id,
+                'position': {
+                    'x_m': sector.x_m if sector else 0,
+                    'y_m': sector.y_m if sector else 0,
+                    'z_m': sector.z_m if sector else 0,
+                },
+                'water_depth_m': event.event_data.get('water_depth_m', 0),
+                'deployed_at_seconds': event.trigger_at_seconds,
+                'turbulence_level': event.event_data.get('turbulence_level', 0.3),
+                'detections': [],
+            }
+        
+        elif event.event_type == 'hydrophone_detection':
+            sensor_id = event.event_data.get('sensor_id', 'hydrophone-unknown')
+            sector = terrain_sectors.get(event.sector_id) if event.sector_id else None
+            
+            detection = {
+                'id': f"hydrophone-det-{event.id}",
+                'sensor_id': sensor_id,
+                'detected_at_seconds': event.trigger_at_seconds,
+                'timestamp': format_time(event.trigger_at_seconds),
+                'location': sector.label if sector else event.sector_id or 'Unknown',
+                'detection_type': event.event_data.get('detection_type', 'unknown'),
+                'confidence': event.event_data.get('confidence', 0.5),
+                'frequency_range': event.event_data.get('frequency_range', 'Unknown'),
+                'flow_direction': event.event_data.get('flow_direction', ''),
+                'intensity': event.event_data.get('intensity', 'moderate'),
+                'classification': event.event_data.get('classification', 'unknown'),
+                'description': event.description or event.title,
+            }
+            detections.append(detection)
+            
+            # Add to hydrophone's detection list if hydrophone exists
+            if sensor_id in hydrophones:
+                hydrophones[sensor_id]['detections'].append(detection)
+    
+    return {
+        'hydrophones': list(hydrophones.values()),
+        'detections': detections,
+    }
+
+
+def extract_talkback_events(
+    events: List[ScenarioEvent],
+    elapsed_seconds: float,
+    terrain_sectors: Dict[str, TerrainSector],
+    agents: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """
+    Extract talkback/survivor communication events from scenario.
+    
+    Returns talkback messages sent and responses received.
+    """
+    talkback_messages = []
+    talkback_responses = []
+    talkback_capability = {
+        'talkback_available': False,
+        'speaker_available': False,
+        'microphone_available': False,
+        'available_agents': [],
+    }
+    
+    # Check which agents have talkback capability
+    for agent in agents:
+        if agent.get('state') in ['active', 'deployed', 'landed_relay']:
+            sensors = agent.get('sensors', [])
+            has_speaker = any('speaker' in s.lower() or 'talkback' in s.lower() for s in sensors)
+            has_mic = any('microphone' in s.lower() or 'mic' in s.lower() for s in sensors)
+            
+            if has_speaker or has_mic:
+                talkback_capability['talkback_available'] = True
+                talkback_capability['speaker_available'] = talkback_capability['speaker_available'] or has_speaker
+                talkback_capability['microphone_available'] = talkback_capability['microphone_available'] or has_mic
+                talkback_capability['available_agents'].append({
+                    'agent_id': agent['agent_id'],
+                    'name': agent['name'],
+                    'has_speaker': has_speaker,
+                    'has_microphone': has_mic,
+                })
+    
+    # Extract messages and responses from events
+    for event in events:
+        if event.trigger_at_seconds > elapsed_seconds:
+            continue
+        
+        if event.event_type == 'talkback_message_sent':
+            agent = next((a for a in agents if a['agent_id'] == event.agent_id), None)
+            sector = terrain_sectors.get(event.sector_id) if event.sector_id else None
+            
+            message = {
+                'id': f"talkback-msg-{event.id}",
+                'agent_id': event.agent_id,
+                'agent_name': agent['name'] if agent else event.agent_id,
+                'sent_at_seconds': event.trigger_at_seconds,
+                'timestamp': format_time(event.trigger_at_seconds),
+                'location': sector.label if sector else event.sector_id or 'Unknown',
+                'message': event.event_data.get('message', event.title),
+                'audio_link_quality': event.event_data.get('audio_link_quality', 0.5),
+                'delivery_status': event.event_data.get('delivery_status', 'delivered'),
+                'response_expected': event.event_data.get('response_expected', True),
+                'response_window_seconds': event.event_data.get('response_window_seconds', 30),
+            }
+            talkback_messages.append(message)
+        
+        elif event.event_type == 'talkback_response_detected':
+            sector = terrain_sectors.get(event.sector_id) if event.sector_id else None
+            
+            response = {
+                'id': f"talkback-resp-{event.id}",
+                'detected_at_seconds': event.trigger_at_seconds,
+                'timestamp': format_time(event.trigger_at_seconds),
+                'location': sector.label if sector else event.sector_id or 'Unknown',
+                'original_message_at': event.event_data.get('original_message_at', 0),
+                'response_type': event.event_data.get('response_type', 'unknown'),
+                'tap_count': event.event_data.get('tap_count', 0),
+                'confidence': event.event_data.get('confidence', 0.5),
+                'requires_human_review': event.event_data.get('requires_human_review', True),
+                'transcript': event.event_data.get('transcript', event.description or event.title),
+                'description': event.description or event.title,
+            }
+            talkback_responses.append(response)
+    
+    return {
+        'capability': talkback_capability,
+        'messages': talkback_messages,
+        'responses': talkback_responses,
+    }
+
+
 def generate_simulation_state_from_scenario(
     mission_id: str,
     scenario_id: str,
@@ -713,6 +966,12 @@ def generate_simulation_state_from_scenario(
     audio_events_data = extract_audio_detections(events, elapsed_seconds, terrain_sectors, agents)
     environmental_readings = extract_environmental_readings(events, elapsed_seconds, terrain_sectors, agents)
     
+    # Extract capability pack data
+    lighting_states = extract_lighting_state(events, elapsed_seconds, agents)
+    seismic_data = extract_seismic_detections(events, elapsed_seconds, terrain_sectors)
+    hydrophone_data = extract_hydrophone_detections(events, elapsed_seconds, terrain_sectors)
+    talkback_data = extract_talkback_events(events, elapsed_seconds, terrain_sectors, agents)
+    
     # Build complete simulation state
     return {
         'mission': {
@@ -754,6 +1013,10 @@ def generate_simulation_state_from_scenario(
             'gas_readings': [],  # TODO: Extract from scenario events
             'environmental_readings': environmental_readings,
         },
+        'lighting': lighting_states,
+        'seismic': seismic_data,
+        'hydrophone': hydrophone_data,
+        'talkback': talkback_data,
         'events': timeline_events,
         'audio_detections': audio_events_data,  # Same data, different format expected by some components
         'ai_analysis': {
