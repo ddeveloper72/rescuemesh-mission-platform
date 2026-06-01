@@ -403,9 +403,6 @@ class MissionViewSet(viewsets.ModelViewSet):
         **Errors:**
         - 404 if no simulation exists
         """
-        
-        POST /api/v1/missions/{pk}/reset-sim/
-        """
         mission = self.get_object()
         
         try:
@@ -426,6 +423,87 @@ class MissionViewSet(viewsets.ModelViewSet):
             'status': 'not_started',
             'message': 'Simulation reset',
             'elapsed_seconds': 0.0
+        })
+    
+    @action(detail=True, methods=['get'], url_path='media')
+    def get_media_artifacts(self, request, pk=None):
+        """
+        Get media artifacts for this mission's use case.
+        
+        **Endpoint:** GET /api/v1/missions/{pk}/media/
+        
+        Returns media artifacts (images, audio, point clouds) that are relevant
+        to this mission's use case, optionally filtered by mission time.
+        
+        **Query Parameters:**
+        - `max_time`: Maximum mission time in seconds (optional)
+        - `min_time`: Minimum mission time in seconds (optional, default: 0)
+        - `media_type`: Filter by media type (optional)
+        - `sector_id`: Filter by sector (optional)
+        - `linked_event`: Filter by linked event type (optional)
+        
+        **Response:**
+        ```json
+        {
+          "media_artifacts": [
+            {
+              "id": "collapsed-thermal-void-heat-signature",
+              "media_type": "thermal_image",
+              "sensor_type": "thermal_camera",
+              "title": "Thermal anomaly in Void Space 1",
+              "description": "Thermal frame showing warm anomaly...",
+              "media_url": "/media/collapsed-building/thermal-void-heat-signature.png",
+              "thumbnail_url": "/media/collapsed-building/thermal-void-heat-signature-thumb.png",
+              "sector_id": "void-space-1",
+              "agent_id": "drone-b",
+              "mission_time_seconds": 360,
+              "mission_time_display": "06:00",
+              "confidence": 0.78,
+              "human_review_required": true,
+              "annotation_tags": ["thermal anomaly", "review required"]
+            }
+          ],
+          "count": 1
+        }
+        ```
+        """
+        from apps.missions.models_media import ScenarioMediaArtifact
+        
+        mission = self.get_object()
+        
+        # Start with all media for this use case
+        media = ScenarioMediaArtifact.objects.filter(
+            use_case_slug=mission.use_case_type
+        )
+        
+        # Apply time filters
+        max_time = request.query_params.get('max_time')
+        if max_time is not None:
+            media = media.filter(mission_time_seconds__lte=float(max_time))
+        
+        min_time = request.query_params.get('min_time', 0)
+        if min_time:
+            media = media.filter(mission_time_seconds__gte=float(min_time))
+        
+        # Apply optional filters
+        media_type = request.query_params.get('media_type')
+        if media_type:
+            media = media.filter(media_type=media_type)
+        
+        sector_id = request.query_params.get('sector_id')
+        if sector_id:
+            media = media.filter(sector_id=sector_id)
+        
+        linked_event = request.query_params.get('linked_event')
+        if linked_event:
+            media = media.filter(linked_event_type=linked_event)
+        
+        # Convert to API format
+        media_list = [artifact.to_api_dict() for artifact in media]
+        
+        return Response({
+            'media_artifacts': media_list,
+            'count': len(media_list)
         })
     
     @action(detail=True, methods=['post'], url_path='speed-sim')

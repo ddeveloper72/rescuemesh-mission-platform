@@ -436,3 +436,8 @@ from .models_scenario import (  # noqa: F401, E402
     ScenarioEvent,
     UserMissionAction,
 )
+
+# Import media models to register them with Django
+from .models_media import (  # noqa: F401, E402
+    ScenarioMediaArtifact,
+)
