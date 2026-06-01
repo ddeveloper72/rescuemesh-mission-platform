@@ -1,4 +1,25 @@
 ---
 // Redirect /demo/collapsed-building to /demo/collapsed-building-search
-return Astro.redirect('/demo/collapsed-building-search', 301);
+// This handles legacy links and provides a seamless UX
+const redirectUrl = '/demo/collapsed-building-search';
+
+// In Astro, redirects work better with proper response codes
+if (Astro.request) {
+  return Astro.redirect(redirectUrl, 301);
+}
 ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0; url=/demo/collapsed-building-search">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting...</title>
+  <script>
+    window.location.href = '/demo/collapsed-building-search';
+  </script>
+</head>
+<body>
+  <p>Redirecting to <a href="/demo/collapsed-building-search">Collapsed Building Search</a>...</p>
+</body>
+</html>

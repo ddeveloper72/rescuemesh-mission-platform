@@ -1,4 +1,21 @@
 ---
 // Redirect /demo/industrial to /demo/industrial-inspection
-return Astro.redirect('/demo/industrial-inspection', 301);
+if (Astro.request) {
+  return Astro.redirect('/demo/industrial-inspection', 301);
+}
 ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0; url=/demo/industrial-inspection">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting...</title>
+  <script>
+    window.location.href = '/demo/industrial-inspection';
+  </script>
+</head>
+<body>
+  <p>Redirecting to <a href="/demo/industrial-inspection">Industrial Inspection</a>...</p>
+</body>
+</html>

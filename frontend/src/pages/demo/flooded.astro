@@ -1,4 +1,21 @@
 ---
 // Redirect /demo/flooded to /demo/flooded-structure
-return Astro.redirect('/demo/flooded-structure', 301);
+if (Astro.request) {
+  return Astro.redirect('/demo/flooded-structure', 301);
+}
 ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0; url=/demo/flooded-structure">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting...</title>
+  <script>
+    window.location.href = '/demo/flooded-structure';
+  </script>
+</head>
+<body>
+  <p>Redirecting to <a href="/demo/flooded-structure">Flooded Structure</a>...</p>
+</body>
+</html>
