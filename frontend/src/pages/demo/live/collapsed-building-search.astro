@@ -68,19 +68,9 @@
  * 
  * **Polling Implementation:**
  * 
- * See <script> section at bottom of page:
- * ```javascript
- * setInterval(() => {
- *   fetch(`/api/v1/missions/${MISSION_PK}/state/`)
- *     .then(res => res.json())
- *     .then(state => {
- *       updateTacticalMap(state, mapConfig);
- *       updateAgentsPanelcol(state);
- *       updateTimelinePanel(state);
- *       // ... etc
- *     });
- * }, 2000);
- * ```
+ * The page polls the Django API every 2 seconds to fetch mission state.
+ * See the bottom <script> tag for the setInterval implementation.
+ * Updates tactical map, agents panel, timeline, and all visualizations.
  * 
  * **Performance:**
  * 

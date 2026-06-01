@@ -319,6 +319,56 @@ npm run dev
 
 The frontend will be available at `http://localhost:4321`
 
+### Docker Deployment (Recommended for Production)
+
+For containerized deployment with PostgreSQL + PostGIS:
+
+```bash
+# 1. Create environment file
+cp .env.example .env
+
+# 2. Edit .env with secure credentials
+# IMPORTANT: Change DB_PASSWORD and DJANGO_SECRET_KEY!
+nano .env
+
+# 3. Build and start all services
+docker-compose up -d
+
+# 4. View logs
+docker-compose logs -f
+
+# 5. Access the application
+# Frontend: http://localhost:4321
+# Backend API: http://localhost:8000
+# Django Admin: http://localhost:8000/admin
+```
+
+**Docker Architecture:**
+- **db**: PostgreSQL 15 + PostGIS 3.3 (spatial database)
+- **backend**: Django + DRF (REST API + simulation engine)
+- **frontend**: Astro + Node.js (static site + interactive islands)
+
+**Common Docker Commands:**
+```bash
+# Stop services (preserves data)
+docker-compose down
+
+# Restart specific service
+docker-compose restart backend
+
+# Run Django commands
+docker-compose exec backend python manage.py migrate
+docker-compose exec backend python manage.py createsuperuser
+
+# Backup database
+docker-compose exec db pg_dump -U rescuemesh rescuemesh > backup.sql
+
+# View resource usage
+docker stats
+```
+
+📖 **Full Docker Guide**: See [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) for complete instructions, troubleshooting, and production deployment.
+
 ### Visit the Demo
 
 1. Open `http://localhost:4321` in your browser

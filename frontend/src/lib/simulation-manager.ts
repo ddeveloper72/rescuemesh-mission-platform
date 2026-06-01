@@ -628,6 +628,8 @@ export class SimulationManager {
    * @private
    */
   private updateAI(ai: MissionSimulationState['ai_analysis']): void {
+    if (!ai) return;
+    
     const aiSummaryEl = getElementByIdSafe(SELECTORS.AI_SUMMARY);
     if (aiSummaryEl) {
       aiSummaryEl.textContent = ai.summary;
