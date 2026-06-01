@@ -319,6 +319,7 @@ const initialClock = {
   import { getTerrainSectors, getTerrainPaths, getWaypoints } from '../../../lib/api';
   import { getTerrainBinding } from '../../../lib/tactical-map/useCaseTerrainBindings';
   import { renderInteractiveActions } from '../../../lib/recommended-actions-manager';
+  import { createPanZoomController } from '../../../lib/tactical-map-pan-zoom';
   
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
   const manager = initializeSimulation(MISSION_PK);
@@ -326,11 +327,46 @@ const initialClock = {
   // Cache terrain data (loaded once, never changes during mission)
   let cachedTerrainData: { sectors: any[], paths: any[], waypoints: any[] } | null = null;
   
+  // Pan/zoom controller reference
+  let panZoomController: any = null;
+  
   // Initialize tactical map with Digital Twin terrain (async)
   let mapConfig: any;
   (async () => {
     console.log('[CaveRescue] Initializing tactical map with Digital Twin...');
     mapConfig = await initializeTacticalMapWithDigitalTwin('cave-rescue');
+    
+    // Initialize pan/zoom controller for tactical map
+    const svgElement = document.getElementById('tactical-map-svg') as SVGSVGElement;
+    if (svgElement) {
+      panZoomController = createPanZoomController(svgElement, 'map-content', {
+        minScale: 0.5,
+        maxScale: 5.0,
+        zoomSpeed: 0.15
+      });
+      panZoomController.enable();
+      
+      // Wire up zoom control buttons
+      document.getElementById('map-zoom-in')?.addEventListener('click', () => {
+        if (panZoomController) {
+          const state = panZoomController.getState();
+          panZoomController.setState({ scale: Math.min(state.maxScale, state.scale * 1.3) });
+        }
+      });
+      
+      document.getElementById('map-zoom-out')?.addEventListener('click', () => {
+        if (panZoomController) {
+          const state = panZoomController.getState();
+          panZoomController.setState({ scale: Math.max(state.minScale, state.scale / 1.3) });
+        }
+      });
+      
+      document.getElementById('map-reset-view')?.addEventListener('click', () => {
+        if (panZoomController) {
+          panZoomController.reset();
+        }
+      });
+    }
     console.log('[CaveRescue] Tactical map initialized:', {
       terrainSource: mapConfig.terrainSource,
       sectorCount: mapConfig.sectors?.length,
