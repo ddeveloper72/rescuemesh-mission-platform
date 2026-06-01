@@ -45,15 +45,60 @@ const { useCase, title = "Tactical Map" } = Astro.props;
       </defs>
       <rect width="100%" height="100%" fill="url(#grid)" />
       
-      <!-- Use-case specific map layout will be rendered here -->
-      <g id="map-sectors"></g>
-      <g id="map-network"></g>
-      <g id="map-hazards"></g>
-      <g id="map-detections"></g>
-      <g id="map-agents"></g>
-      <g id="map-labels"></g>
+      <!-- Transformable content group for pan/zoom -->
+      <g id="map-content">
+        <!-- Use-case specific map layout will be rendered here -->
+        <g id="map-sectors"></g>
+        <g id="map-network"></g>
+        <g id="map-hazards"></g>
+        <g id="map-detections"></g>
+        <g id="map-agents"></g>
+        <g id="map-labels"></g>
+      </g>
+      
+      <!-- Fixed viewport elements (not affected by pan/zoom) -->
       <g id="map-compass"></g>
     </svg>
+    
+    <!-- Pan/Zoom Controls -->
+    <div class="absolute top-2 right-2 flex flex-col gap-1">
+      <button 
+        id="map-zoom-in"
+        class="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded border border-slate-600 flex items-center justify-center text-white transition-colors"
+        title="Zoom In"
+        aria-label="Zoom in"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+      </button>
+      <button 
+        id="map-zoom-out"
+        class="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded border border-slate-600 flex items-center justify-center text-white transition-colors"
+        title="Zoom Out"
+        aria-label="Zoom out"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+        </svg>
+      </button>
+      <button 
+        id="map-reset-view"
+        class="w-8 h-8 bg-slate-800 hover:bg-slate-700 rounded border border-slate-600 flex items-center justify-center text-white transition-colors"
+        title="Reset View"
+        aria-label="Reset view"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      </button>
+    </div>
+    
+    <!-- Map Instructions -->
+    <div class="absolute top-2 left-2 bg-slate-800 bg-opacity-90 rounded px-2 py-1 text-xs text-slate-300">
+      <span class="inline-block mr-2">🖱️ Drag to pan</span>
+      <span class="inline-block">🔍 Scroll to zoom</span>
+    </div>
     
     <!-- Legend -->
     <div class="absolute bottom-2 left-2 bg-slate-800 bg-opacity-90 rounded p-2 text-xs">

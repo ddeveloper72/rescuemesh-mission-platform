@@ -491,6 +491,41 @@ function getAgentPositionAtTime(route: TacticalAgentRoute, time: number): { x: n
 }
 
 /**
+ * Detect label collision and suggest offset
+ */
+function calculateLabelOffset(
+  sector: TacticalSector,
+  allSectors: TacticalSector[],
+  labelOpacity: number
+): { offsetY: number } {
+  if (labelOpacity === 0) return { offsetY: 0 };
+  
+  const centerX = sector.x + sector.width / 2;
+  const centerY = sector.y + sector.height / 2;
+  const collisionThreshold = 60; // pixels
+  
+  // Check for nearby sectors
+  const nearbySectors = allSectors.filter(other => {
+    if (other.id === sector.id) return false;
+    const otherCenterX = other.x + other.width / 2;
+    const otherCenterY = other.y + other.height / 2;
+    const distance = Math.sqrt(
+      Math.pow(centerX - otherCenterX, 2) + 
+      Math.pow(centerY - otherCenterY, 2)
+    );
+    return distance < collisionThreshold;
+  });
+  
+  // If there are nearby sectors, offset label downward
+  if (nearbySectors.length > 0) {
+    // Offset by half height + small margin
+    return { offsetY: sector.height / 2 + 12 };
+  }
+  
+  return { offsetY: 0 };
+}
+
+/**
  * Render sectors on the map with progressive reveal
  */
 export function renderSectors(
@@ -581,6 +616,27 @@ export function renderSectors(
       }
     }
 
+    // Calculate label offset to prevent collisions
+    const labelOffset = calculateLabelOffset(sector, config.sectors, labelOpacity);
+
+    // Build depth/elevation label if available
+    let depthLabel = '';
+    if (sector.depthLabel || sector.elevationLabel) {
+      const depthText = sector.elevationLabel || sector.depthLabel || '';
+      depthLabel = `
+        <text 
+          x="${sector.x + sector.width / 2}" 
+          y="${sector.y + sector.height / 2 + labelOffset.offsetY + 14}"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          class="text-xs"
+          fill="#94a3b8"
+          opacity="${labelOpacity * 0.8}"
+          font-size="9"
+        >${depthText}</text>
+      `;
+    }
+
     return `
       <rect 
         id="sector-${sector.id}"
@@ -597,13 +653,14 @@ export function renderSectors(
       />
       <text 
         x="${sector.x + sector.width / 2}" 
-        y="${sector.y + sector.height / 2}"
+        y="${sector.y + sector.height / 2 + labelOffset.offsetY}"
         text-anchor="middle"
         dominant-baseline="middle"
         class="text-xs"
         fill="#e2e8f0"
         opacity="${labelOpacity}"
       >${label}</text>
+      ${depthLabel}
     `;
   }).join('');
 }
@@ -887,26 +944,33 @@ export function renderNetworkConnections(agents: Agent[], config: MapConfig) {
 
   // Identify origin (entrance) - typically at sector entrance or lowest agent_id
   const entrance = agentsWithPositions.find(a => 
-    a.agent.location_label?.toLowerCase().includes('entrance')
+    a.agent.location_label?.toLowerCase().includes('entrance') ||
+    a.agent.location_label?.toLowerCase().includes('entry') ||
+    a.agent.location_label?.toLowerCase().includes('breach')
   );
   const origin = entrance || agentsWithPositions[0];
 
-  // Separate into relays (including entrance) and active agents
-  const relayNodes = agentsWithPositions.filter(a => 
-    a.agent.state === 'landed_relay' || 
-    a.agent.role === 'relay' ||
-    a.agent.location_label?.toLowerCase().includes('entrance')
+  // Separate into ACTIVE relay nodes only (exclude sacrificed relays - they can't relay!)
+  const activeRelayNodes = agentsWithPositions.filter(a => 
+    a.agent.state !== 'sacrificed' && 
+    a.agent.state !== 'failed' &&
+    (a.agent.state === 'landed_relay' || 
+     a.agent.role === 'relay' ||
+     a.agent.location_label?.toLowerCase().includes('entrance') ||
+     a.agent.location_label?.toLowerCase().includes('entry'))
   );
   
-  // Ensure origin is in relay nodes
-  if (!relayNodes.find(r => r === origin)) {
-    relayNodes.unshift(origin);
+  // Ensure origin is in active relay nodes if it's not sacrificed
+  if (origin.agent.state !== 'sacrificed' && !activeRelayNodes.find(r => r === origin)) {
+    activeRelayNodes.unshift(origin);
   }
 
+  // Active agents = non-relay agents that are still operational
   const activeAgents = agentsWithPositions.filter(a => 
-    a.agent.state !== 'landed_relay' && 
     a.agent.state !== 'sacrificed' &&
-    !a.agent.location_label?.toLowerCase().includes('entrance')
+    a.agent.state !== 'failed' &&
+    a.agent.state !== 'landed_relay' && 
+    !activeRelayNodes.includes(a)
   );
 
   // Draw connections from each agent back to origin through relay chain
@@ -917,7 +981,8 @@ export function renderNetworkConnections(agents: Agent[], config: MapConfig) {
     if (drawnConnections.has(connectionKey)) return; // Skip duplicates
     drawnConnections.add(connectionKey);
 
-    const opacity = (signal / 100) * 0.7;
+    // Scale opacity by signal strength, minimum 25% for visibility
+    const opacity = Math.max(0.25, (signal / 100) * 0.7);
     const color = signal > 70 ? '#10b981' : signal > 40 ? '#eab308' : signal === 0 ? '#64748b' : '#ef4444';
     
     elements.push(`
@@ -936,13 +1001,15 @@ export function renderNetworkConnections(agents: Agent[], config: MapConfig) {
     `);
   };
 
-  // Connect active agents to nearest relay
+  // Connect active agents to nearest ACTIVE relay (bypassing dead relays)
   activeAgents.forEach(({ agent, x, y }) => {
-    // Find nearest relay node (could be origin or intermediate relay)
-    let nearest = origin;
-    let minDist = Math.hypot(x - origin.x, y - origin.y);
+    if (activeRelayNodes.length === 0) return; // No active relays available
     
-    relayNodes.forEach(relay => {
+    // Find nearest ACTIVE relay node
+    let nearest = activeRelayNodes[0];
+    let minDist = Math.hypot(x - nearest.x, y - nearest.y);
+    
+    activeRelayNodes.forEach(relay => {
       const dist = Math.hypot(x - relay.x, y - relay.y);
       if (dist < minDist) {
         minDist = dist;
@@ -950,7 +1017,7 @@ export function renderNetworkConnections(agents: Agent[], config: MapConfig) {
       }
     });
 
-    // Draw connection to nearest relay
+    // Draw connection to nearest active relay
     const signal = agent.signal_strength || 0;
     drawConnection(
       x, y,
@@ -960,30 +1027,30 @@ export function renderNetworkConnections(agents: Agent[], config: MapConfig) {
     );
   });
 
-  // Connect relay chain - each relay to next closest relay toward origin
-  relayNodes.forEach(relay => {
+  // Connect ACTIVE relay chain - each relay to next closest ACTIVE relay toward origin
+  activeRelayNodes.forEach(relay => {
     if (relay === origin) return; // Origin doesn't connect to anything (it's the root)
 
-    // Find nearest relay that's closer to origin (creates chain back to entrance)
+    // Find nearest ACTIVE relay that's closer to origin (creates chain back to entrance)
     const relayDistToOrigin = Math.hypot(relay.x - origin.x, relay.y - origin.y);
     
     let nearest = origin;
     let minDist = relayDistToOrigin;
     
-    relayNodes.forEach(candidateRelay => {
+    activeRelayNodes.forEach(candidateRelay => {
       if (candidateRelay === relay) return; // Skip self
       
       const distToCandidate = Math.hypot(relay.x - candidateRelay.x, relay.y - candidateRelay.y);
       const candidateDistToOrigin = Math.hypot(candidateRelay.x - origin.x, candidateRelay.y - origin.y);
       
-      // Connect to relay that's closer to origin and reasonably near
+      // Connect to ACTIVE relay that's closer to origin and reasonably near
       if (candidateDistToOrigin < relayDistToOrigin && distToCandidate < minDist) {
         minDist = distToCandidate;
         nearest = candidateRelay;
       }
     });
 
-    // Draw relay-to-relay connection
+    // Draw relay-to-relay connection for ACTIVE relays only
     const signal = relay.agent.signal_strength || 0;
     drawConnection(
       relay.x, relay.y,
@@ -1235,7 +1302,7 @@ export function renderCompassRose(navigationModel?: {
     return;
   }
 
-  const compassX = 750; // Top right corner
+  const compassX = 680; // Top right area, left of zoom controls
   const compassY = 40;
   const compassRadius = 25;
 

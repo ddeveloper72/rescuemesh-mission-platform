@@ -41,7 +41,7 @@
       "agent_name": "Scout Drone A",
       "agent_role": "mapper",
       "deploy_at_seconds": 30,
-      "sensors": ["LiDAR", "Thermal", "RGB"],
+      "sensors": ["LiDAR", "Thermal Camera", "Low-Light RGB Camera", "IR Camera", "Visible Spotlight"],
       "average_speed_m_per_s": 2.0,
       "battery_drain_rate_percent_per_second": 0.05,
       "behavior": "patrol",
@@ -83,7 +83,7 @@
       "agent_name": "Thermal/Audio Drone",
       "agent_role": "detector",
       "deploy_at_seconds": 60,
-      "sensors": ["Thermal", "Microphone Array", "WiFi Scanner"],
+      "sensors": ["Thermal Camera", "Microphone Array", "Speaker", "WiFi Scanner", "CO2 Sensor"],
       "average_speed_m_per_s": 1.5,
       "battery_drain_rate_percent_per_second": 0.067,
       "behavior": "one-way",
@@ -283,6 +283,153 @@
       "user_action_type": "custom",
       "metadata": {
         "options": ["continue_mission", "recall_all_agents", "deploy_fresh_agent"]
+      }
+    },
+    {
+      "trigger_at_seconds": 35,
+      "event_type": "lighting_mode_change",
+      "title": "Lighting Mode: Visible Spotlight",
+      "description": "Scout drone activating spotlight for initial lobby scan.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "ground-lobby",
+      "requires_user_action": false,
+      "event_data": {
+        "previous_mode": "low_light_rgb",
+        "new_mode": "visible_spotlight",
+        "light_active": true,
+        "light_intensity_percent": 70,
+        "battery_impact": 0.07,
+        "image_confidence": 0.65,
+        "confidence_penalty_factors": {
+          "dust": 0.35
+        },
+        "reason": "heavy_dust_obscuration"
+      }
+    },
+    {
+      "trigger_at_seconds": 100,
+      "event_type": "seismic_sensor_deployed",
+      "title": "Seismic Sensor 1 Deployed - Ground Level",
+      "description": "Ground acoustic sensor deployed at ground entry for survivor detection.",
+      "severity": "info",
+      "agent_id": "relay-1",
+      "sector_id": "ground-entry",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_id": "seismic-node-1",
+        "background_noise_level": 0.42,
+        "detection_threshold": 0.55
+      }
+    },
+    {
+      "trigger_at_seconds": 140,
+      "event_type": "seismic_sensor_deployed",
+      "title": "Seismic Sensor 2 Deployed - Basement Access",
+      "description": "Second acoustic sensor deployed near basement to improve triangulation.",
+      "severity": "info",
+      "agent_id": "drone-c",
+      "sector_id": "ground-corridor-east",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_id": "seismic-node-2",
+        "background_noise_level": 0.38,
+        "detection_threshold": 0.52
+      }
+    },
+    {
+      "trigger_at_seconds": 185,
+      "event_type": "lighting_mode_change",
+      "title": "Lighting Mode: Thermal",
+      "description": "Scout drone switching to thermal camera for heat signature scan.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "floor-1-corridor",
+      "requires_user_action": false,
+      "event_data": {
+        "previous_mode": "visible_spotlight",
+        "new_mode": "thermal",
+        "light_active": false,
+        "light_intensity_percent": 0,
+        "battery_impact": 0.02,
+        "image_confidence": 0.88,
+        "confidence_penalty_factors": {},
+        "reason": "survivor_search_thermal_scan"
+      }
+    },
+    {
+      "trigger_at_seconds": 220,
+      "event_type": "seismic_detection",
+      "title": "Seismic: Structural Settling Detected",
+      "description": "Seismic sensors detecting structural movement, not human-generated.",
+      "severity": "warning",
+      "agent_id": "drone-a",
+      "sector_id": "floor-1-corridor",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_id": "seismic-node-1",
+        "type": "structural_movement",
+        "confidence": 0.82,
+        "pattern": "irregular low-frequency vibration",
+        "frequency_hz": 1.8,
+        "human_cue_probability": 0.12,
+        "classification": "structural_noise",
+        "requires_human_review": false
+      }
+    },
+    {
+      "trigger_at_seconds": 265,
+      "event_type": "seismic_detection",
+      "title": "Seismic: Possible Human Tapping",
+      "description": "Seismic node 2 detected rhythmic tapping pattern, possibly human-generated.",
+      "severity": "critical",
+      "agent_id": "drone-b",
+      "sector_id": "basement-corridor",
+      "requires_user_action": true,
+      "event_data": {
+        "sensor_id": "seismic-node-2",
+        "type": "tapping",
+        "confidence": 0.79,
+        "pattern": "3 distinct impacts, 2.1s intervals",
+        "frequency_hz": 3.8,
+        "human_cue_probability": 0.84,
+        "classification": "possible_human_tapping",
+        "requires_human_review": true
+      }
+    },
+    {
+      "trigger_at_seconds": 290,
+      "event_type": "talkback_message_sent",
+      "title": "Talkback: Message to Basement",
+      "description": "Operator message sent through Thermal/Audio Drone speaker to basement location.",
+      "severity": "info",
+      "agent_id": "drone-b",
+      "sector_id": "basement-corridor",
+      "requires_user_action": false,
+      "event_data": {
+        "message": "If you can hear me, tap three times.",
+        "audio_link_quality": 0.72,
+        "delivery_status": "delivered",
+        "response_expected": true,
+        "response_window_seconds": 30
+      }
+    },
+    {
+      "trigger_at_seconds": 310,
+      "event_type": "talkback_response_detected",
+      "title": "Talkback Response: Three Taps Confirmed",
+      "description": "Seismic sensor confirmed three distinct taps following talkback message. Strong survivor indication.",
+      "severity": "critical",
+      "agent_id": "drone-b",
+      "sector_id": "basement-storage",
+      "requires_user_action": true,
+      "event_data": {
+        "original_message_at": 290,
+        "response_type": "tapping",
+        "tap_count": 3,
+        "confidence": 0.91,
+        "requires_human_review": true,
+        "transcript": "[Tapping detected: 3 distinct impacts, 1.0-1.3s intervals, high confidence human response]"
       }
     }
   ]

@@ -34,7 +34,7 @@
       "deploy_at_seconds": 30,
       "average_speed_m_per_s": 0.8,
       "battery_drain_rate_percent_per_second": 0.04,
-      "sensors": ["Sonar", "Pressure", "Camera", "Water Quality"],
+      "sensors": ["Sonar", "Pressure", "Underwater Camera", "Hydrophone", "Water Quality", "Underwater Spotlight", "Thermal Camera"],
       "behavior": "amphibious_exploration",
       "waypoints": [
         {
@@ -74,7 +74,7 @@
       "deploy_at_seconds": 90,
       "average_speed_m_per_s": 0.5,
       "battery_drain_rate_percent_per_second": 0.05,
-      "sensors": ["Mini Camera", "Temperature", "Gas Detector"],
+      "sensors": ["Mini Camera", "Temperature", "Gas Detector", "Hydrophone", "Speaker", "Microphone"],
       "behavior": "air_pocket_search",
       "waypoints": [
         {
@@ -269,6 +269,153 @@
       "requires_user_action": false,
       "event_data": {
         "mission_phase": "deep_survey_complete"
+      }
+    },
+    {
+      "trigger_at_seconds": 35,
+      "event_type": "lighting_mode_change",
+      "title": "Lighting Mode: Underwater Spotlight",
+      "description": "Primary ROV activating underwater spotlight for initial survey.",
+      "severity": "info",
+      "agent_id": "rov-a",
+      "sector_id": "hull-breach",
+      "requires_user_action": false,
+      "event_data": {
+        "previous_mode": "low_light_rgb",
+        "new_mode": "visible_spotlight",
+        "light_active": true,
+        "light_intensity_percent": 80,
+        "battery_impact": 0.08,
+        "image_confidence": 0.58,
+        "confidence_penalty_factors": {
+          "moisture": 0.25,
+          "reflection_glare": 0.15
+        },
+        "reason": "underwater_visibility"
+      }
+    },
+    {
+      "trigger_at_seconds": 55,
+      "event_type": "hydrophone_deployed",
+      "title": "Hydrophone 1 Deployed - Hull Breach",
+      "description": "Primary hydrophone deployed at hull breach to monitor acoustic signatures.",
+      "severity": "info",
+      "agent_id": "rov-a",
+      "sector_id": "hull-breach",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_id": "hydrophone-1",
+        "state": "deployed_submerged",
+        "water_depth_m": 0.8,
+        "turbulence_level": 0.35
+      }
+    },
+    {
+      "trigger_at_seconds": 110,
+      "event_type": "hydrophone_detection",
+      "title": "Hydrophone: Water Flow Detected",
+      "description": "Hydrophone detecting water movement through corridor system.",
+      "severity": "info",
+      "agent_id": "rov-a",
+      "sector_id": "passage-main-01",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_id": "hydrophone-1",
+        "detection_type": "water_flow",
+        "confidence": 0.78,
+        "frequency_range": "120-950 Hz",
+        "flow_direction": "stern_to_bow",
+        "intensity": "moderate",
+        "classification": "natural_water_movement"
+      }
+    },
+    {
+      "trigger_at_seconds": 190,
+      "event_type": "hydrophone_deployed",
+      "title": "Hydrophone 2 Deployed - Cargo Hold",
+      "description": "Second hydrophone deployed in cargo hold for expanded coverage.",
+      "severity": "info",
+      "agent_id": "surface-relay",
+      "sector_id": "cargo-hold-2",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_id": "hydrophone-2",
+        "state": "deployed_surface",
+        "water_depth_m": 2.2,
+        "turbulence_level": 0.28
+      }
+    },
+    {
+      "trigger_at_seconds": 250,
+      "event_type": "hydrophone_detection",
+      "title": "Hydrophone: Mechanical Pump Detected",
+      "description": "Hydrophone detecting mechanical pump or motor noise from engine room.",
+      "severity": "info",
+      "agent_id": "rov-a",
+      "sector_id": "cargo-hold-2",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_id": "hydrophone-2",
+        "detection_type": "mechanical_pump",
+        "confidence": 0.89,
+        "frequency_range": "60 Hz + harmonics",
+        "intensity": "moderate",
+        "classification": "pump_or_machinery"
+      }
+    },
+    {
+      "trigger_at_seconds": 285,
+      "event_type": "lighting_mode_change",
+      "title": "Lighting Mode: Thermal (Above Waterline)",
+      "description": "Micro ROV switching to thermal camera in air pocket for heat signature detection.",
+      "severity": "info",
+      "agent_id": "rov-b",
+      "sector_id": "crew-quarters-b",
+      "requires_user_action": false,
+      "event_data": {
+        "previous_mode": "visible_spotlight",
+        "new_mode": "thermal",
+        "light_active": false,
+        "light_intensity_percent": 0,
+        "battery_impact": 0.02,
+        "image_confidence": 0.82,
+        "confidence_penalty_factors": {},
+        "reason": "air_pocket_survivor_search"
+      }
+    },
+    {
+      "trigger_at_seconds": 430,
+      "event_type": "talkback_message_sent",
+      "title": "Talkback: Message to Air Pocket",
+      "description": "Operator message sent through Micro ROV speaker to crew quarters air pocket.",
+      "severity": "info",
+      "agent_id": "rov-b",
+      "sector_id": "crew-quarters-b",
+      "requires_user_action": false,
+      "event_data": {
+        "message": "Can you move or respond?",
+        "audio_link_quality": 0.85,
+        "delivery_status": "delivered",
+        "response_expected": true,
+        "response_window_seconds": 30
+      }
+    },
+    {
+      "trigger_at_seconds": 445,
+      "event_type": "hydrophone_detection",
+      "title": "Hydrophone: Possible Underwater Knock",
+      "description": "Hydrophone detected sharp acoustic impacts underwater, possibly human-generated.",
+      "severity": "warning",
+      "agent_id": "rov-a",
+      "sector_id": "crew-quarters-b",
+      "requires_user_action": true,
+      "event_data": {
+        "sensor_id": "hydrophone-2",
+        "detection_type": "underwater_knock",
+        "confidence": 0.68,
+        "frequency_range": "200-1500 Hz",
+        "intensity": "moderate",
+        "classification": "possible_human_signal"
       }
     }
   ]

@@ -9,6 +9,8 @@ import DetectionDetailModal from '../../../components/islands/DetectionDetailMod
 import AgentDetailModal from '../../../components/demo/AgentDetailModal.astro';
 import RouteProfile from '../../../components/demo/RouteProfile.astro';
 import DistanceLinkBudgetPanel from '../../../components/islands/DistanceLinkBudgetPanel';
+import LightingControlPanel from '../../../components/islands/LightingControlPanel';
+import SeismicMonitoringPanel from '../../../components/islands/SeismicMonitoringPanel';
 
 const MISSION_PK = '7d9f9ad9-2144-4c89-8ef5-08bcf7c41916';
 const USE_CASE = 'industrial-inspection';
@@ -49,16 +51,16 @@ const initialClock = {
       <div class="mb-6 bg-slate-800 rounded-lg p-4 border border-slate-700">
         <div class="text-sm font-semibold mb-2">Switch Use Case:</div>
         <div class="flex flex-wrap gap-2">
-          <a href="/demo/live/collapsed-building-search" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors">
+          <a href="/demo/live/collapsed-building-search" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rescue-400">
             Collapsed Building
           </a>
-          <a href="/demo/live/cave-rescue" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors">
+          <a href="/demo/live/cave-rescue" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rescue-400">
             Cave Rescue
           </a>
-          <a href="/demo/live/flooded-structure" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors">
+          <a href="/demo/live/flooded-structure" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rescue-400">
             Flooded Structure
           </a>
-          <a href="/demo/live/industrial-inspection" class="px-4 py-2 bg-rescue-600 rounded text-sm font-semibold">
+          <a href="/demo/live/industrial-inspection" class="px-4 py-2 bg-rescue-600 rounded text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-rescue-300">
             Industrial Inspection
           </a>
         </div>
@@ -189,6 +191,35 @@ const initialClock = {
       <!-- Distance & Link Budget Panel -->
       <div class="mt-6">
         <DistanceLinkBudgetPanel client:load />
+      </div>
+
+      <!-- Capability Packs Section -->
+      <div class="mt-6">
+        <h2 class="text-2xl font-bold mb-4">Capability Packs</h2>
+        <div class="flex flex-wrap gap-2 mb-4" id="capability-pack-tabs">
+          <button data-pack="lighting" class="capability-pack-tab px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors">
+            🔦 Lighting
+          </button>
+          <button data-pack="seismic" class="capability-pack-tab px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors">
+            📊 Seismic
+          </button>
+          <button data-pack="hydrophone" class="capability-pack-tab px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors opacity-40 cursor-not-allowed" disabled title="No hydrophone capability deployed">
+            🌊 Hydrophone
+          </button>
+          <button data-pack="talkback" class="capability-pack-tab px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors opacity-40 cursor-not-allowed" disabled title="No talkback capability deployed">
+            📢 Talkback
+          </button>
+        </div>
+        
+        <!-- Capability Pack Panels -->
+        <div id="capability-pack-panels">
+          <div data-panel="lighting" class="capability-panel hidden">
+            <LightingControlPanel lightingStates={{}} client:load />
+          </div>
+          <div data-panel="seismic" class="capability-panel hidden">
+            <SeismicMonitoringPanel seismicData={{ sensors: [], detections: [] }} client:load />
+          </div>
+        </div>
       </div>
 
       <!-- Detection Detail Modal -->
@@ -531,6 +562,70 @@ const initialClock = {
         }));
       }
       
+      // Update capability pack panels
+      const capabilityPacks = {
+        lighting: state.lighting || null,
+        seismic: state.seismic || null
+      };
+      
+      // Update tab states (active vs disabled)
+      Object.entries(capabilityPacks).forEach(([pack, data]) => {
+        const tab = document.querySelector(`button[data-pack="${pack}"]`);
+        if (tab) {
+          const hasData = data && (
+            (pack === 'lighting' && Object.keys(data).length > 0) ||
+            (pack === 'seismic' && (data.sensors?.length > 0 || data.detections?.length > 0))
+          );
+          
+          if (hasData) {
+            tab.classList.remove('opacity-40', 'cursor-not-allowed');
+            tab.classList.add('hover:bg-slate-600');
+            tab.disabled = false;
+          } else {
+            tab.classList.add('opacity-40', 'cursor-not-allowed');
+            tab.classList.remove('hover:bg-slate-600');
+            tab.disabled = true;
+          }
+        }
+      });
+      
+      // Dispatch capability pack updates
+      if (capabilityPacks.lighting) {
+        window.dispatchEvent(new CustomEvent('lighting-update', {
+          detail: { lightingStates: capabilityPacks.lighting }
+        }));
+      }
+      if (capabilityPacks.seismic) {
+        window.dispatchEvent(new CustomEvent('seismic-update', {
+          detail: { seismicData: capabilityPacks.seismic }
+        }));
+      }
+      
+      // Update audio detections panel
+      if (state.audio_detections) {
+        // Transform backend format to frontend format
+        const transformedDetections = state.audio_detections.map((detection: any) => ({
+          id: detection.id,
+          agent_id: detection.agent_id,
+          agent_name: detection.agent_name,
+          sensor_type: 'microphone' as const,
+          audio_type: detection.type,
+          status: detection.status,
+          mission_time: detection.detected_at,
+          signal_quality: detection.confidence,
+          confidence: detection.confidence,
+          location_label: detection.location,
+          annotations: detection.human_review_required ? ['Requires human review'] : [],
+          description: detection.description,
+          audio_url: undefined,
+          spectrogram_url: undefined
+        }));
+        
+        window.dispatchEvent(new CustomEvent('audio-detections-update', {
+          detail: { audioDetections: transformedDetections }
+        }));
+      }
+      
       // Update debug panel
       const debugEl = document.getElementById('debug-json');
       if (debugEl) {
@@ -542,5 +637,40 @@ const initialClock = {
   };
   
   console.log('Industrial inspection simulation manager initialized');
+  
+  // Capability pack tab switching
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('.capability-pack-tab');
+    const panels = document.querySelectorAll('.capability-panel');
+    
+    // Show first enabled tab by default
+    const firstEnabledTab = Array.from(tabs).find(tab => !tab.disabled);
+    if (firstEnabledTab) {
+      const pack = firstEnabledTab.getAttribute('data-pack');
+      firstEnabledTab.classList.add('bg-rescue-600', 'font-semibold');
+      firstEnabledTab.classList.remove('bg-slate-700');
+      document.querySelector(`[data-panel="${pack}"]`)?.classList.remove('hidden');
+    }
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        if (tab.disabled) return;
+        
+        const pack = tab.getAttribute('data-pack');
+        
+        // Update tab styles
+        tabs.forEach(t => {
+          t.classList.remove('bg-rescue-600', 'font-semibold');
+          t.classList.add('bg-slate-700');
+        });
+        tab.classList.add('bg-rescue-600', 'font-semibold');
+        tab.classList.remove('bg-slate-700');
+        
+        // Show corresponding panel
+        panels.forEach(p => p.classList.add('hidden'));
+        document.querySelector(`[data-panel="${pack}"]`)?.classList.remove('hidden');
+      });
+    });
+  });
 </script>
 </BaseLayout>

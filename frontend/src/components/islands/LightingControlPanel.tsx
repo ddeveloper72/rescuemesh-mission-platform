@@ -4,7 +4,7 @@
  * Displays current lighting mode (low-light RGB, IR, thermal, visible spotlight)
  * and allows operator to view lighting state, battery cost, and image confidence.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface LightingState {
   agent_id: string;
@@ -72,8 +72,21 @@ function getPenaltyName(key: string): string {
   }
 }
 
-export default function LightingControlPanel({ lightingStates, agents = [] }: LightingControlPanelProps) {
+export default function LightingControlPanel({ lightingStates: initialStates, agents = [] }: LightingControlPanelProps) {
+  const [lightingStates, setLightingStates] = useState<Record<string, LightingState> | null>(initialStates);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+
+  // Listen for lighting updates
+  useEffect(() => {
+    const handleUpdate = (event: CustomEvent) => {
+      if (event.detail?.lightingStates) {
+        setLightingStates(event.detail.lightingStates);
+      }
+    };
+    
+    window.addEventListener('lighting-update', handleUpdate as EventListener);
+    return () => window.removeEventListener('lighting-update', handleUpdate as EventListener);
+  }, []);
 
   // Auto-select first agent with lighting state
   if (!selectedAgentId && lightingStates) {

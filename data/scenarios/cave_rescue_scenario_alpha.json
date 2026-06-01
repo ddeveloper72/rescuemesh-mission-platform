@@ -6,7 +6,7 @@
   "digital_twin_site_slug": "migovec-primadona-demo",
   "digital_twin_terrain_slug": "primadona-entrance-zone",
   "origin_sector_id": "entrance",
-  "duration_seconds": 600,
+  "duration_seconds": 750,
   "agent_routes": [
     {
       "agent_id": "base-station",
@@ -34,7 +34,7 @@
       "deploy_at_seconds": 30,
       "average_speed_m_per_s": 0.5,
       "battery_drain_rate_percent_per_second": 0.045,
-      "sensors": ["LiDAR", "IMU", "RGB Camera", "SLAM"],
+      "sensors": ["LiDAR", "IMU", "Low-Light RGB Camera", "IR Camera", "Thermal Camera", "Microphone Array", "Speaker", "SLAM"],
       "behavior": "progressive_mapping",
       "waypoints": [
         {
@@ -71,6 +71,20 @@
           "action": "narrow_navigation",
           "pause_duration_seconds": 60,
           "notes": "Navigate tight squeeze carefully"
+        },
+        {
+          "sequence_order": 6,
+          "sector_id": "deep-chamber",
+          "action": "deep_exploration",
+          "pause_duration_seconds": 90,
+          "notes": "Push deeper beyond squeeze - survivor search protocol"
+        },
+        {
+          "sequence_order": 7,
+          "sector_id": "survivor-location",
+          "action": "survivor_contact",
+          "pause_duration_seconds": 120,
+          "notes": "Confirmed survivor location - establish 2-way communication"
         }
       ]
     },
@@ -275,6 +289,389 @@
       "event_data": {
         "route_difficulty": "high",
         "minimum_clearance": "0.4m"
+      }
+    },
+    {
+      "trigger_at_seconds": 45,
+      "event_type": "lighting_mode_change",
+      "title": "Lighting Mode: Low-Light RGB",
+      "description": "Cave scout drone operating in low-light RGB mode as ambient light diminishes.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "entrance",
+      "requires_user_action": false,
+      "event_data": {
+        "previous_mode": "low_light_rgb",
+        "new_mode": "low_light_rgb",
+        "light_active": false,
+        "light_intensity_percent": 0,
+        "battery_impact": 0,
+        "image_confidence": 0.65,
+        "confidence_penalty_factors": {
+          "dust": 0.15
+        },
+        "reason": "initial_cave_entry"
+      }
+    },
+    {
+      "trigger_at_seconds": 95,
+      "event_type": "lighting_mode_change",
+      "title": "Lighting Mode: IR-Assisted",
+      "description": "Switching to IR-assisted mode due to darkness in main passage.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "passage-1",
+      "requires_user_action": false,
+      "event_data": {
+        "previous_mode": "low_light_rgb",
+        "new_mode": "ir_assisted",
+        "light_active": true,
+        "light_intensity_percent": 60,
+        "battery_impact": 0.04,
+        "image_confidence": 0.78,
+        "confidence_penalty_factors": {
+          "dust": 0.10
+        },
+        "reason": "insufficient_ambient_light"
+      }
+    },
+    {
+      "trigger_at_seconds": 150,
+      "event_type": "seismic_sensor_deployed",
+      "title": "Seismic Sensor Deployed - Chamber 1 Approach",
+      "description": "Ground acoustic sensor deployed near junction to monitor for survivor signals.",
+      "severity": "info",
+      "agent_id": "relay-1",
+      "sector_id": "junction-alpha",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_id": "seismic-node-1",
+        "background_noise_level": 0.28,
+        "detection_threshold": 0.50
+      }
+    },
+    {
+      "trigger_at_seconds": 220,
+      "event_type": "hydrophone_deployed",
+      "title": "Hydrophone Deployed - Underground Water Detected",
+      "description": "Hydrophone sensor deployed to monitor underground water flow in passage system.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "passage-1",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_id": "hydrophone-1",
+        "state": "deployed_surface",
+        "water_depth_m": 0.5,
+        "turbulence_level": 0.22
+      }
+    },
+    {
+      "trigger_at_seconds": 245,
+      "event_type": "hydrophone_detection",
+      "title": "Underground River Flow Detected",
+      "description": "Hydrophone detecting underground water flow, likely small stream or seepage.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "passage-1",
+      "requires_user_action": false,
+      "event_data": {
+        "sensor_id": "hydrophone-1",
+        "detection_type": "underground_river",
+        "confidence": 0.82,
+        "frequency_range": "80-800 Hz",
+        "flow_direction": "north-northwest",
+        "intensity": "low",
+        "classification": "natural_water_flow"
+      }
+    },
+    {
+      "trigger_at_seconds": 320,
+      "event_type": "lighting_mode_change",
+      "title": "Lighting Mode: Thermal Scan",
+      "description": "Switching to thermal camera to scan chamber for heat signatures.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "chamber-1",
+      "requires_user_action": false,
+      "event_data": {
+        "previous_mode": "ir_assisted",
+        "new_mode": "thermal",
+        "light_active": false,
+        "light_intensity_percent": 0,
+        "battery_impact": 0.02,
+        "image_confidence": 0.85,
+        "confidence_penalty_factors": {},
+        "reason": "survivor_search_protocol"
+      }
+    },
+    {
+      "trigger_at_seconds": 395,
+      "event_type": "seismic_detection",
+      "title": "Possible Human Tapping Detected",
+      "description": "Seismic sensor detected rhythmic impacts, pattern consistent with intentional signaling.",
+      "severity": "critical",
+      "agent_id": "drone-a",
+      "sector_id": "chamber-1",
+      "requires_user_action": true,
+      "event_data": {
+        "sensor_id": "seismic-node-1",
+        "type": "tapping",
+        "confidence": 0.74,
+        "pattern": "3 distinct impacts, 1.5s intervals, repeated twice",
+        "frequency_hz": 4.2,
+        "human_cue_probability": 0.81,
+        "classification": "possible_human_tapping",
+        "requires_human_review": true
+      }
+    },
+    {
+      "trigger_at_seconds": 440,
+      "event_type": "talkback_message_sent",
+      "title": "Talkback Message: Tap Three Times",
+      "description": "Operator message sent through drone speaker system to possible survivor location.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "squeeze-1",
+      "requires_user_action": false,
+      "event_data": {
+        "message": "If you can hear me, tap three times.",
+        "audio_link_quality": 0.68,
+        "delivery_status": "delivered",
+        "response_expected": true,
+        "response_window_seconds": 30
+      }
+    },
+    {
+      "trigger_at_seconds": 456,
+      "event_type": "talkback_response_detected",
+      "title": "Talkback Response: Three Taps Confirmed",
+      "description": "Seismic sensor detected three distinct taps following talkback message. Strong survivor indication.",
+      "severity": "critical",
+      "agent_id": "drone-a",
+      "sector_id": "squeeze-1",
+      "requires_user_action": true,
+      "event_data": {
+        "original_message_at": 440,
+        "response_type": "tapping",
+        "tap_count": 3,
+        "confidence": 0.88,
+        "requires_human_review": true,
+        "transcript": "[Tapping detected: 3 distinct impacts, 0.8-1.2s intervals]"
+      }
+    },
+    {
+      "trigger_at_seconds": 500,
+      "event_type": "lighting_mode_change",
+      "title": "Lighting Mode: Visible Spotlight",
+      "description": "Activating visible spotlight for high-confidence visual confirmation near survivor location.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "squeeze-1",
+      "requires_user_action": false,
+      "event_data": {
+        "previous_mode": "thermal",
+        "new_mode": "visible_spotlight",
+        "light_active": true,
+        "light_intensity_percent": 85,
+        "battery_impact": 0.09,
+        "image_confidence": 0.92,
+        "confidence_penalty_factors": {
+          "dust": 0.08
+        },
+        "reason": "high_priority_visual_confirmation"
+      }
+    },
+    {
+      "trigger_at_seconds": 520,
+      "event_type": "milestone",
+      "title": "Deeper Exploration Beyond Squeeze",
+      "description": "Scout drone successfully navigated tight squeeze and is proceeding to unexplored deep chamber.",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "deep-chamber",
+      "requires_user_action": false,
+      "event_data": {
+        "depth": "-22m",
+        "distance_from_entrance": "45m",
+        "battery_remaining": "42%"
+      }
+    },
+    {
+      "trigger_at_seconds": 530,
+      "event_type": "detection-thermal",
+      "title": "Thermal Anomaly - Human Heat Signature",
+      "description": "Thermal camera detected heat signature consistent with human body temperature in deep chamber.",
+      "severity": "critical",
+      "agent_id": "drone-a",
+      "sector_id": "survivor-location",
+      "requires_user_action": true,
+      "event_data": {
+        "temperature": "36.8°C",
+        "signature_type": "human_body",
+        "confidence": 0.89,
+        "size_estimate": "human_sized",
+        "movement_detected": true
+      }
+    },
+    {
+      "trigger_at_seconds": 545,
+      "event_type": "detection-audio",
+      "title": "Clear Voice Detection - Help Call",
+      "description": "Microphone array detected clear human voice calling for help. High confidence survivor confirmation.",
+      "severity": "critical",
+      "agent_id": "drone-a",
+      "sector_id": "survivor-location",
+      "requires_user_action": true,
+      "event_data": {
+        "confidence": 0.94,
+        "frequency_range": "85-250 Hz (human voice)",
+        "transcript": "[Voice detected: Help! Can anyone hear me?]",
+        "audio_clarity": "clear",
+        "requires_investigation": true
+      }
+    },
+    {
+      "trigger_at_seconds": 555,
+      "event_type": "detection",
+      "title": "Visual Confirmation - Camera Image",
+      "description": "Low-light camera captured image showing person in cave alcove. Survivor appears conscious and mobile.",
+      "severity": "critical",
+      "agent_id": "drone-a",
+      "sector_id": "survivor-location",
+      "requires_user_action": true,
+      "event_data": {
+        "image_confidence": 0.91,
+        "subject_count": 1,
+        "subject_state": "conscious_mobile",
+        "visible_injuries": "none_visible",
+        "image_quality": "adequate"
+      }
+    },
+    {
+      "trigger_at_seconds": 565,
+      "event_type": "talkback_message_sent",
+      "title": "Talkback: Rescue Team Contact",
+      "description": "Operator message sent: 'This is a rescue drone. Help is coming. Can you respond?'",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "survivor-location",
+      "requires_user_action": false,
+      "event_data": {
+        "message": "This is a rescue drone. Help is coming. Can you respond?",
+        "audio_link_quality": 0.82,
+        "delivery_status": "delivered",
+        "response_expected": true,
+        "response_window_seconds": 30
+      }
+    },
+    {
+      "trigger_at_seconds": 572,
+      "event_type": "talkback_response_detected",
+      "title": "Survivor Voice Response Confirmed",
+      "description": "Clear voice response: 'Yes! I'm injured but conscious. One person here. Please help!'",
+      "severity": "critical",
+      "agent_id": "drone-a",
+      "sector_id": "survivor-location",
+      "requires_user_action": true,
+      "event_data": {
+        "original_message_at": 565,
+        "response_type": "voice",
+        "confidence": 0.96,
+        "requires_human_review": true,
+        "transcript": "Yes! I'm injured but conscious. One person here. Please help!",
+        "survivor_count_reported": 1,
+        "injury_status": "injured_conscious"
+      }
+    },
+    {
+      "trigger_at_seconds": 590,
+      "event_type": "talkback_message_sent",
+      "title": "Talkback: Request Status Update",
+      "description": "Operator message sent: 'Copy that. What is your condition? Can you move?'",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "survivor-location",
+      "requires_user_action": false,
+      "event_data": {
+        "message": "Copy that. What is your condition? Can you move?",
+        "audio_link_quality": 0.85,
+        "delivery_status": "delivered",
+        "response_expected": true,
+        "response_window_seconds": 30
+      }
+    },
+    {
+      "trigger_at_seconds": 598,
+      "event_type": "talkback_response_detected",
+      "title": "Survivor Condition Report",
+      "description": "Voice response: 'Leg injured, can't walk. Cold and dehydrated. Been here 18 hours.'",
+      "severity": "critical",
+      "agent_id": "drone-a",
+      "sector_id": "survivor-location",
+      "requires_user_action": true,
+      "event_data": {
+        "original_message_at": 590,
+        "response_type": "voice",
+        "confidence": 0.93,
+        "requires_human_review": true,
+        "transcript": "Leg injured, can't walk. Cold and dehydrated. Been here 18 hours.",
+        "mobility": "immobile",
+        "injury_severity": "moderate",
+        "exposure_duration_hours": 18
+      }
+    },
+    {
+      "trigger_at_seconds": 615,
+      "event_type": "milestone",
+      "title": "MISSION SUCCESS - Survivor Located and Confirmed",
+      "description": "Survivor positively identified and confirmed via thermal, audio, visual, and 2-way voice communication. Location: Deep Chamber, -22m depth, 45m from entrance. Status: 1 person, conscious, leg injury, immobile. Rescue team can now plan extraction.",
+      "severity": "success",
+      "agent_id": "drone-a",
+      "sector_id": "survivor-location",
+      "requires_user_action": true,
+      "event_data": {
+        "survivor_count": 1,
+        "confirmation_methods": ["thermal", "audio", "visual", "2way_voice"],
+        "location_precision": "confirmed",
+        "survivor_status": "conscious_injured_immobile",
+        "rescue_priority": "immediate",
+        "extraction_complexity": "difficult_narrow_passages"
+      }
+    },
+    {
+      "trigger_at_seconds": 635,
+      "event_type": "talkback_message_sent",
+      "title": "Talkback: Maintain Position",
+      "description": "Operator message sent: 'Stay where you are. Rescue team is on the way. The drone will stay with you.'",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "survivor-location",
+      "requires_user_action": false,
+      "event_data": {
+        "message": "Stay where you are. Rescue team is on the way. The drone will stay with you.",
+        "audio_link_quality": 0.80,
+        "delivery_status": "delivered",
+        "response_expected": false,
+        "response_window_seconds": 0
+      }
+    },
+    {
+      "trigger_at_seconds": 642,
+      "event_type": "talkback_response_detected",
+      "title": "Survivor Acknowledgment",
+      "description": "Voice response: 'Thank you! I can see your lights. I'm not alone anymore.'",
+      "severity": "info",
+      "agent_id": "drone-a",
+      "sector_id": "survivor-location",
+      "requires_user_action": false,
+      "event_data": {
+        "original_message_at": 635,
+        "response_type": "voice",
+        "confidence": 0.91,
+        "requires_human_review": false,
+        "transcript": "Thank you! I can see your lights. I'm not alone anymore.",
+        "morale_assessment": "improved"
       }
     }
   ]

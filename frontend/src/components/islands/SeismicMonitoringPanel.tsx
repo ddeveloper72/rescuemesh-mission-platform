@@ -4,7 +4,7 @@
  * Displays deployed seismic/acoustic ground sensors and their detections.
  * Used for tapping/knocking detection in collapsed buildings and caves.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface SeismicDetection {
   id: string;
@@ -75,8 +75,21 @@ function getClassificationColor(classification: string): string {
   return 'text-blue-400';
 }
 
-export default function SeismicMonitoringPanel({ seismicData }: SeismicMonitoringPanelProps) {
+export default function SeismicMonitoringPanel({ seismicData: initialData }: SeismicMonitoringPanelProps) {
+  const [seismicData, setSeismicData] = useState<SeismicData | null>(initialData);
   const [expandedSensorId, setExpandedSensorId] = useState<string | null>(null);
+
+  // Listen for seismic updates
+  useEffect(() => {
+    const handleUpdate = (event: CustomEvent) => {
+      if (event.detail?.seismicData) {
+        setSeismicData(event.detail.seismicData);
+      }
+    };
+    
+    window.addEventListener('seismic-update', handleUpdate as EventListener);
+    return () => window.removeEventListener('seismic-update', handleUpdate as EventListener);
+  }, []);
 
   if (!seismicData || seismicData.sensors.length === 0) {
     return (

@@ -69,11 +69,24 @@ const MESSAGE_PRESETS = [
   "Do not move if you are injured.",
 ];
 
-export default function TalkbackPanel({ talkbackData }: TalkbackPanelProps) {
+export default function TalkbackPanel({ talkbackData: initialData }: TalkbackPanelProps) {
+  const [talkbackData, setTalkbackData] = useState<TalkbackData | null>(initialData);
   const [selectedAgentId, setSelectedAgentId] = useState<string>('');
   const [selectedMessage, setSelectedMessage] = useState<string>(MESSAGE_PRESETS[0]);
   const [isCustomMessage, setIsCustomMessage] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
+
+  // Listen for talkback updates
+  useEffect(() => {
+    const handleUpdate = (event: CustomEvent) => {
+      if (event.detail?.talkbackData) {
+        setTalkbackData(event.detail.talkbackData);
+      }
+    };
+    
+    window.addEventListener('talkback-update', handleUpdate as EventListener);
+    return () => window.removeEventListener('talkback-update', handleUpdate as EventListener);
+  }, []);
 
   // Auto-select first available agent
   useEffect(() => {

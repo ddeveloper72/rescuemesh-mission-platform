@@ -4,7 +4,7 @@
  * Displays underwater acoustic sensors and water sound detections.
  * Used for flooded structures, underground rivers, and submerged operations.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface HydrophoneDetection {
   id: string;
@@ -83,8 +83,21 @@ function getClassificationColor(classification: string): string {
   return 'text-gray-400';
 }
 
-export default function HydrophonePanel({ hydrophoneData }: HydrophonePanelProps) {
+export default function HydrophonePanel({ hydrophoneData: initialData }: HydrophonePanelProps) {
+  const [hydrophoneData, setHydrophoneData] = useState<HydrophoneData | null>(initialData);
   const [expandedHydrophoneId, setExpandedHydrophoneId] = useState<string | null>(null);
+
+  // Listen for hydrophone updates
+  useEffect(() => {
+    const handleUpdate = (event: CustomEvent) => {
+      if (event.detail?.hydrophoneData) {
+        setHydrophoneData(event.detail.hydrophoneData);
+      }
+    };
+    
+    window.addEventListener('hydrophone-update', handleUpdate as EventListener);
+    return () => window.removeEventListener('hydrophone-update', handleUpdate as EventListener);
+  }, []);
 
   if (!hydrophoneData || hydrophoneData.hydrophones.length === 0) {
     return (

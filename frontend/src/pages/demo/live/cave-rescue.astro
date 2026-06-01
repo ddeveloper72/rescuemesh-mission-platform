@@ -11,6 +11,10 @@ import DetectionDetailModal from '../../../components/islands/DetectionDetailMod
 import AgentDetailModal from '../../../components/demo/AgentDetailModal.astro';
 import DistanceLinkBudgetPanel from '../../../components/islands/DistanceLinkBudgetPanel';
 import RouteProfile from '../../../components/demo/RouteProfile.astro';
+import LightingControlPanel from '../../../components/islands/LightingControlPanel';
+import SeismicMonitoringPanel from '../../../components/islands/SeismicMonitoringPanel';
+import HydrophonePanel from '../../../components/islands/HydrophonePanel';
+import TalkbackPanel from '../../../components/islands/TalkbackPanel';
 
 const MISSION_PK = '063218cf-7662-4675-8337-edabd204b793';
 const USE_CASE = 'cave-rescue';
@@ -51,16 +55,16 @@ const initialClock = {
       <div class="mb-6 bg-slate-800 rounded-lg p-4 border border-slate-700">
         <div class="text-sm font-semibold mb-2">Switch Use Case:</div>
         <div class="flex flex-wrap gap-2">
-          <a href="/demo/live/collapsed-building-search" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors">
+          <a href="/demo/live/collapsed-building-search" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rescue-400">
             Collapsed Building
           </a>
-          <a href="/demo/live/cave-rescue" class="px-4 py-2 bg-rescue-600 rounded text-sm font-semibold">
+          <a href="/demo/live/cave-rescue" class="px-4 py-2 bg-rescue-600 rounded text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-rescue-300">
             Cave Rescue
           </a>
-          <a href="/demo/live/flooded-structure" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors">
+          <a href="/demo/live/flooded-structure" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rescue-400">
             Flooded Structure
           </a>
-          <a href="/demo/live/industrial-inspection" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors">
+          <a href="/demo/live/industrial-inspection" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rescue-400">
             Industrial Inspection
           </a>
         </div>
@@ -219,6 +223,41 @@ const initialClock = {
         <DistanceLinkBudgetPanel client:load />
       </div>
 
+      <!-- Capability Packs Section -->
+      <div class="mt-6">
+        <h2 class="text-2xl font-bold mb-4">Capability Packs</h2>
+        <div class="flex flex-wrap gap-2 mb-4" id="capability-pack-tabs">
+          <button data-pack="lighting" class="capability-pack-tab px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors">
+            🔦 Lighting
+          </button>
+          <button data-pack="seismic" class="capability-pack-tab px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors">
+            📊 Seismic
+          </button>
+          <button data-pack="hydrophone" class="capability-pack-tab px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors">
+            🌊 Hydrophone
+          </button>
+          <button data-pack="talkback" class="capability-pack-tab px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors">
+            📢 Talkback
+          </button>
+        </div>
+        
+        <!-- Capability Pack Panels -->
+        <div id="capability-pack-panels">
+          <div data-panel="lighting" class="capability-panel hidden">
+            <LightingControlPanel lightingStates={{}} client:load />
+          </div>
+          <div data-panel="seismic" class="capability-panel hidden">
+            <SeismicMonitoringPanel seismicData={{ sensors: [], detections: [] }} client:load />
+          </div>
+          <div data-panel="hydrophone" class="capability-panel hidden">
+            <HydrophonePanel hydrophoneData={{ hydrophones: [], detections: [] }} client:load />
+          </div>
+          <div data-panel="talkback" class="capability-panel hidden">
+            <TalkbackPanel talkbackData={{ capability: { talkback_available: false, speaker_available: false, microphone_available: false, available_agents: [] }, messages: [], responses: [] }} client:load />
+          </div>
+        </div>
+      </div>
+
       <!-- Detection Detail Modal -->
       <DetectionDetailModal client:load />
       
@@ -290,7 +329,21 @@ const initialClock = {
   // Initialize tactical map with Digital Twin terrain (async)
   let mapConfig: any;
   (async () => {
+    console.log('[CaveRescue] Initializing tactical map with Digital Twin...');
     mapConfig = await initializeTacticalMapWithDigitalTwin('cave-rescue');
+    console.log('[CaveRescue] Tactical map initialized:', {
+      terrainSource: mapConfig.terrainSource,
+      sectorCount: mapConfig.sectors?.length,
+      terrainMeta: mapConfig.terrainMeta
+    });
+    
+    // If simulation has already started, force an immediate map update
+    const currentState = manager.getLastState();
+    if (currentState) {
+      console.log('[CaveRescue] Forcing immediate map update with loaded config');
+      updateTacticalMap(currentState, mapConfig);
+    }
+
     
     // Initialize route profile with Digital Twin data
     try {
@@ -460,8 +513,10 @@ const initialClock = {
         }
       }
       
-      // Update tactical map
-      updateTacticalMap(state, mapConfig);
+      // Update tactical map (only if mapConfig is loaded)
+      if (mapConfig) {
+        updateTacticalMap(state, mapConfig);
+      }
       
       // Update route profile (use CACHED terrain data - no need to reload from API!)
       if (cachedTerrainData) {
@@ -483,6 +538,84 @@ const initialClock = {
       if (state.media_feeds) {
         window.dispatchEvent(new CustomEvent('media-feeds-update', {
           detail: { mediaFeeds: state.media_feeds }
+        }));
+      }
+      
+      // Update capability pack panels
+      const capabilityPacks = {
+        lighting: state.lighting || null,
+        seismic: state.seismic || null,
+        hydrophone: state.hydrophone || null,
+        talkback: state.talkback || null
+      };
+      
+      // Update tab states (active vs disabled)
+      Object.entries(capabilityPacks).forEach(([pack, data]) => {
+        const tab = document.querySelector(`button[data-pack="${pack}"]`);
+        if (tab) {
+          const hasData = data && (
+            (pack === 'lighting' && Object.keys(data).length > 0) ||
+            (pack === 'seismic' && (data.sensors?.length > 0 || data.detections?.length > 0)) ||
+            (pack === 'hydrophone' && (data.hydrophones?.length > 0 || data.detections?.length > 0)) ||
+            (pack === 'talkback' && (data.messages?.length > 0 || data.responses?.length > 0))
+          );
+          
+          if (hasData) {
+            tab.classList.remove('opacity-40', 'cursor-not-allowed');
+            tab.classList.add('hover:bg-slate-600');
+            tab.disabled = false;
+          } else {
+            tab.classList.add('opacity-40', 'cursor-not-allowed');
+            tab.classList.remove('hover:bg-slate-600');
+            tab.disabled = true;
+          }
+        }
+      });
+      
+      // Dispatch capability pack updates
+      if (capabilityPacks.lighting) {
+        window.dispatchEvent(new CustomEvent('lighting-update', {
+          detail: { lightingStates: capabilityPacks.lighting }
+        }));
+      }
+      if (capabilityPacks.seismic) {
+        window.dispatchEvent(new CustomEvent('seismic-update', {
+          detail: { seismicData: capabilityPacks.seismic }
+        }));
+      }
+      if (capabilityPacks.hydrophone) {
+        window.dispatchEvent(new CustomEvent('hydrophone-update', {
+          detail: { hydrophoneData: capabilityPacks.hydrophone }
+        }));
+      }
+      if (capabilityPacks.talkback) {
+        window.dispatchEvent(new CustomEvent('talkback-update', {
+          detail: { talkbackData: capabilityPacks.talkback }
+        }));
+      }
+      
+      // Update audio detections panel
+      if (state.audio_detections) {
+        // Transform backend format to frontend format
+        const transformedDetections = state.audio_detections.map((detection: any) => ({
+          id: detection.id,
+          agent_id: detection.agent_id,
+          agent_name: detection.agent_name,
+          sensor_type: 'microphone' as const,  // Default to microphone for audio detections
+          audio_type: detection.type,  // Backend uses 'type', frontend uses 'audio_type'
+          status: detection.status,
+          mission_time: detection.detected_at,  // Backend uses 'detected_at', frontend uses 'mission_time'
+          signal_quality: detection.confidence,  // Use confidence as signal quality
+          confidence: detection.confidence,
+          location_label: detection.location,  // Backend uses 'location', frontend uses 'location_label'
+          annotations: detection.human_review_required ? ['Requires human review'] : [],
+          description: detection.description,
+          audio_url: undefined,  // No actual audio files in simulation
+          spectrogram_url: undefined  // No actual spectrogram in simulation
+        }));
+        
+        window.dispatchEvent(new CustomEvent('audio-detections-update', {
+          detail: { audioDetections: transformedDetections }
         }));
       }
       
@@ -573,5 +706,40 @@ const initialClock = {
   };
   
   console.log('Cave rescue simulation manager initialized');
+  
+  // Capability pack tab switching
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('.capability-pack-tab');
+    const panels = document.querySelectorAll('.capability-panel');
+    
+    // Show first enabled tab by default
+    const firstEnabledTab = Array.from(tabs).find(tab => !tab.disabled);
+    if (firstEnabledTab) {
+      const pack = firstEnabledTab.getAttribute('data-pack');
+      firstEnabledTab.classList.add('bg-rescue-600', 'font-semibold');
+      firstEnabledTab.classList.remove('bg-slate-700');
+      document.querySelector(`[data-panel="${pack}"]`)?.classList.remove('hidden');
+    }
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        if (tab.disabled) return;
+        
+        const pack = tab.getAttribute('data-pack');
+        
+        // Update tab styles
+        tabs.forEach(t => {
+          t.classList.remove('bg-rescue-600', 'font-semibold');
+          t.classList.add('bg-slate-700');
+        });
+        tab.classList.add('bg-rescue-600', 'font-semibold');
+        tab.classList.remove('bg-slate-700');
+        
+        // Show corresponding panel
+        panels.forEach(p => p.classList.add('hidden'));
+        document.querySelector(`[data-panel="${pack}"]`)?.classList.remove('hidden');
+      });
+    });
+  });
 </script>
 </BaseLayout>

@@ -202,18 +202,41 @@ function calculateScaling(
   const scaleX = dataWidth > 0 ? availableWidth / dataWidth : 1;
   const scaleY = dataHeight > 0 ? availableHeight / dataHeight : 1;
 
-  // Use smaller scale to maintain aspect ratio
-  const scale = Math.min(scaleX, scaleY);
+  // Check aspect ratio - if too extreme, use independent scaling to prevent clustering
+  const aspectRatio = dataWidth / (dataHeight || 1);
+  let finalScaleX: number;
+  let finalScaleY: number;
+  let scaledWidth: number;
+  let scaledHeight: number;
+
+  if (aspectRatio > 4 || aspectRatio < 0.25) {
+    // Extreme aspect ratio: use independent scaling to use available space
+    finalScaleX = scaleX;
+    finalScaleY = scaleY;
+    scaledWidth = dataWidth * finalScaleX;
+    scaledHeight = dataHeight * finalScaleY;
+  } else {
+    // Normal aspect ratio: maintain proportions
+    const scale = Math.min(scaleX, scaleY);
+    finalScaleX = scale;
+    finalScaleY = scale;
+    scaledWidth = dataWidth * scale;
+    scaledHeight = dataHeight * scale;
+  }
+
+  // Center the map horizontally and vertically
+  const centerOffsetX = (availableWidth - scaledWidth) / 2;
+  const centerOffsetY = (availableHeight - scaledHeight) / 2;
 
   return {
     minX,
     maxX,
     minY,
     maxY,
-    scaleX: scale,
-    scaleY: -scale, // Invert Y to match SVG coordinate system
-    offsetX: padding,
-    offsetY: viewBoxHeight - padding, // Start from bottom
+    scaleX: finalScaleX,
+    scaleY: -finalScaleY, // Invert Y to match SVG coordinate system
+    offsetX: padding + centerOffsetX,
+    offsetY: viewBoxHeight - padding - centerOffsetY, // Center vertically
   };
 }
 

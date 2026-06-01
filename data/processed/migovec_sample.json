@@ -113,6 +113,42 @@
       }
     },
     {
+      "sector_id": "deep-chamber",
+      "label": "Deep Chamber",
+      "sector_type": "chamber",
+      "x_m": 52.0,
+      "y_m": -3.0,
+      "z_m": -22.0,
+      "width_m": 9.0,
+      "height_m": 5.5,
+      "depth_m": 14.0,
+      "elevation_m": -22.0,
+      "confidence": 0.78,
+      "source_ref": "synthetic-demo-deep-chamber",
+      "metadata": {
+        "large_void": true,
+        "description": "Deep chamber beyond squeeze with multiple alcoves and rock formations"
+      }
+    },
+    {
+      "sector_id": "survivor-location",
+      "label": "Survivor Alcove",
+      "sector_type": "alcove",
+      "x_m": 58.0,
+      "y_m": -1.5,
+      "z_m": -22.0,
+      "width_m": 3.5,
+      "height_m": 2.8,
+      "depth_m": 4.0,
+      "elevation_m": -22.0,
+      "confidence": 0.92,
+      "source_ref": "synthetic-demo-survivor-alcove",
+      "metadata": {
+        "survivor_confirmed": true,
+        "description": "Protected alcove off deep chamber where survivor was found - injured but conscious"
+      }
+    },
+    {
       "sector_id": "shaft-1",
       "label": "Vertical Shaft",
       "sector_type": "shaft",
@@ -204,6 +240,34 @@
       "capabilities_required": ["compact_profile", "low_light_vision"],
       "metadata": {
         "description": "Tight crawl space - large drones cannot pass"
+      }
+    },
+    {
+      "from_sector": "squeeze-1",
+      "to_sector": "deep-chamber",
+      "distance_m": 9.5,
+      "bearing_deg": 100.0,
+      "vertical_change_m": -4.0,
+      "path_type": "passage",
+      "traversal_risk": "moderate",
+      "confidence": 0.78,
+      "capabilities_required": ["basic_navigation", "low_light_vision"],
+      "metadata": {
+        "description": "Opening passage beyond squeeze leading to deep chamber"
+      }
+    },
+    {
+      "from_sector": "deep-chamber",
+      "to_sector": "survivor-location",
+      "distance_m": 7.0,
+      "bearing_deg": 95.0,
+      "vertical_change_m": 0.0,
+      "path_type": "passage",
+      "traversal_risk": "low",
+      "confidence": 0.85,
+      "capabilities_required": ["basic_navigation"],
+      "metadata": {
+        "description": "Protected alcove off main chamber - survivor location"
       }
     },
     {
