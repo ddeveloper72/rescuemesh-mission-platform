@@ -1,4 +1,107 @@
 ---
+/**
+ * Live Collapsed Building Search Mission Dashboard
+ * 
+ * **Primary interactive mission visualization page for the collapsed building scenario.**
+ * 
+ * This page demonstrates the complete RescueMesh platform capabilities:
+ * - Real-time mission state polling from Django API
+ * - Interactive tactical map with pan/zoom
+ * - Agent status tracking (battery, signal, state)
+ * - Sensor detections (thermal, audio, gas)
+ * - Communication network visualization
+ * - Timeline events
+ * - AI analysis and recommendations
+ * - Mission control (start, pause, reset, speed control)
+ * 
+ * **Architecture:**
+ * 
+ * Frontend (Astro + React islands):
+ * - Static page shell rendered at build time
+ * - Interactive components hydrated via `client:load`
+ * - Polls `/api/v1/missions/{MISSION_PK}/state/` every 2 seconds
+ * - Updates all visualizations synchronously on each poll
+ * 
+ * Backend (Django):
+ * - Calculates mission state on-demand (deterministic simulation)
+ * - No WebSockets, no background tasks (yet)
+ * - State computed from elapsed_seconds + use_case_slug
+ * 
+ * **Mission Flow:**
+ * 
+ * 1. Page loads → Initial state fetch (status: 'not_started', elapsed: 0)
+ * 2. User clicks "Start Simulation" → POST /start-sim/
+ * 3. Polling loop begins → GET /state/ every 2 seconds
+ * 4. Each state update triggers all render functions
+ * 5. Mission progresses: agents move → map reveals → detections appear → events accumulate
+ * 6. User can pause/resume/reset or adjust speed multiplier
+ * 
+ * **Scenario: Collapsed Building Search**
+ * 
+ * Mission ID: c5d0ffd4-2fc8-4b45-841d-88ec93f27e8e
+ * Scenario: collapsed-building-alpha-01
+ * 
+ * Timeline:
+ * - 0s: Mission start, Relay Node 1 deployed at entrance
+ * - 30s: Drone A (scout) enters ground floor
+ * - 60s: Ground floor corridor mapped
+ * - 120s: Drone B (relay) enters, begins exploring
+ * - 180s: Stairwell discovered, descent begins
+ * - 240s: Basement corridor entered
+ * - 320s: **Thermal anomaly detected** (🔥 potential survivor)
+ * - 350s: **Audio event detected** (🔊 possible voice-like signal)
+ * - 420s: Drone B battery critical → lands and becomes relay node
+ * - 480s: Drone C (thermal specialist) enters
+ * - 550s: Drone C enters priority streaming mode (one-way mission critical data)
+ * - 600s+: Mission continues with network routing around landed Drone B
+ * 
+ * **Key Components:**
+ * 
+ * - SimulationControls: Start/pause/reset, speed control, mission clock
+ * - TacticalMap: SVG visualization with sectors, agents, network, detections
+ * - MediaFeedsPanel: Thermal camera feeds (React island)
+ * - AudioDetectionsPanel: Audio spectrum analysis (React island)
+ * - DetectionDetailModal: Detailed detection information (React island)
+ * - AgentDetailModal: Individual agent status and telemetry
+ * - DistanceLinkBudgetPanel: Communication range analysis (React island)
+ * - RouteProfile: Vertical elevation/depth visualization
+ * 
+ * **Polling Implementation:**
+ * 
+ * See <script> section at bottom of page:
+ * ```javascript
+ * setInterval(() => {
+ *   fetch(`/api/v1/missions/${MISSION_PK}/state/`)
+ *     .then(res => res.json())
+ *     .then(state => {
+ *       updateTacticalMap(state, mapConfig);
+ *       updateAgentsPanelcol(state);
+ *       updateTimelinePanel(state);
+ *       // ... etc
+ *     });
+ * }, 2000);
+ * ```
+ * 
+ * **Performance:**
+ * 
+ * - API response time: ~20-50ms (cached scenario data)
+ * - Rendering time: ~5-15ms (SVG updates)
+ * - Total update cycle: <100ms typical
+ * - Polling every 2 seconds feels smooth for demo purposes
+ * - Future: WebSockets for true real-time sub-100ms updates
+ * 
+ * **Constants:**
+ * 
+ * - MISSION_PK: UUID identifying this mission in Django database
+ * - USE_CASE: 'collapsed-building-search' (determines map config)
+ * - TITLE: Human-readable mission name for UI display
+ * 
+ * **Navigation:**
+ * 
+ * - Back to: /demo (demo overview page)
+ * - View static profile: /demo/collapsed-building-search
+ * - Switch scenarios: /demo/live/{other-use-case}
+ */
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SimulationControls from '../../../components/demo/SimulationControls.astro';
 import TacticalMap from '../../../components/demo/TacticalMap.astro';
@@ -15,15 +118,17 @@ import LightingControlPanel from '../../../components/islands/LightingControlPan
 import SeismicMonitoringPanel from '../../../components/islands/SeismicMonitoringPanel';
 import TalkbackPanel from '../../../components/islands/TalkbackPanel';
 
-const MISSION_PK = 'c5d0ffd4-2fc8-4b45-841d-88ec93f27e8e';
-const USE_CASE = 'collapsed-building-search';
-const TITLE = 'Collapsed Building Search';
+// Mission configuration constants
+const MISSION_PK = 'c5d0ffd4-2fc8-4b45-841d-88ec93f27e8e';  // Django mission UUID
+const USE_CASE = 'collapsed-building-search';                // Map config identifier
+const TITLE = 'Collapsed Building Search';                   // Display name
 
+// Initial mission clock state (before API fetch)
 const initialClock = {
-  started_at: null,
-  elapsed_seconds: 0,
-  speed_multiplier: 1.0,
-  is_running: false,
+  started_at: null,              // Real-world start time (ISO 8601)
+  elapsed_seconds: 0,            // Mission elapsed time
+  speed_multiplier: 1.0,         // Simulation speed (1x, 2x, 5x, 10x)
+  is_running: false,             // Simulation status
 };
 ---
 

@@ -2,15 +2,90 @@
 /**
  * Tactical Map Component
  * 
- * Lightweight SVG/HTML tactical map for live mission state visualization.
- * Use-case specific layouts configured per simulation type.
+ * **Core visualization component for live mission state rendering.**
  * 
- * No Three.js or Cesium - pure SVG for MVP.
+ * This component provides a lightweight SVG-based tactical map for visualizing:
+ * - Terrain sectors with progressive "fog of war" reveal
+ * - Agent positions and movement
+ * - Network connectivity between agents (relay chains)
+ * - Sensor detections (thermal, audio, gas)
+ * - Hazards and obstacles
+ * - Compass rose for orientation
+ * 
+ * **Architecture Decision: Pure SVG, No 3D Libraries**
+ * 
+ * The MVP uses plain SVG for simplicity and performance:
+ * - No Three.js, no CesiumJS, no heavy 3D engines
+ * - Fast rendering, small bundle size, easy to debug
+ * - Sufficient for 2D/2.5D tactical displays
+ * - Future: could upgrade to 3D point cloud visualization
+ * 
+ * **Use-Case Specific Configuration:**
+ * 
+ * Each mission type (collapsed-building, cave-rescue, flooded-structure, etc.)
+ * has a corresponding map configuration defined in `tactical-map-manager.ts`:
+ * - Sector layouts (positions, dimensions, labels)
+ * - Terrain colors and styling
+ * - Coordinate scaling for digital twin mode
+ * - Detection marker positions
+ * 
+ * **Pan/Zoom Functionality:**
+ * 
+ * Interactive map navigation via `tactical-map-pan-zoom.ts`:
+ * - Drag to pan (survives DOM updates during polling)
+ * - Mouse wheel to zoom
+ * - Zoom in/out buttons
+ * - Reset view button
+ * - Transform applied to `#map-content` group, not root SVG
+ * 
+ * **Rendering Pipeline:**
+ * 
+ * 1. SVG structure created at page load (static groups)
+ * 2. JavaScript polls `/api/v1/missions/{pk}/state/` every 2 seconds
+ * 3. `updateTacticalMap(state, config)` called with new data
+ * 4. Rendering functions update SVG groups:
+ *    - renderSectors() → #map-sectors
+ *    - renderNetworkConnections() → #map-network
+ *    - renderHazards() → #map-hazards
+ *    - renderDetectionMarkers() → #map-detections
+ *    - renderAgents() → #map-agents
+ *    - renderLabels() → #map-labels (smart collision avoidance)
+ *    - renderCompassRose() → #map-compass (fixed viewport position)
+ * 
+ * **Layer Organization:**
+ * 
+ * Pannable content (inside #map-content):
+ * - Sectors (background)
+ * - Network connections
+ * - Hazards
+ * - Detections
+ * - Agents
+ * - Labels
+ * 
+ * Fixed viewport content (outside #map-content):
+ * - Compass rose (always visible at top-right)
+ * - Pan/zoom controls (buttons)
+ * - Map instructions overlay
+ * 
+ * **Props:**
+ * - useCase: Mission type identifier (e.g., 'collapsed-building-search')
+ * - title: Optional custom map title (default: "Tactical Map")
+ * 
+ * **Dependencies:**
+ * - tactical-map-manager.ts: Rendering engine
+ * - tactical-map-pan-zoom.ts: Pan/zoom controller
+ * - Django API: Mission state data source
+ * 
+ * **Accessibility:**
+ * - Semantic SVG structure
+ * - ARIA labels on interactive controls
+ * - Keyboard-accessible zoom buttons
+ * - Clear visual instructions for mouse/wheel interaction
  */
 
 interface Props {
-  useCase: string;
-  title?: string;
+  useCase: string;   // Mission type identifier
+  title?: string;    // Custom map title (optional)
 }
 
 const { useCase, title = "Tactical Map" } = Astro.props;

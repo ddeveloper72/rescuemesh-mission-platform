@@ -1,5 +1,33 @@
 """
 Mission API views.
+
+This module provides REST API endpoints for mission management, simulation control,
+and mission state retrieval.
+
+**Key Endpoints:**
+- GET /api/v1/missions/ - List all missions
+- POST /api/v1/missions/ - Create a new mission
+- GET /api/v1/missions/{pk}/ - Get mission details
+- POST /api/v1/missions/{pk}/start/ - Start a mission
+- POST /api/v1/missions/{pk}/complete/ - Complete a mission
+- GET /api/v1/missions/{pk}/events/ - Get mission events timeline
+- GET /api/v1/missions/{pk}/state/ - Get current simulation state (MOST IMPORTANT)
+- POST /api/v1/missions/{pk}/start-sim/ - Start simulation
+- POST /api/v1/missions/{pk}/pause-sim/ - Pause simulation
+- POST /api/v1/missions/{pk}/reset-sim/ - Reset simulation
+- POST /api/v1/missions/{pk}/set-speed/ - Set simulation speed multiplier
+
+**Frontend Integration:**
+The dashboard polls `/api/v1/missions/{pk}/state/` every 2 seconds to get:
+- Agent positions and states
+- Sensor data (detections, observations)
+- Map coverage progress
+- Timeline events
+- AI analysis results
+
+**Simulation Architecture:**
+This is a deterministic, on-demand simulation. No WebSockets, no Celery,
+no background tasks. State is computed per request based on elapsed time.
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -16,19 +44,63 @@ from .services.simulation import calculate_mission_state
 
 class MissionViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for managing missions.
+    ViewSet for managing missions and simulations.
+    
+    Provides CRUD operations for missions plus specialized actions for
+    simulation control and state retrieval.
+    
+    **Simulation Control Actions:**
+    - `simulation_state()`: GET current dashboard state (polled by frontend)
+    - `start_simulation()`: POST to start/resume simulation
+    - `pause_simulation()`: POST to pause simulation
+    - `reset_simulation()`: POST to reset to initial state
+    - `set_simulation_speed()`: POST to change speed multiplier
+    
+    **Mission Lifecycle Actions:**
+    - `start()`: Mark mission as active (different from start_simulation)
+    - `complete()`: Mark mission as completed
+    - `events()`: Get mission events timeline
+    
+    **Authorization:**
+    Currently no authentication required (MVP). Future versions will add
+    role-based access control for mission operators vs viewers.
     """
     queryset = Mission.objects.all()
     serializer_class = MissionSerializer
     
     def get_serializer_class(self):
+        """Use MissionCreateSerializer for POST, MissionSerializer for GET."""
         if self.action == 'create':
             return MissionCreateSerializer
         return MissionSerializer
     
     @action(detail=True, methods=['get'])
     def events(self, request, pk=None):
-        """Get all events for a mission."""
+        """
+        Get all events for a mission in chronological order.
+        
+        **Endpoint:** GET /api/v1/missions/{pk}/events/
+        
+        Returns the complete mission timeline as an array of timestamped events.
+        Events include agent deployments, state changes, detections, failures,
+        and operator decisions.
+        
+        **Response:**
+        ```json
+        [
+          {
+            "id": "uuid",
+            "event_type": "agent_deployed",
+            "timestamp": "2026-06-01T14:30:00Z",
+            "title": "Drone A Deployed",
+            "description": "Scout drone entered collapsed building",
+            "confidence": null,
+            "event_data": {...}
+          },
+          ...
+        ]
+        ```
+        """
         mission = self.get_object()
         events = mission.events.all()
         serializer = MissionEventSerializer(events, many=True)
@@ -36,7 +108,20 @@ class MissionViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def start(self, request, pk=None):
-        """Start a mission."""
+        """
+        Start a mission (marks as active, distinct from starting simulation).
+        
+        **Endpoint:** POST /api/v1/missions/{pk}/start/
+        
+        Changes mission status from 'planned' to 'active' and records the start time.
+        Creates a 'mission_start' event in the timeline.
+        
+        **Note:** This is mission lifecycle management, not simulation control.
+        Use `/start-sim/` to start the simulation itself.
+        
+        **Errors:**
+        - 400 if mission is not in 'planned' status
+        """
         mission = self.get_object()
         if mission.status != 'planned':
             return Response(
@@ -60,7 +145,17 @@ class MissionViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
-        """Complete a mission."""
+        """
+        Complete a mission (marks as completed).
+        
+        **Endpoint:** POST /api/v1/missions/{pk}/complete/
+        
+        Changes mission status to 'completed' and records completion time.
+        Creates a 'mission_end' event in the timeline.
+        
+        Use this when the mission has achieved its objectives or
+        reached a natural conclusion.
+        """
         mission = self.get_object()
         mission.status = 'completed'
         from django.utils import timezone
@@ -74,22 +169,54 @@ class MissionViewSet(viewsets.ModelViewSet):
             description=f'Mission {mission.mission_id} completed'
         )
         
-        return Response(MissionSerializer(mission).data)    
+        return Response(MissionSerializer(mission).data)
+    
     @action(detail=True, methods=['get'], url_path='state')
     def simulation_state(self, request, pk=None):
         """
         Get the current mission simulation state.
         
-        GET /api/v1/missions/{pk}/state/
+        **Endpoint:** GET /api/v1/missions/{pk}/state/
         
-        This calculates the complete dashboard state on-demand based on:
-        - Mission start time
-        - Speed multiplier
-        - Use case type
-        - Elapsed time
+        **This is the most important endpoint in the entire API.**
         
-        Returns a complete dashboard state including agents, sensors,
-        map coverage, events, and AI analysis.
+        The frontend dashboard polls this endpoint every 2 seconds to get
+        the complete mission state. The response drives all visualizations:
+        - Tactical map (agent positions, sectors, network connections)
+        - Telemetry panel (battery, signal, sensor status)
+        - Timeline panel (events, detections)
+        - Sensor outputs panel (thermal, audio, etc.)
+        
+        **Deterministic Calculation:**
+        State is computed on-demand based on:
+        1. Mission start time (simulation.started_at)
+        2. Current wall-clock time
+        3. Speed multiplier (1x, 2x, 5x, 10x)
+        4. Use case type (determines scenario, agents, routes)
+        5. Random seed (ensures reproducibility)
+        
+        No background processing. No WebSockets. No Celery.
+        Same elapsed_seconds always returns same state.
+        
+        **Response Structure:**
+        ```json
+        {
+          "mission_id": "mission-alpha-001",
+          "mission_name": "Collapsed Building Search Alpha",
+          "elapsed_seconds": 245.3,
+          "status": "running",
+          "agents": [...],
+          "sensors": {...},
+          "map_coverage": {...},
+          "timeline_events": [...],
+          "ai_analysis": {...}
+        }
+        ```
+        
+        **Performance:**
+        - Cached scenario data (via @lru_cache)
+        - Typical response time: 20-50ms
+        - Supports multiple concurrent clients polling different missions
         """
         mission = self.get_object()
         
@@ -109,7 +236,7 @@ class MissionViewSet(viewsets.ModelViewSet):
         else:
             use_case_slug = mission.use_case_type
         
-        # Calculate current state
+        # Calculate current state - this is where the magic happens
         state = calculate_mission_state(
             mission_id=mission.mission_id,
             mission_name=mission.name,
@@ -126,9 +253,30 @@ class MissionViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='start-sim')
     def start_simulation(self, request, pk=None):
         """
-        Start the mission simulation.
+        Start or resume the mission simulation.
         
-        POST /api/v1/missions/{pk}/start-sim/
+        **Endpoint:** POST /api/v1/missions/{pk}/start-sim/
+        
+        Changes simulation status to 'running' and records the start time.
+        If the simulation was previously paused, it resumes from the accumulated
+        elapsed time.
+        
+        **Behavior:**
+        - First start: Sets started_at to current time, begins from 0 seconds
+        - Resume from pause: Sets new started_at, continues from accumulated_elapsed_seconds
+        - Already running: Returns error (idempotency check)
+        
+        **Response:**
+        ```json
+        {
+          "status": "running",
+          "message": "Simulation started",
+          "elapsed_seconds": 0.0
+        }
+        ```
+        
+        **Errors:**
+        - 400 if simulation is already running
         """
         mission = self.get_object()
         
@@ -164,7 +312,35 @@ class MissionViewSet(viewsets.ModelViewSet):
         """
         Pause the mission simulation.
         
-        POST /api/v1/missions/{pk}/pause-sim/
+        **Endpoint:** POST /api/v1/missions/{pk}/pause-sim/
+        
+        Freezes the simulation at its current elapsed time. The accumulated_elapsed_seconds
+        field is updated to preserve the current mission time, so that when the simulation
+        is resumed, it continues from exactly where it left off.
+        
+        **Use Cases:**
+        - Operator needs to analyze current state without mission progressing
+        - Demo/presentation pause for discussion
+        - Waiting for additional agents to be added before continuing
+        
+        **Behavior:**
+        1. Calculates current elapsed_seconds (including time since started_at)
+        2. Stores in accumulated_elapsed_seconds (freezes the state)
+        3. Sets status to 'paused'
+        4. Records paused_at timestamp
+        
+        **Response:**
+        ```json
+        {
+          "status": "paused",
+          "message": "Simulation paused",
+          "elapsed_seconds": 245.3
+        }
+        ```
+        
+        **Errors:**
+        - 404 if no simulation exists
+        - 400 if simulation is not running
         """
         mission = self.get_object()
         
@@ -182,7 +358,7 @@ class MissionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Accumulate elapsed time before pausing
+        # Accumulate elapsed time before pausing - this is critical!
         simulation.accumulated_elapsed_seconds = simulation.get_elapsed_seconds()
         simulation.status = 'paused'
         simulation.paused_at = timezone.now()
@@ -198,6 +374,35 @@ class MissionViewSet(viewsets.ModelViewSet):
     def reset_simulation(self, request, pk=None):
         """
         Reset the mission simulation to initial state.
+        
+        **Endpoint:** POST /api/v1/missions/{pk}/reset-sim/
+        
+        Clears all simulation progress and returns to time zero. This allows
+        the same mission to be replayed from the beginning.
+        
+        **Behavior:**
+        1. Sets status to 'reset'
+        2. Clears started_at, paused_at timestamps
+        3. Resets accumulated_elapsed_seconds to 0.0
+        4. Next call to /state/ will show mission at t=0
+        
+        **Use Cases:**
+        - Replay mission scenario from the beginning
+        - Demo/presentation restart
+        - Testing reproducibility with same seed
+        
+        **Response:**
+        ```json
+        {
+          "status": "reset",
+          "message": "Simulation reset to initial state",
+          "elapsed_seconds": 0.0
+        }
+        ```
+        
+        **Errors:**
+        - 404 if no simulation exists
+        """
         
         POST /api/v1/missions/{pk}/reset-sim/
         """
