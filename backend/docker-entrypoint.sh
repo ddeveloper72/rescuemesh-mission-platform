@@ -55,6 +55,10 @@ if [ "$MISSION_COUNT" = "0" ]; then
     echo "    💡 Retry: docker exec rescuemesh_backend python manage.py seed_mission_scenarios --all"
   fi
   
+  # Seed media artifacts (images, thermal, etc.)
+  echo "  - Loading media artifacts..."
+  python manage.py seed_media_artifacts || echo "  ⚠️  Media artifact seeding skipped or failed"
+  
   echo "✅ Initial data loading completed"
 else
   echo "✅ Database already populated ($MISSION_COUNT missions found)"

@@ -14,15 +14,22 @@
  * @module simulation-manager
  */
 
-import type { MissionSimulationState } from '../types/simulation';
+import type { MissionSimulationState, MediaFrame } from '../types/simulation';
 import {
   getMissionState,
   startSimulation,
   pauseSimulation,
   resetSimulation,
   setSimulationSpeed,
+  getApiBaseUrl,
 } from './api';
 import { updateDetectionData } from './detection-modal-manager';
+import { 
+  validateMissionUUID, 
+  isUUIDMismatchError, 
+  getUUIDMismatchGuidance,
+  warnIfHardcodedUUID
+} from './uuid-validation';
 
 // ====================
 // DOM SELECTOR CONSTANTS
@@ -306,6 +313,46 @@ export class SimulationManager {
         this.updateUI(result.data);
       } else {
         console.warn('[SimulationManager] Failed to fetch mission state:', result.error);
+        
+        // Check if this is a UUID mismatch (404 with valid UUID format)
+        if (result.error && isUUIDMismatchError(result.error, this.missionPk)) {
+          console.error('[SimulationManager] UUID mismatch detected!');
+          console.error(getUUIDMismatchGuidance(this.missionPk));
+          
+          // Stop polling to prevent spam
+          this.stopPolling();
+          
+          // Show user-friendly error
+          const errorContainer = document.getElementById('mission-error-banner');
+          if (errorContainer) {
+            errorContainer.innerHTML = `
+              <div class="bg-orange-900/40 border-2 border-orange-500 rounded-lg p-4 mb-6" role="alert">
+                <div class="flex items-start gap-3">
+                  <svg class="w-6 h-6 text-orange-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                  </svg>
+                  <div class="flex-grow">
+                    <h3 class="text-lg font-bold text-orange-200 mb-2">Mission Not Found (UUID Mismatch)</h3>
+                    <p class="text-orange-100 mb-3">
+                      The mission UUID <code class="bg-slate-800 px-2 py-1 rounded text-xs">${this.missionPk}</code> 
+                      doesn't exist in the current database.
+                    </p>
+                    <div class="text-sm text-orange-200 space-y-2">
+                      <p class="font-semibold">This usually means the database was recreated but the frontend has stale UUIDs.</p>
+                      <p class="font-semibold">To fix:</p>
+                      <ol class="list-decimal list-inside space-y-1 ml-2">
+                        <li>Rebuild frontend: <code class="bg-slate-800 px-2 py-1 rounded">docker compose build --no-cache frontend</code></li>
+                        <li>Restart frontend: <code class="bg-slate-800 px-2 py-1 rounded">docker compose up -d frontend</code></li>
+                        <li>Or view available missions: <a href="http://localhost:8000/api/v1/missions/health/" class="text-blue-300 underline" target="_blank">Health Check</a></li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+            errorContainer.classList.remove('hidden');
+          }
+        }
       }
     } catch (error) {
       console.error('[SimulationManager] Polling error:', error);
@@ -363,8 +410,108 @@ export class SimulationManager {
       }));
     }
     
+    // Update media feeds progressively based on simulation time
+    if (state.simulation_clock.elapsed_seconds > 0) {
+      this.updateMediaFeeds(state.simulation_clock.elapsed_seconds);
+    }
+    
     // Update control button states based on running status
     this.updateControlButtons(state.simulation_clock.is_running);
+  }
+
+  /**
+   * Fetch media artifacts from API and dispatch to MediaFeedsPanel.
+   * Progressively reveals media as simulation time advances.
+   * @param elapsedSeconds - Current simulation time in seconds
+   * @private
+   */
+  private async updateMediaFeeds(elapsedSeconds: number): Promise<void> {
+    try {
+      const baseUrl = getApiBaseUrl();
+      const url = `${baseUrl}/missions/${this.missionPk}/media/?max_time=${elapsedSeconds}`;
+      
+      console.log(`[SimulationManager] Fetching media artifacts from: ${url}`);
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.warn(`[SimulationManager] Failed to fetch media artifacts: ${response.status}`);
+        return;
+      }
+      
+      const data = await response.json();
+      const mediaArtifacts = data.media_artifacts || [];
+      
+      console.log(`[SimulationManager] Received ${mediaArtifacts.length} media artifacts`);
+      
+      // Transform API format to MediaFrame format expected by MediaFeedsPanel
+      const mediaFeeds: MediaFrame[] = mediaArtifacts.map((artifact: any) => this.transformMediaArtifact(artifact));
+      
+      console.log(`[SimulationManager] Dispatching media-feeds-update event with ${mediaFeeds.length} feeds`);
+      
+      // Dispatch event to MediaFeedsPanel React island
+      window.dispatchEvent(new CustomEvent('media-feeds-update', {
+        detail: { mediaFeeds }
+      }));
+    } catch (error) {
+      console.error('[SimulationManager] Error fetching media artifacts:', error);
+    }
+  }
+
+  /**
+   * Transform backend media artifact format to frontend MediaFrame format.
+   * @param artifact - Media artifact from API
+   * @returns MediaFrame object for MediaFeedsPanel
+   * @private
+   */
+  private transformMediaArtifact(artifact: any): MediaFrame {
+    // Map sensor types
+    const sensorTypeMap: Record<string, MediaFrame['sensor_type']> = {
+      'rgb_camera': 'rgb_camera',
+      'low_light_camera': 'low_light_camera',
+      'thermal_camera': 'thermal_camera',
+      'inspection_camera': 'inspection_camera',
+      'underwater_camera': 'underwater_camera',
+      'hazard_camera': 'hazard_camera',
+    };
+    
+    // Determine status from signal quality and flags
+    let status: MediaFrame['status'] = 'live';
+    if (artifact.human_review_required) {
+      status = 'human_review_required';
+    } else if (artifact.linked_event_type === 'thermal_detection') {
+      status = 'thermal_detection';
+    } else if (artifact.confidence && artifact.confidence < 0.6) {
+      status = 'ai_flagged';
+    } else if (artifact.signal_quality < 40) {
+      status = 'lost';
+    } else if (artifact.signal_quality < 60) {
+      status = 'degraded';
+    } else if (artifact.signal_quality < 80) {
+      status = 'delayed';
+    }
+    
+    // Determine frame type from media type
+    let frameType: MediaFrame['frame_type'] = 'still';
+    if (artifact.sensor_type === 'thermal_camera') {
+      frameType = 'thermal';
+    }
+    
+    return {
+      frame_id: artifact.id || 'unknown',
+      agent_id: artifact.agent_id || 'unknown',
+      agent_name: artifact.agent_role || 'Unknown Agent',
+      sensor_type: sensorTypeMap[artifact.sensor_type] || 'rgb_camera',
+      frame_type: frameType,
+      status: status,
+      mission_time: artifact.mission_time_display || '00:00',
+      signal_quality: Math.round((artifact.signal_quality || 1.0) * 100),
+      confidence: Math.round((artifact.confidence || 1.0) * 100),
+      location_label: artifact.sector_id || 'Unknown Location',
+      annotations: artifact.annotation_tags || [],
+      description: artifact.description || artifact.title || 'No description available',
+      media_url: artifact.media_url,
+      thumbnail_url: artifact.thumbnail_url,
+    };
   }
 
   /**
@@ -778,7 +925,50 @@ export class SimulationManager {
  * @returns SimulationManager instance (for advanced control if needed)
  */
 export function initializeSimulation(missionPk: string): SimulationManager {
-  const manager = new SimulationManager(missionPk);
+  // Validate mission UUID before initializing
+  const validationResult = validateMissionUUID(missionPk);
+  
+  if (!validationResult.valid) {
+    console.error('[SimulationManager] UUID validation failed:', validationResult.error);
+    if (validationResult.suggestions) {
+      console.error('Suggestions:');
+      validationResult.suggestions.forEach(s => console.error('  -', s));
+    }
+    
+    // Show user-friendly error
+    const errorContainer = document.getElementById('mission-error-banner');
+    if (errorContainer) {
+      errorContainer.innerHTML = `
+        <div class="bg-red-900/40 border-2 border-red-500 rounded-lg p-4 mb-6" role="alert">
+          <div class="flex items-start gap-3">
+            <svg class="w-6 h-6 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div>
+              <h3 class="text-lg font-bold text-red-200 mb-2">Invalid Mission UUID</h3>
+              <p class="text-red-100 mb-2">${validationResult.error}</p>
+              ${validationResult.suggestions ? `
+                <div class="text-sm text-red-200 mt-2">
+                  <p class="font-semibold mb-1">To fix this:</p>
+                  <ul class="list-disc list-inside space-y-1">
+                    ${validationResult.suggestions.map(s => `<li>${s}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+      errorContainer.classList.remove('hidden');
+    }
+    
+    throw new Error(`UUID validation failed: ${validationResult.error}`);
+  }
+  
+  // Warn in development if this looks like a hardcoded UUID
+  warnIfHardcodedUUID(missionPk, 'data-mission-pk');
+  
+  const manager = new SimulationManager(validationResult.normalized!);
   manager.startPolling();
   
   setupControlButtonListeners(manager);

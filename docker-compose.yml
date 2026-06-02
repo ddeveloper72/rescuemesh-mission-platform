@@ -68,6 +68,7 @@ services:
       - ./frontend:/app
       - /app/node_modules  # Prevent overwriting node_modules
       - /app/.astro  # Cache Astro build artifacts
+      - /app/dist  # Prevent overwriting built production files
     ports:
       - "${FRONTEND_PORT:-4321}:4321"
     environment:

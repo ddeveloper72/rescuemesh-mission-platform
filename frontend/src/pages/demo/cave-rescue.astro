@@ -2,18 +2,19 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import DemoDashboard from '../../components/demo/DemoDashboard.astro';
 import DataSourceBadge from '../../components/demo/DataSourceBadge.astro';
-import { API_ENDPOINTS, fetchAPI } from '../../lib/api';
+import { API_ENDPOINTS, fetchWithFallback } from '../../lib/api';
 import type { UseCaseDemoProfile } from '../../types/demo';
+import { getDemoProfileFallback } from '../../data/demo-profile-fallbacks';
 
-const result = await fetchAPI<UseCaseDemoProfile>(
-  API_ENDPOINTS.useCases.demoProfile('cave-rescue')
-);
-
-if (!result.success || !result.data) {
+const fallback = getDemoProfileFallback('cave-rescue');
+if (!fallback) {
   return Astro.redirect('/404');
 }
 
-const profile = result.data;
+const profile = await fetchWithFallback<UseCaseDemoProfile>(
+  API_ENDPOINTS.useCases.demoProfile('cave-rescue'),
+  fallback
+);
 ---
 
 <BaseLayout title={`${profile.title} - Demo`} description={profile.missionObjective}>

@@ -74,6 +74,31 @@ class MissionViewSet(viewsets.ModelViewSet):
             return MissionCreateSerializer
         return MissionSerializer
     
+    def get_object(self):
+        """
+        Override to provide better error messages for UUID mismatches.
+        """
+        from .validators import check_mission_exists
+        from rest_framework.exceptions import NotFound
+        
+        pk = self.kwargs.get('pk')
+        
+        try:
+            return super().get_object()
+        except Mission.DoesNotExist:
+            # Provide detailed diagnostic information
+            diagnostic = check_mission_exists(pk)
+            
+            error_message = f"Mission not found: {pk}\n\n"
+            
+            if diagnostic.get('suggestions'):
+                error_message += "Possible causes:\n"
+                error_message += "\n".join(diagnostic['suggestions'])
+            
+            error_message += "\n\nTo get current mission UUIDs: GET /api/v1/missions/health/"
+            
+            raise NotFound(error_message)
+    
     @action(detail=True, methods=['get'])
     def events(self, request, pk=None):
         """
@@ -550,6 +575,56 @@ class MissionViewSet(viewsets.ModelViewSet):
             'speed_multiplier': simulation.speed_multiplier,
             'message': f'Speed set to {simulation.speed_multiplier}x',
             'elapsed_seconds': simulation.get_elapsed_seconds()
+        })
+    
+    @action(detail=False, methods=['get'], url_path='health')
+    def health_check(self, request):
+        """
+        Health check endpoint that lists all available mission UUIDs.
+        
+        GET /api/v1/missions/health/
+        
+        Returns:
+        {
+            "status": "healthy",
+            "missions_count": 5,
+            "missions": [
+                {
+                    "uuid": "...",
+                    "name": "Collapsed Building Search Demo",
+                    "use_case_type": "collapsed-building-search",
+                    "status": "ready"
+                }
+            ],
+            "timestamp": "2026-06-01T20:45:00Z"
+        }
+        
+        Use this endpoint to:
+        - Verify missions are seeded correctly
+        - Get fresh UUIDs after database recreation
+        - Debug UUID mismatch issues
+        """
+        from .validators import validate_uuid_format
+        
+        missions = Mission.objects.select_related('use_case_template').all()
+        
+        mission_data = []
+        for mission in missions:
+            mission_data.append({
+                'uuid': str(mission.pk),
+                'name': mission.name,
+                'use_case_type': mission.use_case_type,
+                'use_case_template': mission.use_case_template.slug if mission.use_case_template else None,
+                'status': mission.status,
+                'created_at': mission.created_at.isoformat() if mission.created_at else None,
+            })
+        
+        return Response({
+            'status': 'healthy',
+            'missions_count': missions.count(),
+            'missions': mission_data,
+            'timestamp': timezone.now().isoformat(),
+            'warning': 'If you see different UUIDs than expected, rebuild frontend with: docker compose build --no-cache frontend'
         })
 
 class MissionEventViewSet(viewsets.ModelViewSet):

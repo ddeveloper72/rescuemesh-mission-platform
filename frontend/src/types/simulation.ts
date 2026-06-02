@@ -398,4 +398,7 @@ export interface MediaFrame {
   location_label: string;
   annotations: string[];
   description: string;
+  media_url?: string;
+  thumbnail_url?: string;
+}
 }

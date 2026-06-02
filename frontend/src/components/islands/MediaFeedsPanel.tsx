@@ -2,16 +2,20 @@ import { useEffect, useState } from 'react';
 import type { MediaFrame } from '../../types/simulation';
 
 interface MediaFeedsPanelProps {
-  mediaFeeds: MediaFrame[];
+  mediaFeeds?: MediaFrame[];
 }
 
-export default function MediaFeedsPanel({ mediaFeeds: initialMediaFeeds }: MediaFeedsPanelProps) {
+export default function MediaFeedsPanel({ mediaFeeds: initialMediaFeeds = [] }: MediaFeedsPanelProps) {
   const [displayedFeeds, setDisplayedFeeds] = useState<MediaFrame[]>(initialMediaFeeds);
 
   useEffect(() => {
+    console.log('[MediaFeedsPanel] Component mounted, listening for media-feeds-update events');
+    
     // Listen for media feeds updates from simulation
     const handleMediaFeedsUpdate = (event: CustomEvent) => {
+      console.log('[MediaFeedsPanel] Received media-feeds-update event:', event.detail);
       if (event.detail && event.detail.mediaFeeds) {
+        console.log(`[MediaFeedsPanel] Updating with ${event.detail.mediaFeeds.length} feeds`);
         setDisplayedFeeds(event.detail.mediaFeeds);
       }
     };
@@ -19,6 +23,7 @@ export default function MediaFeedsPanel({ mediaFeeds: initialMediaFeeds }: Media
     window.addEventListener('media-feeds-update', handleMediaFeedsUpdate as EventListener);
 
     return () => {
+      console.log('[MediaFeedsPanel] Component unmounting, removing event listener');
       window.removeEventListener('media-feeds-update', handleMediaFeedsUpdate as EventListener);
     };
   }, []);
@@ -67,13 +72,66 @@ export default function MediaFeedsPanel({ mediaFeeds: initialMediaFeeds }: Media
     }
   };
 
-  // Helper function to render simulated frame placeholder
-  const renderFramePlaceholder = (frame: MediaFrame) => {
+  // Helper function to render frame (actual image or simulated placeholder)
+  const renderFrame = (frame: MediaFrame) => {
     const isDegraded = frame.status === 'degraded' || frame.status === 'delayed' || frame.signal_quality < 60;
     const isThermal = frame.sensor_type === 'thermal_camera' || frame.frame_type === 'thermal';
     const isUnderwater = frame.sensor_type === 'underwater_camera';
     const isLastGoodFrame = frame.status === 'last_good_frame';
 
+    // If we have a real image URL, display it
+    if (frame.media_url || frame.thumbnail_url) {
+      const imageUrl = frame.thumbnail_url || frame.media_url;
+      return (
+        <div className="relative aspect-video w-full bg-black rounded-md overflow-hidden border border-gray-700">
+          <img 
+            src={imageUrl} 
+            alt={frame.description}
+            className={`w-full h-full object-cover ${isDegraded ? 'opacity-70' : ''}`}
+            loading="lazy"
+          />
+          
+          {/* Degradation effects overlay */}
+          {isDegraded && (
+            <div className="absolute inset-0">
+              {/* Scanlines */}
+              <div className="absolute inset-0 opacity-20"
+                   style={{
+                     backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)'
+                   }}>
+              </div>
+            </div>
+          )}
+
+          {/* Last good frame timestamp overlay */}
+          {isLastGoodFrame && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-black/70 px-4 py-2 rounded border border-gray-600">
+                <p className="text-gray-300 text-sm font-mono">LAST GOOD FRAME</p>
+                <p className="text-gray-500 text-xs font-mono">{frame.mission_time}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Frame metadata overlay */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+            <div className="flex items-center justify-between text-xs text-gray-300 font-mono">
+              <span>{frame.location_label}</span>
+              <span>{frame.mission_time}</span>
+            </div>
+          </div>
+
+          {/* Confidence indicator */}
+          <div className="absolute top-2 right-2 bg-black/70 px-2 py-1 rounded text-xs font-mono">
+            <span className={frame.confidence >= 75 ? 'text-green-400' : frame.confidence >= 50 ? 'text-yellow-400' : 'text-red-400'}>
+              {Math.round(frame.confidence * 100)}% conf
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    // Otherwise render simulated placeholder
     // Base gradient for different frame types
     let gradientClass = 'from-gray-800 via-gray-700 to-gray-800';
     if (isThermal) {
@@ -213,8 +271,8 @@ export default function MediaFeedsPanel({ mediaFeeds: initialMediaFeeds }: Media
               </div>
             </div>
 
-            {/* Frame placeholder */}
-            {renderFramePlaceholder(frame)}
+            {/* Frame image or placeholder */}
+            {renderFrame(frame)}
 
             {/* Frame details */}
             <div className="mt-3 space-y-2">

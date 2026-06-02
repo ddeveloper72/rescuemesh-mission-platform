@@ -8,7 +8,7 @@
 // API base URL - different for server-side (Docker) vs client-side (browser)
 // Server-side (Astro SSR): Use Docker service name 'backend'
 // Client-side (browser): Use localhost (Docker port forwarding)
-const getApiBaseUrl = (): string => {
+export const getApiBaseUrl = (): string => {
   const envUrl = import.meta.env.PUBLIC_DJANGO_API_BASE_URL;
   
   // If running server-side (SSR), use the environment variable

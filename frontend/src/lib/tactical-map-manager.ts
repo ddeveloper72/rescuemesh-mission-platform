@@ -411,15 +411,15 @@ export function getFloodedStructureMapConfig(): MapConfig {
 export function getMapConfig(useCase: string): MapConfig {
   switch (useCase) {
     case 'industrial-inspection':
-      return { ...getIndustrialInspectionMapConfig(), terrainSource: 'local-fallback' };
+      return { ...getIndustrialInspectionMapConfig(), terrainSource: 'django-digital-twin' };
     case 'collapsed-building-search':
-      return { ...getCollapsedBuildingMapConfig(), terrainSource: 'local-fallback' };
+      return { ...getCollapsedBuildingMapConfig(), terrainSource: 'django-digital-twin' };
     case 'cave-rescue':
-      return { ...getCaveRescueMapConfig(), terrainSource: 'local-fallback' };
+      return { ...getCaveRescueMapConfig(), terrainSource: 'django-digital-twin' };
     case 'flooded-structure':
-      return { ...getFloodedStructureMapConfig(), terrainSource: 'local-fallback' };
+      return { ...getFloodedStructureMapConfig(), terrainSource: 'django-digital-twin' };
     case 'archaeological-exploration':
-      return { ...getArchaeologicalExplorationMapConfig(), terrainSource: 'local-fallback' };
+      return { ...getArchaeologicalExplorationMapConfig(), terrainSource: 'django-digital-twin' };
     default:
       return { width: 800, height: 450, sectors: [], terrainSource: 'local-fallback' };
   }
@@ -540,7 +540,8 @@ function calculateLabelOffset(
   sector: TacticalSector,
   allSectors: TacticalSector[],
   labelOpacity: number,
-  label: string
+  label: string,
+  agentPositions: Array<{x: number, y: number}> = []
 ): { offsetX: number; offsetY: number } {
   // Skip calculation entirely if label is invisible
   if (labelOpacity === 0) return { offsetX: 0, offsetY: 0 };
@@ -627,6 +628,28 @@ function calculateLabelOffset(
       }
     }
     
+    // Phase 3: Check for collisions with agent markers
+    // Agent markers are circles with radius ~10px (8px + 2px stroke)
+    // Labels should not overlap with these critical visual elements
+    for (const agentPos of agentPositions) {
+      const agentRadius = 12; // Include pulse animation margin
+      
+      // Calculate distance from label center to agent center
+      const dx = (labelBounds.x + labelBounds.width / 2) - agentPos.x;
+      const dy = (labelBounds.y + labelBounds.height / 2) - agentPos.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Minimum safe distance: agent radius + label half-diagonal + buffer
+      const labelHalfDiag = Math.sqrt(labelWidth * labelWidth + labelHeight * labelHeight) / 2;
+      const minSafeDistance = agentRadius + labelHalfDiag + 15; // Increased buffer to 15px
+      
+      if (distance < minSafeDistance) {
+        // Very heavy penalty for agent overlap - agents are most important visual element
+        const penetration = minSafeDistance - distance;
+        collisionScore += penetration * 25; // Increased from 15 to 25 points per pixel
+      }
+    }
+    
     // Update best position if this candidate has a lower collision score
     if (collisionScore < bestPosition.collisionScore) {
       bestPosition = {
@@ -707,7 +730,8 @@ function calculateRectangleOverlap(
 export function renderSectors(
   config: MapConfig,
   currentTime: number,
-  simulationSectors?: any[]
+  simulationSectors?: any[],
+  agentPositions: Array<{x: number, y: number}> = []
 ) {
   const sectorsGroup = document.getElementById('map-sectors');
   if (!sectorsGroup) return;
@@ -795,8 +819,8 @@ export function renderSectors(
       }
     }
 
-    // Calculate label offset to prevent collisions
-    const labelOffset = calculateLabelOffset(sector, config.sectors, labelOpacity, label);
+    // Calculate label offset to prevent collisions (including with agents)
+    const labelOffset = calculateLabelOffset(sector, config.sectors, labelOpacity, label, agentPositions);
 
     // Build depth/elevation label if available
     let depthLabel = '';
@@ -1673,8 +1697,34 @@ export function updateTacticalMap(state: MissionSimulationState, config: MapConf
   // Get current elapsed time from mission state
   const currentTime = state.simulation_clock?.elapsed_seconds || 0;
   
-  // Update sectors with progressive reveal using simulation state
-  renderSectors(config, currentTime, state.sectors);
+  // Extract agent positions for label collision detection
+  const agentPositions: Array<{x: number, y: number}> = [];
+  state.agents.forEach(agent => {
+    // Use Digital Twin position if available
+    if (config.terrainSource === 'django-digital-twin' && config.coordinateScaling && agent.position) {
+      const scaling = config.coordinateScaling;
+      const svgX = (agent.position.x - scaling.minX) * scaling.scaleX + scaling.offsetX;
+      const svgY = (agent.position.y - scaling.minY) * scaling.scaleY + scaling.offsetY;
+      agentPositions.push({ x: svgX, y: svgY });
+    } else if (config.routes) {
+      // Try to find position from route
+      const agentIdLower = agent.agent_id.toLowerCase();
+      const agentNameLower = agent.name.toLowerCase();
+      const route = config.routes.find(r => {
+        const routeIdLower = r.agentId.toLowerCase();
+        return agentIdLower.includes(routeIdLower) || routeIdLower.includes(agentIdLower);
+      });
+      if (route) {
+        const pos = getAgentPositionAtTime(route, currentTime);
+        if (pos) {
+          agentPositions.push({ x: pos.x, y: pos.y });
+        }
+      }
+    }
+  });
+  
+  // Update sectors with progressive reveal using simulation state and agent positions
+  renderSectors(config, currentTime, state.sectors, agentPositions);
   
   // Update agents with route-based positioning
   updateAgents(state.agents, config, currentTime);

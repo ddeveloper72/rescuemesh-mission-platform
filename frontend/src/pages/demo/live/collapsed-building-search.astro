@@ -413,59 +413,48 @@ const initialClock = {
   import { initializeTacticalMapWithDigitalTwin, updateTacticalMap } from '../../../lib/tactical-map-manager';
   import { initDetectionModalManager, updateDetectionData } from '../../../lib/detection-modal-manager';
   import { initAgentModalManager, showAgentModal } from '../../../lib/agent-modal-manager';
+  import { renderInteractiveActions } from '../../../lib/recommended-actions-manager';
   import { initializeRouteProfile, updateRouteProfile } from '../../../lib/route-profile-renderer';
   import { adaptToRouteProfile } from '../../../lib/tactical-map/routeProfileAdapter';
   import { getTerrainSectors, getTerrainPaths, getWaypoints } from '../../../lib/api';
   import { getTerrainBinding } from '../../../lib/tactical-map/useCaseTerrainBindings';
-  import { renderInteractiveActions } from '../../../lib/recommended-actions-manager';
   import { createPanZoomController } from '../../../lib/tactical-map-pan-zoom';
   
-  // Mission PK from Astro props (passed via data attribute)
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
-  
-  // Initialize simulation manager
   const manager = initializeSimulation(MISSION_PK);
   
   // Cache terrain data (loaded once, never changes during mission)
   let cachedTerrainData: { sectors: any[], paths: any[], waypoints: any[] } | null = null;
   
-  // Pan/zoom controller reference
-  let panZoomController: any = null;
-  
   // Initialize tactical map with Digital Twin terrain (async)
   let mapConfig: any;
+  let panZoomController: any;
   (async () => {
     mapConfig = await initializeTacticalMapWithDigitalTwin('collapsed-building-search');
     
-    // Initialize pan/zoom controller for tactical map
+    // Enable pan/zoom controls
     const svgElement = document.getElementById('tactical-map-svg') as SVGSVGElement;
     if (svgElement) {
       panZoomController = createPanZoomController(svgElement, 'map-content', {
         minScale: 0.5,
-        maxScale: 5.0,
-        zoomSpeed: 0.15
+        maxScale: 5,
+        zoomSpeed: 0.15,
       });
       panZoomController.enable();
       
-      // Wire up zoom control buttons
+      // Wire up UI controls
       document.getElementById('map-zoom-in')?.addEventListener('click', () => {
-        if (panZoomController) {
-          const state = panZoomController.getState();
-          panZoomController.setState({ scale: Math.min(state.maxScale, state.scale * 1.3) });
-        }
+        const state = panZoomController.getState();
+        panZoomController.setState({ scale: state.scale * 1.3 });
       });
       
       document.getElementById('map-zoom-out')?.addEventListener('click', () => {
-        if (panZoomController) {
-          const state = panZoomController.getState();
-          panZoomController.setState({ scale: Math.max(state.minScale, state.scale / 1.3) });
-        }
+        const state = panZoomController.getState();
+        panZoomController.setState({ scale: state.scale / 1.3 });
       });
       
       document.getElementById('map-reset-view')?.addEventListener('click', () => {
-        if (panZoomController) {
-          panZoomController.reset();
-        }
+        panZoomController.reset();
       });
     }
     
