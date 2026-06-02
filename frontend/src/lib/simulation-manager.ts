@@ -474,19 +474,23 @@ export class SimulationManager {
       'hazard_camera': 'hazard_camera',
     };
     
-    // Determine status from signal quality and flags
+    // Convert signal_quality from decimal (0-1) to percentage (0-100) FIRST
+    const signalQualityPercent = Math.round((artifact.signal_quality || 1.0) * 100);
+    const confidencePercent = Math.round((artifact.confidence || 1.0) * 100);
+    
+    // Determine status from signal quality and flags (using percentage values)
     let status: MediaFrame['status'] = 'live';
     if (artifact.human_review_required) {
       status = 'human_review_required';
     } else if (artifact.linked_event_type === 'thermal_detection') {
       status = 'thermal_detection';
-    } else if (artifact.confidence && artifact.confidence < 0.6) {
+    } else if (confidencePercent < 60) {
       status = 'ai_flagged';
-    } else if (artifact.signal_quality < 40) {
+    } else if (signalQualityPercent < 40) {
       status = 'lost';
-    } else if (artifact.signal_quality < 60) {
+    } else if (signalQualityPercent < 60) {
       status = 'degraded';
-    } else if (artifact.signal_quality < 80) {
+    } else if (signalQualityPercent < 80) {
       status = 'delayed';
     }
     
@@ -504,8 +508,8 @@ export class SimulationManager {
       frame_type: frameType,
       status: status,
       mission_time: artifact.mission_time_display || '00:00',
-      signal_quality: Math.round((artifact.signal_quality || 1.0) * 100),
-      confidence: Math.round((artifact.confidence || 1.0) * 100),
+      signal_quality: signalQualityPercent,
+      confidence: confidencePercent,
       location_label: artifact.sector_id || 'Unknown Location',
       annotations: artifact.annotation_tags || [],
       description: artifact.description || artifact.title || 'No description available',
