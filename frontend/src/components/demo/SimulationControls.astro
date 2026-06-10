@@ -1,5 +1,6 @@
 ---
 import type { SimulationClock } from '../../types/simulation';
+import { formatMissionTime } from '../../lib/simulation-manager';
 
 interface Props {
   clock: SimulationClock;
@@ -7,6 +8,7 @@ interface Props {
 }
 
 const { clock, missionPk } = Astro.props;
+const initialClockDisplay = formatMissionTime(clock.elapsed_seconds);
 
 // NOTE: Client-side interactivity powered by simulation-manager.ts
 // Interactive controls added via script in pages that use this component
@@ -28,7 +30,7 @@ const { clock, missionPk } = Astro.props;
   <div class="mb-6">
     <div class="text-center">
       <div id="sim-clock" class="text-5xl font-bold font-mono text-rescue-400 mb-2">
-        {Math.floor(clock.elapsed_seconds / 60).toString().padStart(2, '0')}:{(clock.elapsed_seconds % 60).toFixed(0).padStart(2, '0')}
+        {initialClockDisplay}
       </div>
       <div class="text-sm text-slate-400">
         Mission Elapsed Time (<span id="sim-speed">{clock.speed_multiplier}</span>x speed)

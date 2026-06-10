@@ -313,7 +313,7 @@ const initialClock = {
 </BaseLayout>
 
 <script>
-  import { initializeSimulation } from '../../../lib/simulation-manager';
+  import { formatCompactMissionTime, initializeSimulation } from '../../../lib/simulation-manager';
   import { initializeTacticalMapWithDigitalTwin, updateTacticalMap } from '../../../lib/tactical-map-manager';
   import { initDetectionModalManager, updateDetectionData } from '../../../lib/detection-modal-manager';
   import { initAgentModalManager, showAgentModal } from '../../../lib/agent-modal-manager';
@@ -446,10 +446,7 @@ const initialClock = {
       // Update mission clock
       const clockEl = document.getElementById('mission-clock-time');
       if (clockEl && state.simulation_clock) {
-        const elapsed = state.simulation_clock.elapsed_seconds;
-        const minutes = Math.floor(elapsed / 60);
-        const seconds = Math.floor(elapsed % 60);
-        clockEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        clockEl.textContent = formatCompactMissionTime(state.simulation_clock.elapsed_seconds);
       }
       
       // Update agents display

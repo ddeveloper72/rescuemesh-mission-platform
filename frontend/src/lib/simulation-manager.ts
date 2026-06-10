@@ -155,13 +155,44 @@ function querySelectorSafe<T extends Element>(selector: string): T | null {
 }
 
 /**
- * Format elapsed seconds into ISO 8601-compliant HH:MM:SS display format.
- * Follows ISO 8601 time representation for mission elapsed time display.
+ * Format elapsed mission time so the display grows with long-running demos.
  */
-function formatMissionTime(elapsedSeconds: number): string {
-  const hours = Math.floor(elapsedSeconds / 3600);
-  const minutes = Math.floor((elapsedSeconds % 3600) / 60);
-  const seconds = Math.floor(elapsedSeconds % 60);
+export function formatMissionTime(elapsedSeconds: number): string {
+  const totalSeconds = Math.max(0, Math.floor(elapsedSeconds));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) {
+    return `${days}d ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  if (hours > 0) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  if (minutes > 0) {
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  return `${seconds}s`;
+}
+
+/**
+ * Format elapsed seconds into a fixed-width clock for compact map displays.
+ */
+export function formatCompactMissionTime(elapsedSeconds: number): string {
+  const totalSeconds = Math.max(0, Math.floor(elapsedSeconds));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) {
+    return `${days}d ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 

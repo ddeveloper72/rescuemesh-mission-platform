@@ -23,6 +23,22 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(','
 GEOS_LIBRARY_PATH = os.environ.get('GEOS_LIBRARY_PATH')
 GDAL_LIBRARY_PATH = os.environ.get('GDAL_LIBRARY_PATH')
 
+if os.name == 'nt':
+    try:
+        import osgeo
+
+        osgeo_dir = Path(osgeo.__file__).resolve().parent
+        if GEOS_LIBRARY_PATH is None:
+            geos_library = osgeo_dir / 'geos_c.dll'
+            if geos_library.exists():
+                GEOS_LIBRARY_PATH = str(geos_library)
+        if GDAL_LIBRARY_PATH is None:
+            gdal_library = osgeo_dir / 'gdal.dll'
+            if gdal_library.exists():
+                GDAL_LIBRARY_PATH = str(gdal_library)
+    except ImportError:
+        pass
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',

@@ -78,3 +78,4 @@ secrets/
 *.sql
 *.sql.gz
 postgres_data/
+backend/gdal-3.12.2-cp312-cp312-win_amd64.whl
