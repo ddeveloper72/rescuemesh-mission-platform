@@ -3,6 +3,7 @@ import type {
   AudioDetection,
   EnvironmentalReading,
   MediaFrame,
+  MissionSimulationState,
   MissionEvent,
 } from '../types/simulation';
 
@@ -26,6 +27,33 @@ interface EscalationRenderOptions {
   contactRiskElementId?: string;
 }
 
+interface MapSummaryOptions {
+  coverageElementId?: string;
+  confidenceElementId?: string;
+  pointsElementId?: string;
+  mappedSectorsElementId?: string;
+}
+
+interface NetworkSummaryOptions {
+  meshHealthElementId?: string;
+  packetLossElementId?: string;
+}
+
+interface IndustrialTelemetryOptions {
+  criticalElementId?: string;
+  majorElementId?: string;
+  minorElementId?: string;
+  gasElementId?: string;
+  thermalElementId?: string;
+}
+
+interface ArchaeologicalTelemetryOptions {
+  mapSummary?: MapSummaryOptions;
+  artefactCandidatesElementId?: string;
+  aiSummaryElementId?: string;
+  aiFindingsElementId?: string;
+}
+
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -33,6 +61,55 @@ function escapeHtml(value: unknown): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function setTextById(id: string | undefined, value: string): void {
+  if (!id) return;
+
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+function getBatteryHealthClass(batteryPercent: number): string {
+  if (batteryPercent > 50) {
+    return 'h-full bg-green-500 transition-all duration-500';
+  }
+  if (batteryPercent > 20) {
+    return 'h-full bg-yellow-500 transition-all duration-500';
+  }
+  return 'h-full bg-red-500 transition-all duration-500';
+}
+
+function getAgentStateClass(state: string): string {
+  const baseClass = 'px-2 py-1 rounded text-xs font-semibold';
+  const stateClassMap: Record<string, string> = {
+    active: `${baseClass} bg-green-900 text-green-300`,
+    healthy: `${baseClass} bg-green-900 text-green-300`,
+    deployed: `${baseClass} bg-green-900 text-green-300`,
+    degraded: `${baseClass} bg-yellow-900 text-yellow-300`,
+    intermittent: `${baseClass} bg-yellow-900 text-yellow-300`,
+    failed: `${baseClass} bg-red-900 text-red-300`,
+    failed_primary_power: `${baseClass} bg-red-900 text-red-300`,
+    lost: `${baseClass} bg-red-900 text-red-300`,
+    landed_relay: `${baseClass} bg-purple-900 text-purple-300`,
+    landed: `${baseClass} bg-purple-900 text-purple-300`,
+    sacrificed: `${baseClass} bg-slate-700 text-slate-300`,
+    abandoned: `${baseClass} bg-slate-700 text-slate-300`,
+    recoverable: `${baseClass} bg-blue-900 text-blue-300`,
+    recovered: `${baseClass} bg-blue-900 text-blue-300`,
+    nfc_readable: `${baseClass} bg-yellow-900 text-yellow-300`,
+    powered_download_available: `${baseClass} bg-yellow-900 text-yellow-300`,
+    external_power_needed: `${baseClass} bg-orange-900 text-orange-300`,
+    resurrection_attempted: `${baseClass} bg-orange-900 text-orange-300`,
+    resurrection_successful: `${baseClass} bg-green-900 text-green-300`,
+    resurrection_failed: `${baseClass} bg-red-900 text-red-300`,
+    black_box_recovered: `${baseClass} bg-blue-900 text-blue-300`,
+    retired: `${baseClass} bg-slate-700 text-slate-300`,
+  };
+
+  return stateClassMap[state] || `${baseClass} bg-slate-800 text-slate-300`;
 }
 
 export function getSensorStatusClass(status: string): string {
@@ -64,7 +141,7 @@ export function renderAgentStatusPanel(
           <h3 class="font-semibold">${escapeHtml(agent.name)}</h3>
           <p class="text-xs text-slate-400">${escapeHtml(agent.role)}</p>
         </div>
-        <span data-agent-state="${escapeHtml(agent.agent_id)}" class="px-2 py-1 rounded text-xs font-semibold bg-slate-800 text-slate-300">
+        <span data-agent-state="${escapeHtml(agent.agent_id)}" class="${getAgentStateClass(agent.state)}">
           ${escapeHtml(agent.state)}
         </span>
       </div>
@@ -86,7 +163,7 @@ export function renderAgentStatusPanel(
       <div class="mt-2 h-2 bg-slate-900 rounded-full overflow-hidden">
         <div
           data-agent-battery-bar="${escapeHtml(agent.agent_id)}"
-          class="h-full bg-green-500 transition-all duration-500"
+          class="${getBatteryHealthClass(agent.battery_percent)}"
           style="width: ${agent.battery_percent}%"
         ></div>
       </div>
@@ -152,6 +229,115 @@ export function renderEnvironmentalReadings(
     element.className = `font-semibold ${getSensorStatusClass(reading.status)}`;
     element.textContent = `${reading.value}${reading.unit}`;
   });
+}
+
+export function renderMapSummary(
+  map: MissionSimulationState['map'] | undefined,
+  options: MapSummaryOptions = {}
+): void {
+  if (!map) return;
+
+  const coverage = typeof map.coverage_percent === 'number'
+    ? map.coverage_percent.toFixed(1)
+    : map.coverage_percent;
+
+  setTextById(options.coverageElementId || 'map-coverage', `${coverage}%`);
+  setTextById(options.confidenceElementId || 'map-confidence', `${(map.confidence * 100).toFixed(0)}%`);
+  setTextById(options.pointsElementId || 'map-points', map.total_points.toLocaleString());
+
+  const mappedSectorsEl = document.getElementById(options.mappedSectorsElementId || '');
+  if (mappedSectorsEl && map.mapped_sectors?.length) {
+    mappedSectorsEl.innerHTML = map.mapped_sectors.map(sector =>
+      `<div class="px-2 py-1 bg-slate-700 rounded text-xs inline-block mr-2 mb-2">${escapeHtml(sector)}</div>`
+    ).join('');
+  }
+}
+
+export function renderNetworkSummary(
+  network: MissionSimulationState['network'] | undefined,
+  options: NetworkSummaryOptions = {}
+): void {
+  if (!network) return;
+
+  setTextById(options.meshHealthElementId || 'mesh-health', `${network.mesh_health}%`);
+  setTextById(options.packetLossElementId || 'packet-loss', `${network.packet_loss_percent}%`);
+}
+
+export function renderIndustrialTelemetry(
+  state: MissionSimulationState,
+  options: IndustrialTelemetryOptions = {}
+): void {
+  const defectEvents = state.events?.filter(event => event.type === 'defect-detected') || [];
+  const criticalCount = defectEvents.filter(event => event.severity === 'critical').length;
+  const highCount = defectEvents.filter(event => event.severity === 'high').length;
+  const moderateCount = defectEvents.filter(event => event.severity === 'moderate').length;
+  const gasCount = state.events?.filter(event =>
+    event.type === 'hazard-alert' && event.title.toLowerCase().includes('gas')
+  ).length || 0;
+
+  setTextById(options.criticalElementId || 'defect-critical', criticalCount.toString());
+  setTextById(options.majorElementId || 'defect-major', highCount.toString());
+  setTextById(options.minorElementId || 'defect-minor', moderateCount.toString());
+  setTextById(options.gasElementId || 'gas-count', gasCount.toString());
+  setTextById(options.thermalElementId || 'thermal-count', (state.sensors?.thermal_anomalies?.length || 0).toString());
+}
+
+export function renderArchaeologicalTelemetry(
+  state: MissionSimulationState,
+  options: ArchaeologicalTelemetryOptions = {}
+): void {
+  renderNetworkSummary(state.network);
+  renderMapSummary(state.map, {
+    mappedSectorsElementId: 'discovered-chambers',
+    ...options.mapSummary
+  });
+
+  const candidatesEl = document.getElementById(options.artefactCandidatesElementId || 'artefact-candidates');
+  const artefactCandidates = (state.sensors as any)?.artefact_candidates;
+  if (candidatesEl && artefactCandidates) {
+    if (artefactCandidates.length === 0) {
+      candidatesEl.innerHTML = '<p class="text-slate-400">No candidates detected yet...</p>';
+    } else {
+      candidatesEl.innerHTML = artefactCandidates.map((candidate: any) => `
+        <div class="p-3 bg-slate-700 rounded-lg text-sm">
+          <div class="flex justify-between items-start mb-1">
+            <span class="font-semibold text-yellow-400">${escapeHtml(candidate.type)}</span>
+            <span class="text-xs text-slate-400">${escapeHtml(candidate.detected_at)}</span>
+          </div>
+          <p class="text-slate-300 text-xs mb-1">${escapeHtml(candidate.location)}</p>
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-slate-400">Confidence: ${((candidate.confidence || 0) * 100).toFixed(0)}%</span>
+            <span class="text-orange-400">${escapeHtml(candidate.status)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+
+  if (!state.ai_analysis) return;
+
+  setTextById(options.aiSummaryElementId || 'ai-summary', state.ai_analysis.summary);
+
+  const findingsEl = document.getElementById(options.aiFindingsElementId || 'ai-findings');
+  const findings = state.ai_analysis.priority_findings || [];
+  if (!findingsEl) return;
+
+  if (findings.length === 0) {
+    findingsEl.innerHTML = '';
+    return;
+  }
+
+  findingsEl.innerHTML = `
+    <h3 class="text-sm font-semibold mb-2 text-slate-300">Priority Findings:</h3>
+    ${findings.map(finding => `
+      <div class="p-2 bg-slate-700 rounded text-sm text-slate-300 flex items-start gap-2">
+        <svg class="w-4 h-4 text-rescue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>${escapeHtml(finding)}</span>
+      </div>
+    `).join('')}
+  `;
 }
 
 export function dispatchMediaFeeds(mediaFeeds: MediaFrame[] | undefined): void {

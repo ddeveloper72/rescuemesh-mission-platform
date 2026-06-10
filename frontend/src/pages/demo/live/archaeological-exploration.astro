@@ -232,11 +232,11 @@ const initialClock = {
   import { formatCompactMissionTime, initializeSimulation } from '../../../lib/simulation-manager';
   import { initializeTacticalMapWithDigitalTwin, updateTacticalMap } from '../../../lib/tactical-map-manager';
   import { updateDetectionData } from '../../../lib/detection-modal-manager';
-  import { renderInteractiveActions } from '../../../lib/recommended-actions-manager';
   import { initializeLiveRouteProfile, updateLiveRouteProfile } from '../../../lib/route-profile-manager';
   import {
     dispatchMediaFeeds,
     renderAgentStatusPanel,
+    renderArchaeologicalTelemetry,
     renderEnvironmentalReadings,
     renderMissionEvents
   } from '../../../lib/live-demo-renderers';
@@ -282,55 +282,7 @@ const initialClock = {
         carbon_dioxide: 'co2-reading'
       });
       
-      // Update network status
-      if (state.network) {
-        const meshEl = document.getElementById('mesh-health');
-        const lossEl = document.getElementById('packet-loss');
-        if (meshEl) meshEl.textContent = `${state.network.mesh_health}%`;
-        if (lossEl) lossEl.textContent = `${state.network.packet_loss_percent}%`;
-      }
-      
-      // Update map coverage
-      if (state.map) {
-        const coverageEl = document.getElementById('map-coverage');
-        const confidenceEl = document.getElementById('map-confidence');
-        const pointsEl = document.getElementById('map-points');
-        
-        if (coverageEl) coverageEl.textContent = `${state.map.coverage_percent}%`;
-        if (confidenceEl) confidenceEl.textContent = `${(state.map.confidence * 100).toFixed(0)}%`;
-        if (pointsEl) pointsEl.textContent = state.map.total_points.toLocaleString();
-        
-        const chambersEl = document.getElementById('discovered-chambers');
-        if (chambersEl && state.map.mapped_sectors && state.map.mapped_sectors.length > 0) {
-          chambersEl.innerHTML = state.map.mapped_sectors.map(sector => 
-            `<div class="px-2 py-1 bg-slate-700 rounded text-xs inline-block mr-2 mb-2">${sector}</div>`
-          ).join('');
-        }
-      }
-      
-      // Update artefact candidates
-      if (state.sensors && state.sensors.artefact_candidates) {
-        const candidatesEl = document.getElementById('artefact-candidates');
-        if (candidatesEl) {
-          if (state.sensors.artefact_candidates.length === 0) {
-            candidatesEl.innerHTML = '<p class="text-slate-400">No candidates detected yet...</p>';
-          } else {
-            candidatesEl.innerHTML = state.sensors.artefact_candidates.map(candidate => `
-              <div class="p-3 bg-slate-700 rounded-lg text-sm">
-                <div class="flex justify-between items-start mb-1">
-                  <span class="font-semibold text-yellow-400">${candidate.type}</span>
-                  <span class="text-xs text-slate-400">${candidate.detected_at}</span>
-                </div>
-                <p class="text-slate-300 text-xs mb-1">${candidate.location}</p>
-                <div class="flex justify-between items-center text-xs">
-                  <span class="text-slate-400">Confidence: ${(candidate.confidence * 100).toFixed(0)}%</span>
-                  <span class="text-orange-400">${candidate.status}</span>
-                </div>
-              </div>
-            `).join('');
-          }
-        }
-      }
+      renderArchaeologicalTelemetry(state);
       
       renderMissionEvents(state.events);
       
@@ -344,34 +296,6 @@ const initialClock = {
       
       // Update detection data for modal manager
       updateDetectionData(state);
-      
-      // Update AI analysis
-      if (state.ai_analysis) {
-        const summaryEl = document.getElementById('ai-summary');
-        const findingsEl = document.getElementById('ai-findings');
-        
-        if (summaryEl) {
-          summaryEl.textContent = state.ai_analysis.summary;
-        }
-        
-        if (findingsEl && state.ai_analysis.priority_findings) {
-          if (state.ai_analysis.priority_findings.length === 0) {
-            findingsEl.innerHTML = '';
-          } else {
-            findingsEl.innerHTML = `
-              <h3 class="text-sm font-semibold mb-2 text-slate-300">Priority Findings:</h3>
-              ${state.ai_analysis.priority_findings.map(finding => `
-                <div class="p-2 bg-slate-700 rounded text-sm text-slate-300 flex items-start gap-2">
-                  <svg class="w-4 h-4 text-rescue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                  <span>${finding}</span>
-                </div>
-              `).join('')}
-            `;
-          }
-        }
-      }
       
       dispatchMediaFeeds(state.media_feeds);
       

@@ -288,6 +288,7 @@ const initialClock = {
     initializeCapabilityPackTabs,
     renderAgentStatusPanel,
     renderEnvironmentalReadings,
+    renderIndustrialTelemetry,
     renderMissionEvents,
     updateCapabilityPacks
   } from '../../../lib/live-demo-renderers';
@@ -338,36 +339,7 @@ const initialClock = {
       }
       
       renderAgentStatusPanel(state.agents);
-      
-      // Update defect counters from events
-      if (state.events) {
-        const defectEvents = state.events.filter(e => e.type === 'defect-detected');
-        const criticalCount = defectEvents.filter(e => (e as any).severity === 'critical').length;
-        const highCount = defectEvents.filter(e => (e as any).severity === 'high').length;
-        const moderateCount = defectEvents.filter(e => (e as any).severity === 'moderate').length;
-        
-        const criticalEl = document.getElementById('defect-critical');
-        if (criticalEl) criticalEl.textContent = criticalCount.toString();
-        
-        const majorEl = document.getElementById('defect-major');
-        if (majorEl) majorEl.textContent = highCount.toString();
-        
-        const minorEl = document.getElementById('defect-minor');
-        if (minorEl) minorEl.textContent = moderateCount.toString();
-        
-        // Update gas detection counter
-        const gasEvents = state.events.filter(e => 
-          e.type === 'hazard-alert' && e.title.toLowerCase().includes('gas')
-        );
-        const gasCountEl = document.getElementById('gas-count');
-        if (gasCountEl) gasCountEl.textContent = gasEvents.length.toString();
-        
-        // Update thermal count from sensor data
-        const thermalCountEl = document.getElementById('thermal-count');
-        if (thermalCountEl && state.sensors.thermal_anomalies) {
-          thermalCountEl.textContent = state.sensors.thermal_anomalies.length.toString();
-        }
-      }
+      renderIndustrialTelemetry(state);
       
       renderEnvironmentalReadings(state.sensors?.environmental_readings, {
         oxygen: 'o2-reading',
