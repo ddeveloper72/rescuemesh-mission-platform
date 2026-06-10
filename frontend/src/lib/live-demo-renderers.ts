@@ -18,6 +18,14 @@ interface EnvironmentalReadingsOptions {
   missingText?: string;
 }
 
+type CapabilityPackName = 'lighting' | 'seismic' | 'hydrophone' | 'talkback';
+type CapabilityPackData = Partial<Record<CapabilityPackName, any>>;
+
+interface EscalationRenderOptions {
+  containerId?: string;
+  contactRiskElementId?: string;
+}
+
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -177,4 +185,159 @@ export function dispatchAudioDetections(audioDetections: AudioDetection[] | unde
   window.dispatchEvent(new CustomEvent('audio-detections-update', {
     detail: { audioDetections: transformedDetections }
   }));
+}
+
+function hasCapabilityData(pack: CapabilityPackName, data: any): boolean {
+  if (!data) return false;
+
+  switch (pack) {
+    case 'lighting':
+      return Object.keys(data).length > 0;
+    case 'seismic':
+      return (data.sensors?.length || 0) > 0 || (data.detections?.length || 0) > 0;
+    case 'hydrophone':
+      return (data.hydrophones?.length || 0) > 0 || (data.detections?.length || 0) > 0;
+    case 'talkback':
+      return (data.messages?.length || 0) > 0 || (data.responses?.length || 0) > 0;
+  }
+}
+
+function dispatchCapabilityUpdate(pack: CapabilityPackName, data: any): void {
+  if (!data) return;
+
+  const eventMap = {
+    lighting: { name: 'lighting-update', detailKey: 'lightingStates' },
+    seismic: { name: 'seismic-update', detailKey: 'seismicData' },
+    hydrophone: { name: 'hydrophone-update', detailKey: 'hydrophoneData' },
+    talkback: { name: 'talkback-update', detailKey: 'talkbackData' }
+  } satisfies Record<CapabilityPackName, { name: string; detailKey: string }>;
+
+  const event = eventMap[pack];
+  window.dispatchEvent(new CustomEvent(event.name, {
+    detail: { [event.detailKey]: data }
+  }));
+}
+
+export function updateCapabilityPacks(capabilityPacks: CapabilityPackData): void {
+  Object.entries(capabilityPacks).forEach(([packName, data]) => {
+    const pack = packName as CapabilityPackName;
+    const tab = document.querySelector<HTMLButtonElement>(`button[data-pack="${pack}"]`);
+    const hasData = hasCapabilityData(pack, data);
+
+    if (tab) {
+      tab.disabled = !hasData;
+      tab.classList.toggle('opacity-40', !hasData);
+      tab.classList.toggle('cursor-not-allowed', !hasData);
+      tab.classList.toggle('hover:bg-slate-600', hasData);
+    }
+
+    dispatchCapabilityUpdate(pack, data);
+  });
+}
+
+export function initializeCapabilityPackTabs(): void {
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll<HTMLButtonElement>('.capability-pack-tab');
+    const panels = document.querySelectorAll<HTMLElement>('.capability-panel');
+    const firstEnabledTab = Array.from(tabs).find(tab => !tab.disabled);
+
+    if (firstEnabledTab) {
+      const pack = firstEnabledTab.getAttribute('data-pack');
+      firstEnabledTab.classList.add('bg-rescue-600', 'font-semibold');
+      firstEnabledTab.classList.remove('bg-slate-700');
+      document.querySelector<HTMLElement>(`[data-panel="${pack}"]`)?.classList.remove('hidden');
+    }
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        if (tab.disabled) return;
+
+        const pack = tab.getAttribute('data-pack');
+
+        tabs.forEach(item => {
+          item.classList.remove('bg-rescue-600', 'font-semibold');
+          item.classList.add('bg-slate-700');
+        });
+
+        tab.classList.add('bg-rescue-600', 'font-semibold');
+        tab.classList.remove('bg-slate-700');
+
+        panels.forEach(panel => panel.classList.add('hidden'));
+        document.querySelector<HTMLElement>(`[data-panel="${pack}"]`)?.classList.remove('hidden');
+      });
+    });
+  });
+}
+
+export function renderEscalationBanner(escalation: any, options: EscalationRenderOptions = {}): void {
+  const contactRisk = escalation?.contact_continuity_risk || 'stable';
+
+  if (options.contactRiskElementId) {
+    const contactRiskEl = document.getElementById(options.contactRiskElementId);
+    if (contactRiskEl) {
+      const riskClasses: Record<string, string> = {
+        stable: 'bg-green-900/40 text-green-300 border border-green-700',
+        watch: 'bg-yellow-900/40 text-yellow-300 border border-yellow-700',
+        high: 'bg-orange-900/40 text-orange-300 border border-orange-700',
+        critical: 'bg-red-900/40 text-red-300 border border-red-700'
+      };
+
+      contactRiskEl.className = `font-semibold px-2 py-1 rounded text-sm ${riskClasses[contactRisk] || riskClasses.stable}`;
+      contactRiskEl.textContent = String(contactRisk).toUpperCase();
+    }
+  }
+
+  const bannerContainer = document.getElementById(options.containerId || 'escalation-banner-container');
+  if (!bannerContainer) return;
+
+  if (!escalation?.active) {
+    bannerContainer.innerHTML = '';
+    return;
+  }
+
+  const severity = escalation.severity || 'advisory';
+  const severityClasses: Record<string, { container: string; icon: string; title: string; text: string }> = {
+    critical: { container: 'bg-red-900/40 border-red-500', icon: 'text-red-400', title: 'text-red-200', text: 'text-red-100' },
+    urgent: { container: 'bg-orange-900/40 border-orange-500', icon: 'text-orange-400', title: 'text-orange-200', text: 'text-orange-100' },
+    warning: { container: 'bg-yellow-900/40 border-yellow-500', icon: 'text-yellow-400', title: 'text-yellow-200', text: 'text-yellow-100' },
+    advisory: { container: 'bg-blue-900/40 border-blue-500', icon: 'text-blue-400', title: 'text-blue-200', text: 'text-blue-100' }
+  };
+  const riskBadgeClasses: Record<string, string> = {
+    critical: 'bg-red-900/60 border-red-600 text-red-200',
+    high: 'bg-orange-900/60 border-orange-600 text-orange-200',
+    watch: 'bg-yellow-900/60 border-yellow-600 text-yellow-200'
+  };
+  const classes = severityClasses[severity] || severityClasses.advisory;
+  const shouldPulse = severity === 'critical' || severity === 'urgent';
+
+  bannerContainer.innerHTML = `
+    <div class="rounded-lg border-2 p-4 mb-6 ${classes.container} ${shouldPulse ? 'animate-pulse' : ''}" role="alert" aria-live="assertive">
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0 ${classes.icon}">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div class="flex-grow">
+          <div class="flex items-center gap-2 mb-2">
+            <h3 class="text-lg font-bold ${classes.title}">
+              ${escapeHtml(String(severity).toUpperCase())}: Mission Escalation
+            </h3>
+            ${contactRisk && contactRisk !== 'stable'
+              ? `<span class="text-xs px-2 py-1 rounded border ${riskBadgeClasses[contactRisk] || riskBadgeClasses.watch}">
+                   Contact Risk: ${escapeHtml(String(contactRisk).toUpperCase())}
+                 </span>`
+              : ''}
+          </div>
+          ${escalation.reason ? `<p class="text-base ${classes.text} leading-relaxed">${escapeHtml(escalation.reason)}</p>` : ''}
+          ${escalation.area_of_interest
+            ? `<div class="mt-2 text-sm opacity-90">
+                 <span class="font-semibold">Area of Interest:</span>
+                 <span class="font-mono ml-1">${escapeHtml(escalation.area_of_interest)}</span>
+               </div>`
+            : ''}
+        </div>
+      </div>
+    </div>
+  `;
 }
