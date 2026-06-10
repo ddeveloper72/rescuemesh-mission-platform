@@ -283,42 +283,24 @@ const initialClock = {
   import { initAgentModalManager, showAgentModal } from '../../../lib/agent-modal-manager';
   import { renderInteractiveActions } from '../../../lib/recommended-actions-manager';
   import { initializeLiveRouteProfile, updateLiveRouteProfile } from '../../../lib/route-profile-manager';
-  import { createPanZoomController } from '../../../lib/tactical-map-pan-zoom';
+  import {
+    dispatchAudioDetections,
+    dispatchMediaFeeds,
+    renderAgentStatusPanel,
+    renderEnvironmentalReadings,
+    renderMissionEvents
+  } from '../../../lib/live-demo-renderers';
+  import { initializeTacticalMapPanZoom } from '../../../lib/live-demo-tactical-map';
   
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
   const manager = initializeSimulation(MISSION_PK);
   
   // Initialize tactical map with Digital Twin terrain (async)
   let mapConfig: any;
-  let panZoomController: any;
   (async () => {
     mapConfig = await initializeTacticalMapWithDigitalTwin('industrial-inspection');
     
-    // Enable pan/zoom controls
-    const svgElement = document.getElementById('tactical-map-svg') as SVGSVGElement;
-    if (svgElement) {
-      panZoomController = createPanZoomController(svgElement, 'map-content', {
-        minScale: 0.5,
-        maxScale: 5,
-        zoomSpeed: 0.15,
-      });
-      panZoomController.enable();
-      
-      // Wire up UI controls
-      document.getElementById('map-zoom-in')?.addEventListener('click', () => {
-        const state = panZoomController.getState();
-        panZoomController.setState({ scale: state.scale * 1.3 });
-      });
-      
-      document.getElementById('map-zoom-out')?.addEventListener('click', () => {
-        const state = panZoomController.getState();
-        panZoomController.setState({ scale: state.scale / 1.3 });
-      });
-      
-      document.getElementById('map-reset-view')?.addEventListener('click', () => {
-        panZoomController.reset();
-      });
-    }
+    initializeTacticalMapPanZoom();
     
     await initializeLiveRouteProfile('industrial-inspection', {
       containerId: 'route-profile',
@@ -354,44 +336,7 @@ const initialClock = {
         clockEl.textContent = formatCompactMissionTime(state.simulation_clock.elapsed_seconds);
       }
       
-      // Update agents display
-      const agentsContainer = document.getElementById('agents-container');
-      if (agentsContainer && state.agents) {
-        agentsContainer.innerHTML = state.agents.map(agent => `
-          <div class="p-4 bg-slate-700 rounded-lg">
-            <div class="flex justify-between items-start mb-2">
-              <div>
-                <h3 class="font-semibold">${agent.name}</h3>
-                <p class="text-xs text-slate-400">${agent.role}</p>
-              </div>
-              <span data-agent-state="${agent.agent_id}" class="px-2 py-1 rounded text-xs font-semibold bg-slate-800 text-slate-300">
-                ${agent.state}
-              </span>
-            </div>
-            <div class="space-y-2 text-sm">
-              <div class="flex justify-between">
-                <span class="text-slate-400">Battery:</span>
-                <span data-agent-battery="${agent.agent_id}">${agent.battery_percent}%</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-slate-400">Signal:</span>
-                <span data-agent-signal="${agent.agent_id}">${agent.signal_strength}%</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-slate-400">Location:</span>
-                <span class="text-xs">${agent.location_label}</span>
-              </div>
-            </div>
-            <div class="mt-2 h-2 bg-slate-900 rounded-full overflow-hidden">
-              <div 
-                data-agent-battery-bar="${agent.agent_id}"
-                class="h-full bg-green-500 transition-all duration-500"
-                style="width: ${agent.battery_percent}%"
-              ></div>
-            </div>
-          </div>
-        `).join('');
-      }
+      renderAgentStatusPanel(state.agents);
       
       // Update defect counters from events
       if (state.events) {
@@ -423,107 +368,14 @@ const initialClock = {
         }
       }
       
-      // Update environmental sensor readings
-      if (state.sensors && state.sensors.environmental_readings) {
-        const readings = state.sensors.environmental_readings;
-        
-        // Helper to get status color class
-        const getStatusClass = (status: string) => {
-          switch (status) {
-            case 'normal': return 'text-green-400';
-            case 'watch': return 'text-yellow-400';
-            case 'warning': return 'text-orange-400';
-            case 'critical': return 'text-red-400';
-            default: return 'text-slate-300';
-          }
-        };
-        
-        // Update O2
-        const o2Reading = readings.find((r: any) => r.sensor_type === 'oxygen');
-        const o2El = document.getElementById('o2-reading');
-        if (o2El) {
-          if (o2Reading) {
-            const className = getStatusClass((o2Reading as any).status);
-            o2El.className = `font-semibold ${className}`;
-            o2El.textContent = `${(o2Reading as any).value}${(o2Reading as any).unit}`;
-          } else {
-            o2El.className = 'font-semibold text-slate-500';
-            o2El.textContent = '--';
-          }
-        }
-        
-        // Update CO2
-        const co2Reading = readings.find((r: any) => r.sensor_type === 'carbon_dioxide');
-        const co2El = document.getElementById('co2-reading');
-        if (co2El) {
-          if (co2Reading) {
-            const className = getStatusClass((co2Reading as any).status);
-            co2El.className = `font-semibold ${className}`;
-            co2El.textContent = `${(co2Reading as any).value}${(co2Reading as any).unit}`;
-          } else {
-            co2El.className = 'font-semibold text-slate-500';
-            co2El.textContent = '--';
-          }
-        }
-        
-        // Update H2
-        const h2Reading = readings.find((r: any) => r.sensor_type === 'hydrogen');
-        const h2El = document.getElementById('h2-reading');
-        if (h2El) {
-          if (h2Reading) {
-            const className = getStatusClass((h2Reading as any).status);
-            h2El.className = `font-semibold ${className}`;
-            h2El.textContent = `${(h2Reading as any).value}${(h2Reading as any).unit}`;
-          } else {
-            h2El.className = 'font-semibold text-slate-500';
-            h2El.textContent = '--';
-          }
-        }
-        
-        // Update CH4
-        const ch4Reading = readings.find((r: any) => r.sensor_type === 'methane');
-        const ch4El = document.getElementById('ch4-reading');
-        if (ch4El) {
-          if (ch4Reading) {
-            const className = getStatusClass((ch4Reading as any).status);
-            ch4El.className = `font-semibold ${className}`;
-            ch4El.textContent = `${(ch4Reading as any).value}${(ch4Reading as any).unit}`;
-          } else {
-            ch4El.className = 'font-semibold text-slate-500';
-            ch4El.textContent = '--';
-          }
-        }
-      }
+      renderEnvironmentalReadings(state.sensors?.environmental_readings, {
+        oxygen: 'o2-reading',
+        carbon_dioxide: 'co2-reading',
+        hydrogen: 'h2-reading',
+        methane: 'ch4-reading'
+      }, { resetMissing: true });
       
-      // Update events display
-      const eventsContainer = document.getElementById('events-container');
-      if (eventsContainer && state.events) {
-        if (state.events.length === 0) {
-          eventsContainer.innerHTML = '<p class="text-slate-400">No events yet...</p>';
-        } else {
-          eventsContainer.innerHTML = state.events.slice().reverse().map(event => {
-            const severity = (event as any).severity;
-            let severityBadge = '';
-            if (severity === 'critical') {
-              severityBadge = '<span class="ml-2 px-2 py-0.5 bg-red-900 text-red-300 rounded text-xs font-semibold">CRITICAL</span>';
-            } else if (severity === 'high') {
-              severityBadge = '<span class="ml-2 px-2 py-0.5 bg-orange-900 text-orange-300 rounded text-xs font-semibold">HIGH</span>';
-            } else if (severity === 'moderate') {
-              severityBadge = '<span class="ml-2 px-2 py-0.5 bg-yellow-900 text-yellow-300 rounded text-xs font-semibold">MODERATE</span>';
-            }
-            
-            return `
-              <div class="p-3 bg-slate-700 rounded-lg text-sm">
-                <div class="flex justify-between items-start mb-1">
-                  <span class="font-semibold">${event.title}${severityBadge}</span>
-                  <span class="text-xs text-slate-400">${event.time}</span>
-                </div>
-                <p class="text-slate-300 text-xs">${event.description}</p>
-              </div>
-            `;
-          }).join('');
-        }
-      }
+      renderMissionEvents(state.events, { showSeverity: true });
       
       // Update tactical map
       updateTacticalMap(state, mapConfig);
@@ -536,12 +388,7 @@ const initialClock = {
       // Update detection data for modal manager
       updateDetectionData(state);
       
-      // Update media feeds - dispatch custom event for React component
-      if (state.media_feeds) {
-        window.dispatchEvent(new CustomEvent('media-feeds-update', {
-          detail: { mediaFeeds: state.media_feeds }
-        }));
-      }
+      dispatchMediaFeeds(state.media_feeds);
       
       // Update capability pack panels
       const capabilityPacks = {
@@ -582,30 +429,7 @@ const initialClock = {
         }));
       }
       
-      // Update audio detections panel
-      if (state.audio_detections) {
-        // Transform backend format to frontend format
-        const transformedDetections = state.audio_detections.map((detection: any) => ({
-          id: detection.id,
-          agent_id: detection.agent_id,
-          agent_name: detection.agent_name,
-          sensor_type: 'microphone' as const,
-          audio_type: detection.type,
-          status: detection.status,
-          mission_time: detection.detected_at,
-          signal_quality: detection.confidence,
-          confidence: detection.confidence,
-          location_label: detection.location,
-          annotations: detection.human_review_required ? ['Requires human review'] : [],
-          description: detection.description,
-          audio_url: undefined,
-          spectrogram_url: undefined
-        }));
-        
-        window.dispatchEvent(new CustomEvent('audio-detections-update', {
-          detail: { audioDetections: transformedDetections }
-        }));
-      }
+      dispatchAudioDetections(state.audio_detections);
       
       // Update debug panel
       const debugEl = document.getElementById('debug-json');
