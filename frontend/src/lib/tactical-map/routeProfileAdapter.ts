@@ -127,6 +127,52 @@ function findAgentSector(agent: Agent, sectors: TerrainSector[]): TerrainSector 
   });
 }
 
+function isOriginSector(sector: TerrainSector): boolean {
+  const sectorType = sector.sector_type.toLowerCase();
+  const sectorId = sector.sector_id.toLowerCase();
+  const label = sector.label.toLowerCase();
+
+  return (
+    sector.metadata?.entry_point === true ||
+    sector.metadata?.surface_access === true ||
+    sectorType === 'entry' ||
+    sectorType === 'entrance' ||
+    sectorId.includes('entry') ||
+    label.includes('entry')
+  );
+}
+
+function findOriginSector(sectors: TerrainSector[]): TerrainSector {
+  return sectors.find(isOriginSector) ||
+    sectors.find(sector => Math.abs(getSectorZ(sector)) < 0.1) ||
+    sectors[0] as TerrainSector;
+}
+
+function hasMissionStarted(missionState?: MissionSimulationState): boolean {
+  if (!missionState) {
+    return false;
+  }
+
+  return Boolean(
+    missionState.simulation_clock?.is_running ||
+    (missionState.simulation_clock?.elapsed_seconds ?? 0) > 0 ||
+    missionState.mission?.status !== 'not_started'
+  );
+}
+
+function getSectorMissionConfidence(
+  missionState: MissionSimulationState | undefined,
+  sector: TerrainSector
+): number | undefined {
+  const missionSector = missionState?.sectors?.find(stateSector => (
+    stateSector.sector_id === sector.sector_id ||
+    stateSector.sector_id === sector.id ||
+    stateSector.label === sector.label
+  ));
+
+  return (missionSector as any)?.confidence;
+}
+
 // ============================================================================
 // Route Calculation
 // ============================================================================
@@ -156,11 +202,7 @@ function calculateRouteDistances(
   }
 
   // Find origin sector (entry point)
-  const originSector = sectors.find(s => 
-    s.metadata?.entry_point === true || 
-    s.sector_type === 'entry' ||
-    Math.abs(getSectorZ(s)) < 0.1
-  ) || sectors[0];
+  const originSector = findOriginSector(sectors);
 
   routeDistances.set(getSectorRouteKey(originSector), 0);
 
@@ -264,11 +306,7 @@ export function adaptToRouteProfile(
   let maxElevationM = 0;
 
   // Add origin point
-  const originSector = sectors.find(s => 
-    s.metadata?.entry_point === true || 
-    s.sector_type === 'entry' ||
-    Math.abs(getSectorZ(s)) < 0.1
-  ) || sectors[0];
+  const originSector = findOriginSector(sectors);
 
   if (originSector) {
     points.push({
@@ -286,9 +324,14 @@ export function adaptToRouteProfile(
   }
 
   // Filter sectors to only show explored ones (confidence > 0)
-  const exploredSectors = sectors.filter(sector => 
-    sector.confidence === undefined || sector.confidence > 0
-  );
+  const exploredSectors = sectors.filter(sector => {
+    const missionConfidence = getSectorMissionConfidence(missionState, sector);
+    if (missionConfidence !== undefined) {
+      return missionConfidence > 0;
+    }
+
+    return sector.confidence === undefined || sector.confidence > 0;
+  });
 
   // Add sector points (but don't use them for scale calculation yet)
   for (const sector of exploredSectors) {
@@ -296,6 +339,7 @@ export function adaptToRouteProfile(
     const { depthM, elevationM } = calculateDepthElevation(sector);
     const zM = getSectorZ(sector);
     const label = getSectorLabel(sector);
+    const confidence = getSectorMissionConfidence(missionState, sector) ?? sector.confidence;
 
     maxRouteDistanceM = Math.max(maxRouteDistanceM, routeDistanceM);
     maxDepthM = Math.max(maxDepthM, depthM);
@@ -311,7 +355,7 @@ export function adaptToRouteProfile(
       zM,
       depthM,
       elevationM,
-      confidence: sector.confidence,
+      confidence,
       status: sector.sector_type,
       risk: sector.metadata?.risk_level as string | undefined,
       tooltip: `${label}\nRoute: ${routeDistanceM.toFixed(0)} m\n${depthLabel}\nType: ${sector.sector_type}`,
@@ -352,7 +396,7 @@ export function adaptToRouteProfile(
   // Track agent Z positions for dynamic scale calculation
   const agentZPositions: number[] = [0]; // Always include ground level (origin)
 
-  if (missionState && missionState.agents) {
+  if (hasMissionStarted(missionState) && missionState?.agents) {
     for (const agent of missionState.agents) {
       const agentSector = findAgentSector(agent, sectors);
 
