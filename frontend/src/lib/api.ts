@@ -11,9 +11,11 @@
 export const getApiBaseUrl = (): string => {
   const envUrl = import.meta.env.PUBLIC_DJANGO_API_BASE_URL;
   
-  // If running server-side (SSR), use the environment variable
+  // If running server-side (SSR), prefer the environment variable.
+  // Docker sets this to http://backend:8000/api/v1; local Astro dev should
+  // fall back to localhost because the Docker service hostname is unavailable.
   if (typeof window === 'undefined') {
-    return envUrl || 'http://backend:8000/api/v1';
+    return envUrl || 'http://localhost:8000/api/v1';
   }
   
   // If running client-side (browser), always use localhost
