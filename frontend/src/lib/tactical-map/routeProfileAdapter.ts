@@ -12,7 +12,7 @@
  */
 
 import type { TerrainSector, TerrainPath, Waypoint } from '../api';
-import type { MissionSimulationState } from '../types/simulation';
+import type { Agent, MissionSimulationState } from '../../types/simulation';
 
 // ============================================================================
 // Route Profile View Model Types
@@ -64,6 +64,69 @@ export interface RouteProfileViewModel {
   };
 }
 
+function getNumber(value: number | null | undefined, fallback = 0): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function getSectorZ(sector: TerrainSector): number {
+  return getNumber(sector.z_m);
+}
+
+function getSectorLabel(sector: TerrainSector): string {
+  return sector.label || sector.sector_id || sector.id;
+}
+
+function getSectorRouteKey(sector: TerrainSector): string {
+  return sector.sector_id || sector.id;
+}
+
+function getSectorKeys(sector: TerrainSector): string[] {
+  return [sector.id, sector.sector_id, sector.label].filter(Boolean);
+}
+
+function pathEndpointKeys(path: TerrainPath): [string[], string[]] {
+  return [
+    [path.from_sector, path.from_sector_id, path.from_sector_label].filter(Boolean),
+    [path.to_sector, path.to_sector_id, path.to_sector_label].filter(Boolean)
+  ];
+}
+
+function hasIntersection(a: string[], b: string[]): boolean {
+  return a.some(value => b.includes(value));
+}
+
+function sectorsMatchPath(path: TerrainPath, fromKeys: string[], toKeys: string[]): boolean {
+  const [pathFromKeys, pathToKeys] = pathEndpointKeys(path);
+  return (
+    hasIntersection(pathFromKeys, fromKeys) && hasIntersection(pathToKeys, toKeys)
+  ) || (
+    hasIntersection(pathFromKeys, toKeys) && hasIntersection(pathToKeys, fromKeys)
+  );
+}
+
+function findPointBySectorReference(points: RouteProfilePoint[], sectorReference: string): RouteProfilePoint | undefined {
+  return points.find(point => {
+    const sectorKeys = point.metadata?.sectorKeys as string[] | undefined;
+    return point.id === sectorReference || sectorKeys?.includes(sectorReference);
+  });
+}
+
+function findAgentSector(agent: Agent, sectors: TerrainSector[]): TerrainSector | undefined {
+  const nav = agent.navigation as any;
+  const possibleRefs = [
+    (agent as any).sector,
+    nav?.sector,
+    nav?.sector_id,
+    nav?.current_sector,
+    agent.location_label
+  ].filter(Boolean);
+
+  return sectors.find(sector => {
+    const keys = getSectorKeys(sector);
+    return possibleRefs.some(ref => keys.includes(ref));
+  });
+}
+
 // ============================================================================
 // Route Calculation
 // ============================================================================
@@ -96,21 +159,21 @@ function calculateRouteDistances(
   const originSector = sectors.find(s => 
     s.metadata?.entry_point === true || 
     s.sector_type === 'entry' ||
-    Math.abs(s.z_m) < 0.1
+    Math.abs(getSectorZ(s)) < 0.1
   ) || sectors[0];
 
-  routeDistances.set(originSector.id, 0);
+  routeDistances.set(getSectorRouteKey(originSector), 0);
 
   // Build a simple route sequence
   // Sort sectors by distance from origin (Euclidean) as a first approximation
   const sortedSectors = [...sectors].sort((a, b) => {
     const distA = Math.sqrt(
-      Math.pow(a.x_m - originSector.x_m, 2) + 
-      Math.pow(a.y_m - originSector.y_m, 2)
+      Math.pow(getNumber(a.x_m) - getNumber(originSector.x_m), 2) + 
+      Math.pow(getNumber(a.y_m) - getNumber(originSector.y_m), 2)
     );
     const distB = Math.sqrt(
-      Math.pow(b.x_m - originSector.x_m, 2) + 
-      Math.pow(b.y_m - originSector.y_m, 2)
+      Math.pow(getNumber(b.x_m) - getNumber(originSector.x_m), 2) + 
+      Math.pow(getNumber(b.y_m) - getNumber(originSector.y_m), 2)
     );
     return distA - distB;
   });
@@ -123,23 +186,22 @@ function calculateRouteDistances(
     if (sector.id === originSector.id) continue;
 
     // Try to find a path between prevSector and current sector
-    const path = paths.find(p => 
-      (p.from_sector === prevSector.id && p.to_sector === sector.id) ||
-      (p.to_sector === prevSector.id && p.from_sector === sector.id)
-    );
+    const prevKeys = getSectorKeys(prevSector);
+    const sectorKeys = getSectorKeys(sector);
+    const path = paths.find(p => sectorsMatchPath(p, prevKeys, sectorKeys));
 
     if (path && path.distance_m) {
       cumulativeDistance += path.distance_m;
     } else {
       // Fallback: calculate Euclidean distance
       const euclideanDist = Math.sqrt(
-        Math.pow(sector.x_m - prevSector.x_m, 2) + 
-        Math.pow(sector.y_m - prevSector.y_m, 2)
+        Math.pow(getNumber(sector.x_m) - getNumber(prevSector.x_m), 2) + 
+        Math.pow(getNumber(sector.y_m) - getNumber(prevSector.y_m), 2)
       );
       cumulativeDistance += euclideanDist;
     }
 
-    routeDistances.set(sector.id, cumulativeDistance);
+    routeDistances.set(getSectorRouteKey(sector), cumulativeDistance);
     prevSector = sector;
   }
 
@@ -161,13 +223,13 @@ function calculateRouteDistances(
  * - elevationM = z when z > 0
  */
 function calculateDepthElevation(sector: TerrainSector): { depthM: number; elevationM: number } {
-  const zM = sector.z_m;
+  const zM = getSectorZ(sector);
   
   // Use explicit depth_m or elevation_m if available
-  if (sector.depth_m !== undefined && sector.depth_m > 0) {
+  if (sector.depth_m !== undefined && sector.depth_m !== null && sector.depth_m > 0) {
     return { depthM: sector.depth_m, elevationM: 0 };
   }
-  if (sector.elevation_m !== undefined && sector.elevation_m > 0) {
+  if (sector.elevation_m !== undefined && sector.elevation_m !== null && sector.elevation_m > 0) {
     return { depthM: 0, elevationM: sector.elevation_m };
   }
 
@@ -188,7 +250,7 @@ function calculateDepthElevation(sector: TerrainSector): { depthM: number; eleva
 export function adaptToRouteProfile(
   sectors: TerrainSector[],
   paths: TerrainPath[],
-  waypoints: Waypoint[],
+  _waypoints: Waypoint[],
   missionState?: MissionSimulationState,
   originLabel: string = 'Entry Point'
 ): RouteProfileViewModel {
@@ -205,7 +267,7 @@ export function adaptToRouteProfile(
   const originSector = sectors.find(s => 
     s.metadata?.entry_point === true || 
     s.sector_type === 'entry' ||
-    Math.abs(s.z_m) < 0.1
+    Math.abs(getSectorZ(s)) < 0.1
   ) || sectors[0];
 
   if (originSector) {
@@ -230,9 +292,10 @@ export function adaptToRouteProfile(
 
   // Add sector points (but don't use them for scale calculation yet)
   for (const sector of exploredSectors) {
-    const routeDistanceM = routeDistances.get(sector.id) || 0;
+    const routeDistanceM = routeDistances.get(getSectorRouteKey(sector)) || 0;
     const { depthM, elevationM } = calculateDepthElevation(sector);
-    const zM = sector.z_m;
+    const zM = getSectorZ(sector);
+    const label = getSectorLabel(sector);
 
     maxRouteDistanceM = Math.max(maxRouteDistanceM, routeDistanceM);
     maxDepthM = Math.max(maxDepthM, depthM);
@@ -242,7 +305,7 @@ export function adaptToRouteProfile(
 
     points.push({
       id: sector.id,
-      label: sector.name || `Sector ${sector.id}`,
+      label,
       type: 'sector',
       routeDistanceM,
       zM,
@@ -251,28 +314,31 @@ export function adaptToRouteProfile(
       confidence: sector.confidence,
       status: sector.sector_type,
       risk: sector.metadata?.risk_level as string | undefined,
-      tooltip: `${sector.name || sector.id}\nRoute: ${routeDistanceM.toFixed(0)} m\n${depthLabel}\nType: ${sector.sector_type}`,
-      metadata: sector.metadata
+      tooltip: `${label}\nRoute: ${routeDistanceM.toFixed(0)} m\n${depthLabel}\nType: ${sector.sector_type}`,
+      metadata: {
+        ...sector.metadata,
+        sectorKeys: getSectorKeys(sector)
+      }
     });
   }
 
   // Add path segments
   for (const path of paths) {
-    const fromDistance = routeDistances.get(path.from_sector) || 0;
-    const toDistance = routeDistances.get(path.to_sector) || 0;
+    const fromDistance = routeDistances.get(path.from_sector_id) || routeDistances.get(path.from_sector) || 0;
+    const toDistance = routeDistances.get(path.to_sector_id) || routeDistances.get(path.to_sector) || 0;
     const distanceM = path.distance_m || Math.abs(toDistance - fromDistance);
-    const verticalChangeM = path.vertical_change_m || 0;
+    const verticalChangeM = getNumber(path.vertical_change_m);
     const slopePercent = distanceM > 0 ? (Math.abs(verticalChangeM) / distanceM) * 100 : 0;
 
     segments.push({
-      fromId: path.from_sector,
-      toId: path.to_sector,
+      fromId: findPointBySectorReference(points, path.from_sector_id || path.from_sector)?.id || path.from_sector,
+      toId: findPointBySectorReference(points, path.to_sector_id || path.to_sector)?.id || path.to_sector,
       distanceM,
       verticalChangeM,
       slopePercent,
       traversalRisk: path.traversal_risk,
       status: 'mapped',
-      label: path.name || undefined
+      label: `${path.from_sector_label || path.from_sector_id} to ${path.to_sector_label || path.to_sector_id}`
     });
   }
 
@@ -288,19 +354,12 @@ export function adaptToRouteProfile(
 
   if (missionState && missionState.agents) {
     for (const agent of missionState.agents) {
-      // Find sector agent is in
-      // agent.sector contains sector_id (string like "ground-entry"), not UUID
-      const agentSector = sectors.find(s => 
-        agent.sector === s.sector_id || 
-        agent.sector === s.id ||
-        agent.sector === s.name ||
-        (s.metadata?.aliases && (s.metadata.aliases as string[]).includes(agent.sector))
-      );
+      const agentSector = findAgentSector(agent, sectors);
 
       if (agentSector) {
-        const routeDistanceM = routeDistances.get(agentSector.id) || 0;
+        const routeDistanceM = routeDistances.get(getSectorRouteKey(agentSector)) || 0;
         const { depthM, elevationM } = calculateDepthElevation(agentSector);
-        const zM = agentSector.z_m;
+        const zM = getSectorZ(agentSector);
 
         // Track agent Z position for scale calculation
         agentZPositions.push(zM);
@@ -314,7 +373,7 @@ export function adaptToRouteProfile(
         const agentType = agent.state === 'landed_relay' ? 'relay' : 'agent';
 
         points.push({
-          id: `agent-${agent.id}`,
+          id: `agent-${agent.agent_id}`,
           label: agent.name,
           type: agentType,
           routeDistanceM,
@@ -322,7 +381,7 @@ export function adaptToRouteProfile(
           depthM,
           elevationM,
           status: agent.state,
-          tooltip: `${agent.name}\nRoute: ${routeDistanceM.toFixed(0)} m\n${depthM > 0 ? `↓ ${depthM.toFixed(0)} m` : elevationM > 0 ? `↑ ${elevationM.toFixed(0)} m` : '0 m'}\nBattery: ${agent.battery}%\nStatus: ${agent.state}`
+          tooltip: `${agent.name}\nRoute: ${routeDistanceM.toFixed(0)} m\n${depthM > 0 ? `↓ ${depthM.toFixed(0)} m` : elevationM > 0 ? `↑ ${elevationM.toFixed(0)} m` : '0 m'}\nBattery: ${agent.battery_percent}%\nStatus: ${agent.state}`
         });
       }
     }

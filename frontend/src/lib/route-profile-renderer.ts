@@ -114,8 +114,9 @@ function renderProfile(viewModel: RouteProfileViewModel, config: RenderConfig): 
   const chartWidth = config.viewBoxWidth - config.paddingLeft - config.paddingRight;
   const chartHeight = config.viewBoxHeight - config.paddingTop - config.paddingBottom;
 
+  const xMax = Math.max(maxRouteDistanceM, 1);
   const xScale = (routeDistanceM: number) => {
-    return config.paddingLeft + (routeDistanceM / maxRouteDistanceM) * chartWidth;
+    return config.paddingLeft + (routeDistanceM / xMax) * chartWidth;
   };
 
   const yScale = (zM: number) => {
@@ -126,7 +127,7 @@ function renderProfile(viewModel: RouteProfileViewModel, config: RenderConfig): 
   };
 
   // Render grid
-  renderGrid(config, xScale, yScale, maxRouteDistanceM, minZM, maxZM, chartHeight);
+  renderGrid(config, xScale, yScale, xMax, minZM, maxZM, chartHeight);
 
   // Render reference line (ground level at z=0)
   renderReferenceLine(config, yScale);
@@ -432,9 +433,10 @@ function addTooltipInteractivity(config: RenderConfig): void {
     });
 
     point.addEventListener('mousemove', (e) => {
+      const mouseEvent = e as MouseEvent;
       const svgRect = svg.getBoundingClientRect();
-      const mouseX = e.clientX - svgRect.left;
-      const mouseY = e.clientY - svgRect.top;
+      const mouseX = mouseEvent.clientX - svgRect.left;
+      const mouseY = mouseEvent.clientY - svgRect.top;
       
       // Convert to SVG coordinates
       const svgX = (mouseX / svgRect.width) * config.viewBoxWidth;

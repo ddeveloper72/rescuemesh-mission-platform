@@ -282,10 +282,7 @@ const initialClock = {
   import { initDetectionModalManager, updateDetectionData } from '../../../lib/detection-modal-manager';
   import { initAgentModalManager, showAgentModal } from '../../../lib/agent-modal-manager';
   import { renderInteractiveActions } from '../../../lib/recommended-actions-manager';
-  import { initializeRouteProfile, updateRouteProfile } from '../../../lib/route-profile-renderer';
-  import { adaptToRouteProfile } from '../../../lib/tactical-map/routeProfileAdapter';
-  import { getTerrainSectors, getTerrainPaths, getWaypoints } from '../../../lib/api';
-  import { getTerrainBinding } from '../../../lib/tactical-map/useCaseTerrainBindings';
+  import { initializeLiveRouteProfile, updateLiveRouteProfile } from '../../../lib/route-profile-manager';
   import { createPanZoomController } from '../../../lib/tactical-map-pan-zoom';
   
   const MISSION_PK = document.querySelector('[data-mission-pk]')?.getAttribute('data-mission-pk') || '';
@@ -323,40 +320,10 @@ const initialClock = {
       });
     }
     
-    // Initialize route profile with Digital Twin data
-    try {
-      const binding = getTerrainBinding('industrial-inspection');
-      if (binding && binding.terrainMapSlug) {
-        const [sectorsResult, pathsResult, waypointsResult] = await Promise.all([
-          getTerrainSectors(binding.terrainMapSlug),
-          getTerrainPaths(binding.terrainMapSlug),
-          getWaypoints(binding.terrainMapSlug)
-        ]);
-        
-        if (sectorsResult.success && sectorsResult.data) {
-          // Handle paginated response from Django REST Framework
-          const sectors = Array.isArray(sectorsResult.data) ? sectorsResult.data : (sectorsResult.data as any).results || [];
-          const paths = pathsResult.success ? (Array.isArray(pathsResult.data) ? pathsResult.data : (pathsResult.data as any).results || []) : [];
-          const waypoints = waypointsResult.success ? (Array.isArray(waypointsResult.data) ? waypointsResult.data : (waypointsResult.data as any).results || []) : [];
-          
-          // CACHE terrain data to avoid reloading on every poll
-          cachedTerrainData = { sectors, paths, waypoints };
-          
-          const routeProfileViewModel = adaptToRouteProfile(
-            sectors,
-            paths,
-            waypoints,
-            undefined,
-            'Ground Level Entry'
-          );
-          initializeRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
-        }
-      }
-    } catch (err) {
-      console.error('Route profile initialization failed:', err);
-      const loadingEl = document.getElementById('route-profile-loading');
-      if (loadingEl) loadingEl.textContent = 'Failed to load route profile';
-    }
+    await initializeLiveRouteProfile('industrial-inspection', {
+      containerId: 'route-profile',
+      originLabel: 'Ground Level Entry'
+    });
   
     // Initialize detection modal manager
     initDetectionModalManager();
@@ -561,21 +528,10 @@ const initialClock = {
       // Update tactical map
       updateTacticalMap(state, mapConfig);
       
-      // Update route profile (use CACHED terrain data - no need to reload from API!)
-      if (cachedTerrainData) {
-        try {
-          const routeProfileViewModel = adaptToRouteProfile(
-            cachedTerrainData.sectors,
-            cachedTerrainData.paths,
-            cachedTerrainData.waypoints,
-            state, // Only the state changes each poll
-            'Ground Level Entry'
-          );
-          updateRouteProfile(routeProfileViewModel, { containerId: 'route-profile' });
-        } catch (err) {
-          console.error('Route profile update failed:', err);
-        }
-      }
+      await updateLiveRouteProfile('industrial-inspection', state, {
+        containerId: 'route-profile',
+        originLabel: 'Ground Level Entry'
+      });
       
       // Update detection data for modal manager
       updateDetectionData(state);
