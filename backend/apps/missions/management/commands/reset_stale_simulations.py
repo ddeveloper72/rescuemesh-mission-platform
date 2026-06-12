@@ -54,7 +54,7 @@ class Command(BaseCommand):
             
             self.stdout.write(
                 self.style.SUCCESS(
-                    f'✓ Reset ALL {count} running simulations'
+                    f'Reset ALL {count} running simulations'
                 )
             )
             return
@@ -71,7 +71,7 @@ class Command(BaseCommand):
         if count == 0:
             self.stdout.write(
                 self.style.SUCCESS(
-                    f'✓ No stale simulations found (max age: {max_age_minutes} minutes)'
+                    f'No stale simulations found (max age: {max_age_minutes} minutes)'
                 )
             )
             return
@@ -92,6 +92,6 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f'✓ Reset {count} stale simulation(s) older than {max_age_minutes} minutes'
+                f'Reset {count} stale simulation(s) older than {max_age_minutes} minutes'
             )
         )

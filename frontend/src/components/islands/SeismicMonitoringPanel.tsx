@@ -60,12 +60,12 @@ function getStateColor(state: string): string {
 
 function getStateIcon(state: string): string {
   switch (state) {
-    case 'listening': return '👂';
-    case 'noise_contaminated': return '⚠';
-    case 'signal_detected': return '✓';
-    case 'triangulation_ready': return '📍';
-    case 'failed': return '✗';
-    default: return '●';
+    case 'listening': return 'LIVE';
+    case 'noise_contaminated': return 'NOISE';
+    case 'signal_detected': return 'SIGNAL';
+    case 'triangulation_ready': return 'TRI';
+    case 'failed': return 'FAIL';
+    default: return 'IDLE';
   }
 }
 
@@ -95,7 +95,7 @@ export default function SeismicMonitoringPanel({ seismicData: initialData }: Sei
     return (
       <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
         <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-          <span className="text-gray-500">👂</span>
+          <span className="text-gray-500 text-xs font-semibold tracking-wide">SEIS</span>
           Seismic / Acoustic Ground Monitoring
         </h3>
         <p className="text-gray-400 text-sm">
@@ -118,7 +118,7 @@ export default function SeismicMonitoringPanel({ seismicData: initialData }: Sei
   return (
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
       <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-        <span className="text-green-400">👂</span>
+        <span className="text-green-400 text-xs font-semibold tracking-wide">SEIS</span>
         Seismic / Acoustic Ground Monitoring
       </h3>
 
@@ -130,7 +130,7 @@ export default function SeismicMonitoringPanel({ seismicData: initialData }: Sei
         </p>
         {humanCueDetections.length > 0 && (
           <p className="text-orange-400 font-medium mt-1">
-            ⚠ {humanCueDetections.length} possible human cue{humanCueDetections.length !== 1 ? 's' : ''} detected
+            {humanCueDetections.length} possible human cue{humanCueDetections.length !== 1 ? 's' : ''} detected
           </p>
         )}
       </div>
@@ -169,7 +169,7 @@ export default function SeismicMonitoringPanel({ seismicData: initialData }: Sei
                 </p>
               </div>
               <button className="text-gray-400 hover:text-white">
-                {expandedSensorId === sensor.sensor_id ? '▼' : '▶'}
+                {expandedSensorId === sensor.sensor_id ? 'Hide' : 'Show'}
               </button>
             </div>
 
@@ -212,14 +212,14 @@ export default function SeismicMonitoringPanel({ seismicData: initialData }: Sei
                           }`}
                         >
                           <p className={`text-xs font-semibold ${getClassificationColor(detection.classification)}`}>
-                            {detection.type === 'tapping' && '👆 '}
+                            {detection.type === 'tapping' && 'TAP '}
                             {detection.classification.replace(/_/g, ' ').toUpperCase()}
                           </p>
                           <p className="text-xs text-gray-300 mt-1">
                             {detection.pattern}
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
-                            {detection.timestamp} • Confidence: {Math.round(detection.confidence * 100)}%
+                            {detection.timestamp} / Confidence: {Math.round(detection.confidence * 100)}%
                           </p>
                           {detection.human_cue_probability > 0.6 && (
                             <p className="text-xs text-orange-400 font-medium mt-1">
@@ -228,7 +228,7 @@ export default function SeismicMonitoringPanel({ seismicData: initialData }: Sei
                           )}
                           {detection.requires_human_review && (
                             <p className="text-xs text-yellow-400 font-medium mt-1">
-                              ⚠ Human review required
+                              Human review required
                             </p>
                           )}
                           <button className="text-xs text-blue-400 hover:text-blue-300 mt-1">
@@ -253,7 +253,7 @@ export default function SeismicMonitoringPanel({ seismicData: initialData }: Sei
       {seismicData.sensors.length > 0 && seismicData.sensors.length < 3 && (
         <div className="mt-4 bg-blue-900 bg-opacity-20 border border-blue-700 rounded p-3">
           <p className="text-xs text-blue-200">
-            💡 <strong>Recommendation:</strong> Deploy additional sensor for triangulation and false-positive reduction.
+            <strong>Recommendation:</strong> Deploy additional sensor for triangulation and false-positive reduction.
           </p>
         </div>
       )}
@@ -277,7 +277,7 @@ export default function SeismicMonitoringPanel({ seismicData: initialData }: Sei
       {/* Safety Note */}
       <div className="mt-3 bg-yellow-900 bg-opacity-20 border border-yellow-700 rounded p-2">
         <p className="text-xs text-yellow-200">
-          ⚠ Simulation only. All human cue detections require operator verification and search/rescue coordination.
+          Simulation only. All human cue detections require operator verification and search/rescue coordination.
         </p>
       </div>
     </div>

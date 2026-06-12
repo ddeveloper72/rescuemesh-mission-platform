@@ -107,7 +107,7 @@ class Command(BaseCommand):
             metadata=data.get('metadata', {}),
         )
         
-        self.stdout.write(self.style.SUCCESS(f'  ✓ Created scenario: {scenario.name}'))
+        self.stdout.write(self.style.SUCCESS(f'  Created scenario: {scenario.name}'))
         
         # Create agent routes
         routes_created = 0
@@ -142,7 +142,7 @@ class Command(BaseCommand):
                 waypoints_created += 1
             
             routes_created += 1
-            self.stdout.write(f'    ✓ Route: {route.agent_name} ({waypoints_created} waypoints)')
+            self.stdout.write(f'    Route: {route.agent_name} ({waypoints_created} waypoints)')
         
         # Create scenario events
         events_created = 0
@@ -164,5 +164,5 @@ class Command(BaseCommand):
             events_created += 1
         
         self.stdout.write(self.style.SUCCESS(
-            f'  ✓ Imported: {routes_created} routes, {events_created} events'
+            f'  Imported: {routes_created} routes, {events_created} events'
         ))

@@ -37,6 +37,7 @@ class Command(BaseCommand):
             self.seed_cave_rescue()
             self.seed_flooded_structure()
             self.seed_industrial_inspection()
+            self.seed_archaeological_exploration()
         
         self.stdout.write(self.style.SUCCESS('Successfully seeded all use case templates!'))
 
@@ -275,7 +276,7 @@ Output Format: JSON with detections array, confidence scores, and recommended ac
             is_active=True
         )
         
-        self.stdout.write(self.style.SUCCESS('  ✓ Collapsed Building Search'))
+        self.stdout.write(self.style.SUCCESS('  Collapsed Building Search'))
 
     def seed_cave_rescue(self):
         """Seed Cave Rescue use case"""
@@ -371,7 +372,7 @@ Output Format: JSON with detections array, confidence scores, and recommended ac
             requires_human_review=True
         )
         
-        self.stdout.write(self.style.SUCCESS('  ✓ Cave Rescue'))
+        self.stdout.write(self.style.SUCCESS('  Cave Rescue'))
 
     def seed_flooded_structure(self):
         """Seed Flooded Structure use case"""
@@ -453,7 +454,7 @@ Output Format: JSON with detections array, confidence scores, and recommended ac
             requires_human_review=True
         )
         
-        self.stdout.write(self.style.SUCCESS('  ✓ Flooded Structure'))
+        self.stdout.write(self.style.SUCCESS('  Flooded Structure'))
 
     def seed_industrial_inspection(self):
         """Seed Industrial Inspection use case"""
@@ -557,5 +558,186 @@ Output Format: JSON with detections array, confidence scores, and recommended ac
             max_tokens=1200,
             requires_human_review=True
         )
+
+        self.stdout.write(self.style.SUCCESS('  Industrial Confined Space Inspection'))
+
+    def seed_archaeological_exploration(self):
+        """Seed Archaeological Exploration use case"""
+        self.stdout.write('Seeding Archaeological Exploration...')
+
+        use_case = UseCaseTemplate.objects.create(
+            slug='archaeological-exploration',
+            title='Archaeological Exploration',
+            priority='navigation_safety',
+            summary='Map and document fragile underground heritage spaces without unnecessary human entry or disturbance.',
+            objective='Deploy low-disturbance autonomous agents to map fragile chambers, monitor environmental conditions, preserve communication links, and flag possible artefact or conservation review areas for qualified human experts.',
+            is_active=True,
+            is_demo=True
+        )
+
+        TerrainProfile.objects.create(
+            use_case=use_case,
+            terrain_type='Fragile underground chamber complex with restricted access passages',
+            gps_status='denied',
+            communication_conditions='GPS denied underground. Curved passages and stone mass require relay positioning.',
+            lighting_conditions='Dark with strict low-disturbance artificial lighting',
+            hazards=['Low oxygen zones', 'Unstable passages', 'Dust-sensitive surfaces', 'Conservation constraints'],
+            accessibility='Human access restricted to protect fragile site fabric and artefacts',
+            simulation_complexity='high'
+        )
+
+        scout = AgentRoleTemplate.objects.create(
+            use_case=use_case,
+            name='Heritage Scout A',
+            role='primary_mapping',
+            description='Low-disturbance LiDAR and low-light mapping agent',
+            default_quantity=1,
+            agent_type='drone',
+            capabilities=['3d_mapping', 'low_light_navigation', 'no_contact_survey'],
+            specifications={'battery_capacity': 90, 'max_speed': 1.2, 'disturbance_mode': 'low'}
+        )
+
+        inspector = AgentRoleTemplate.objects.create(
+            use_case=use_case,
+            name='Micro Inspector B',
+            role='narrow_passage_survey',
+            description='Compact close-range imaging agent for side passages and restricted voids',
+            default_quantity=1,
+            agent_type='ground_robot',
+            capabilities=['compact_navigation', 'close_range_imaging', 'artefact_candidate_marking'],
+            specifications={'battery_capacity': 70, 'max_speed': 0.6, 'size': 'micro'}
+        )
+
+        relay = AgentRoleTemplate.objects.create(
+            use_case=use_case,
+            name='Relay Node ARCH-01',
+            role='communications_relay',
+            description='Static relay and environmental monitor for the entry chamber',
+            default_quantity=1,
+            agent_type='relay_node',
+            capabilities=['relay', 'environmental_monitoring', 'long_duration_beacon'],
+            specifications={'battery_capacity': 180, 'relay_range': 45.0}
+        )
+
+        SensorPackageTemplate.objects.create(
+            agent_role=scout,
+            sensor_type='lidar',
+            display_name='Heritage LiDAR',
+            description='Low-disturbance chamber geometry mapping',
+            data_format='point_cloud',
+            expected_output='3D chamber geometry and route profile',
+            specifications={'range': 12.0, 'resolution': 0.02, 'scan_mode': 'low_disturbance'},
+            failure_modes=['dust_disturbance_limit', 'feature_poor_geometry']
+        )
+
+        SensorPackageTemplate.objects.create(
+            agent_role=inspector,
+            sensor_type='camera',
+            display_name='Close-Range Conservation Camera',
+            description='Review-only imaging for candidate artefacts and fragile surfaces',
+            data_format='image',
+            expected_output='Candidate review images for human experts',
+            specifications={'resolution': '4k', 'lighting': 'low_heat_led'},
+            failure_modes=['low_light_noise', 'surface_glare']
+        )
+
+        SensorPackageTemplate.objects.create(
+            agent_role=relay,
+            sensor_type='environmental',
+            display_name='Chamber Environment Monitor',
+            description='Temperature, humidity, oxygen, and CO2 monitoring',
+            data_format='json',
+            expected_output='Environmental readings for conservation review',
+            specifications={'readings': ['temperature', 'humidity', 'oxygen', 'co2']},
+            failure_modes=['sensor_drift']
+        )
+
+        FailureProfile.objects.create(
+            use_case=use_case,
+            name='Dust-Sensitive Zone',
+            description='Agent speed must be reduced near fragile deposits to avoid disturbance',
+            affected_component='navigation',
+            severity='medium',
+            trigger_type='sector_based',
+            trigger_conditions={'sector': 'decorated_wall_zone'},
+            effects={'mapping_rate_multiplier': 0.5, 'requires_low_disturbance_mode': True},
+            operator_message='Conservation-safe mode enabled near dust-sensitive surface',
+            is_recoverable=True,
+            recovery_actions=['reduce_speed', 'increase_standoff_distance']
+        )
+
+        FailureProfile.objects.create(
+            use_case=use_case,
+            name='Narrow Passage Signal Loss',
+            description='Curved passage geometry increases packet loss for the micro inspector',
+            affected_component='radio',
+            severity='high',
+            trigger_type='sector_based',
+            trigger_conditions={'sector': 'north_alcove'},
+            effects={'packet_loss': 0.45, 'requires_relay': True},
+            operator_message='Relay hold required before continuing side-passage survey',
+            is_recoverable=True,
+            recovery_actions=['hold_position', 'deploy_relay']
+        )
+
+        ExpectedOutputTemplate.objects.create(
+            use_case=use_case,
+            name='3D Chamber Geometry',
+            output_type='3d_map',
+            description='Detailed 3D point cloud of chamber geometry and access routes',
+            confidence_required=True,
+            human_review_required=False,
+            display_priority=10,
+            icon_name='map'
+        )
+
+        ExpectedOutputTemplate.objects.create(
+            use_case=use_case,
+            name='Artefact Candidate Log',
+            output_type='ai_analysis',
+            description='Review-only list of possible artefacts, inscriptions, or decorated surfaces',
+            confidence_required=True,
+            human_review_required=True,
+            display_priority=9,
+            icon_name='sparkles'
+        )
+
+        ExpectedOutputTemplate.objects.create(
+            use_case=use_case,
+            name='Environmental Readings',
+            output_type='environmental',
+            description='Temperature, humidity, oxygen, and CO2 trends around sensitive areas',
+            confidence_required=False,
+            human_review_required=True,
+            display_priority=8,
+            icon_name='gauge'
+        )
+
+        ExpectedOutputTemplate.objects.create(
+            use_case=use_case,
+            name='Conservation Route Notes',
+            output_type='report',
+            description='Suggested low-disturbance inspection route for human experts',
+            confidence_required=True,
+            human_review_required=True,
+            display_priority=7,
+            icon_name='route'
+        )
+
+        AIPromptTemplate.objects.create(
+            use_case=use_case,
+            name='Heritage Documentation Assistant',
+            role='heritage_documentation',
+            description='Analyze geometry, environmental readings, and visual candidates while preserving expert archaeological interpretation.',
+            prompt_text='Review heritage survey data and identify areas requiring archaeologist or conservation expert review. Do not make definitive artefact claims.',
+            system_prompt='You support non-destructive heritage documentation. Flag candidates for expert review and avoid definitive archaeological identification.',
+            input_types=['chamber_geometry', 'environmental_readings', 'candidate_images'],
+            output_schema={'review_candidates': [], 'conservation_notes': [], 'confidence': 'float'},
+            temperature=0.2,
+            max_tokens=1000,
+            requires_human_review=True,
+            is_active=True
+        )
+
+        self.stdout.write(self.style.SUCCESS('  Archaeological Exploration'))
         
-        self.stdout.write(self.style.SUCCESS('  ✓ Industrial Confined Space Inspection'))

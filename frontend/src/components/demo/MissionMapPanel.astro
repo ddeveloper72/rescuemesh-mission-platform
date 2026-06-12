@@ -31,23 +31,23 @@ const failedAgents = profile.agents.filter(a =>
 );
 ---
 
-<div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
-  <div class="flex items-start justify-between mb-4">
+<div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+  <div class="flex items-center justify-between mb-2">
     <div>
-      <h2 class="text-xl font-bold mb-1">Mission Map</h2>
+      <h2 class="text-2xl font-bold">Tactical Map</h2>
       <p class="text-sm text-slate-400">{mapTypeLabels[profile.simulation.mapType]}</p>
     </div>
-    <div class="text-right">
-      <div class="text-sm text-slate-400">Confidence</div>
-      <div class="text-lg font-semibold text-rescue-400">
-        {Math.round(profile.simulation.defaultConfidence * 100)}%
-      </div>
+    <div class="text-lg font-mono text-blue-400 bg-slate-900 px-3 py-1 rounded border border-slate-700">
+      <span>{profile.timeline[0]?.time || '00:00'}</span>
     </div>
   </div>
+  <p class="text-xs text-slate-400 mb-4">
+    <span class="inline-block mr-4">Terrain generated from simulated mission returns</span>
+    <span class="inline-block mr-4">Static profile snapshot</span>
+    <span class="inline-block">Open live simulation for progressive reveal</span>
+  </p>
 
-  <!-- Map Placeholder - Static profile view -->
-  <!-- Live telemetry map available in simulation mode -->
-  <div class="relative bg-slate-900 rounded-lg border-2 border-slate-700 aspect-video flex items-center justify-center overflow-hidden">
+  <div class="relative bg-slate-900 rounded-lg overflow-hidden aspect-video">
     <!-- Background pattern -->
     <div class="absolute inset-0 opacity-10">
       <div class="absolute inset-0" style="background-image: radial-gradient(circle at 2px 2px, rgb(148, 163, 184) 1px, transparent 0); background-size: 20px 20px;"></div>
@@ -66,6 +66,24 @@ const failedAgents = profile.agents.filter(a =>
       <div class="text-sm text-slate-400 max-w-md">
         {mapDescriptions[profile.simulation.mapType]}
       </div>
+    </div>
+
+    <!-- Static controls mirroring the live map -->
+    <div class="absolute top-2 right-2 flex flex-col gap-1">
+      <button class="w-8 h-8 bg-slate-800 rounded border border-slate-600 flex items-center justify-center text-slate-500" title="Zoom available in live simulation" aria-label="Zoom unavailable in static profile">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+      </button>
+      <button class="w-8 h-8 bg-slate-800 rounded border border-slate-600 flex items-center justify-center text-slate-500" title="Zoom available in live simulation" aria-label="Zoom unavailable in static profile">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="absolute top-2 left-2 bg-slate-800 bg-opacity-90 rounded px-2 py-1 text-xs text-slate-300">
+      Profile snapshot
     </div>
 
     <!-- Asset markers overlay -->
@@ -103,9 +121,5 @@ const failedAgents = profile.agents.filter(a =>
         </span>
       ))}
     </div>
-  </div>
-
-  <div class="mt-4 text-xs text-slate-500 italic">
-    Static profile view - Open live simulation to view agent movement and map coverage updates
   </div>
 </div>

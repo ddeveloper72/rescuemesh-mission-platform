@@ -44,13 +44,13 @@
  * 2. JavaScript polls `/api/v1/missions/{pk}/state/` every 2 seconds
  * 3. `updateTacticalMap(state, config)` called with new data
  * 4. Rendering functions update SVG groups:
- *    - renderSectors() → #map-sectors
- *    - renderNetworkConnections() → #map-network
- *    - renderHazards() → #map-hazards
- *    - renderDetectionMarkers() → #map-detections
- *    - renderAgents() → #map-agents
- *    - renderLabels() → #map-labels (smart collision avoidance)
- *    - renderCompassRose() → #map-compass (fixed viewport position)
+ *    - renderSectors() -> #map-sectors
+ *    - renderNetworkConnections() -> #map-network
+ *    - renderHazards() -> #map-hazards
+ *    - renderDetectionMarkers() -> #map-detections
+ *    - renderAgents() -> #map-agents
+ *    - renderLabels() -> #map-labels (smart collision avoidance)
+ *    - renderCompassRose() -> #map-compass (fixed viewport position)
  * 
  * **Layer Organization:**
  * 
@@ -99,9 +99,9 @@ const { useCase, title = "Tactical Map" } = Astro.props;
     </div>
   </div>
   <p class="text-xs text-slate-400 mb-4">
-    <span class="inline-block mr-4">● Terrain generated from simulated LiDAR/depth/sonar returns</span>
-    <span class="inline-block mr-4">● Sectors progressively reveal as agents map them</span>
-    <span class="inline-block">● Confidence increases with repeated or multi-agent scans</span>
+    <span class="inline-flex items-center gap-1.5 mr-4"><span class="h-1.5 w-1.5 rounded-full bg-slate-500"></span> Terrain generated from simulated LiDAR/depth/sonar returns</span>
+    <span class="inline-flex items-center gap-1.5 mr-4"><span class="h-1.5 w-1.5 rounded-full bg-slate-500"></span> Sectors progressively reveal as agents map them</span>
+    <span class="inline-flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-slate-500"></span> Confidence increases with repeated or multi-agent scans</span>
   </p>
   
   <div id="tactical-map-container" class="relative bg-slate-900 rounded-lg overflow-hidden" style="aspect-ratio: 16/9">
@@ -171,8 +171,18 @@ const { useCase, title = "Tactical Map" } = Astro.props;
     
     <!-- Map Instructions -->
     <div class="absolute top-2 left-2 bg-slate-800 bg-opacity-90 rounded px-2 py-1 text-xs text-slate-300">
-      <span class="inline-block mr-2">🖱️ Drag to pan</span>
-      <span class="inline-block">🔍 Scroll to zoom</span>
+      <span class="inline-flex items-center gap-1.5 mr-3">
+        <svg class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-8 5h8m-7 5h6M5 4h14v16H5z" />
+        </svg>
+        Drag to pan
+      </span>
+      <span class="inline-flex items-center gap-1.5">
+        <svg class="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 6v10m-5-5h10m3 0a8 8 0 11-16 0 8 8 0 0116 0z" />
+        </svg>
+        Scroll to zoom
+      </span>
     </div>
     
     <!-- Legend -->
@@ -198,11 +208,15 @@ const { useCase, title = "Tactical Map" } = Astro.props;
         <div class="border-t border-slate-700 my-1"></div>
         <div class="text-slate-400 font-semibold text-[10px]">Detections</div>
         <div class="flex items-center gap-2">
-          <span class="text-red-500">🔥</span>
+          <svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 14.76V5a2 2 0 10-4 0v9.76a4 4 0 104 0z" />
+          </svg>
           <span>Thermal</span>
         </div>
         <div class="flex items-center gap-2">
-          <span class="text-purple-500">🔊</span>
+          <svg class="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5L6 9H3v6h3l5 4V5zM15.54 8.46a5 5 0 010 7.07M18.36 5.64a9 9 0 010 12.73" />
+          </svg>
           <span>Audio</span>
         </div>
       </div>

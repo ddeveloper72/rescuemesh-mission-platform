@@ -263,7 +263,7 @@ export default function MediaFeedsPanel({ mediaFeeds: initialMediaFeeds = [] }: 
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-white">{frame.agent_name}</span>
-                <span className="text-xs text-gray-500">•</span>
+                <span className="text-xs text-gray-500">/</span>
                 <span className="text-xs text-gray-400">{getSensorTypeLabel(frame.sensor_type)}</span>
               </div>
               <div className={`px-2 py-0.5 rounded text-xs font-semibold border ${getStatusBadgeColor(frame.status)}`}>

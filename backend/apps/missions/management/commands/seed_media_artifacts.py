@@ -35,7 +35,7 @@ class Command(BaseCommand):
             self.seed_industrial_inspection()
             self.seed_flooded_structure()
         
-        self.stdout.write(self.style.SUCCESS(f'✓ Successfully seeded {ScenarioMediaArtifact.objects.count()} media artifacts!'))
+        self.stdout.write(self.style.SUCCESS(f'Successfully seeded {ScenarioMediaArtifact.objects.count()} media artifacts'))
 
     def seed_collapsed_building(self):
         """Seed Collapsed Building media artifacts"""
@@ -240,7 +240,7 @@ class Command(BaseCommand):
             }
         )
         
-        self.stdout.write(self.style.SUCCESS('  ✓ Collapsed Building media (7 artifacts)'))
+        self.stdout.write(self.style.SUCCESS('  Collapsed Building media (7 artifacts)'))
 
     def seed_archaeology(self):
         """Seed Archaeological Exploration media artifacts"""
@@ -406,7 +406,7 @@ class Command(BaseCommand):
             sensor_type='environmental_sensor',
             file_path='/media/archaeology/env-sensor-dashboard.png',
             title='Environmental Sensor Dashboard',
-            description='Comprehensive environmental monitoring dashboard showing temperature, humidity, CO₂, O₂ levels in sealed chamber. Climate archive preservation data.',
+            description='Comprehensive environmental monitoring dashboard showing temperature, humidity, CO2, O2 levels in sealed chamber. Climate archive preservation data.',
             mission_time_seconds=360.0,
             linked_event_type='environmental_monitoring',
             confidence=0.95,
@@ -429,7 +429,7 @@ class Command(BaseCommand):
             }
         )
         
-        self.stdout.write(self.style.SUCCESS('  ✓ Archaeological Exploration media (6 artifacts)'))
+        self.stdout.write(self.style.SUCCESS('  Archaeological Exploration media (6 artifacts)'))
 
     def seed_cave_rescue(self):
         """Seed Cave Rescue media artifacts"""
@@ -803,7 +803,7 @@ class Command(BaseCommand):
             }
         )
         
-        self.stdout.write(self.style.SUCCESS('  ✓ Cave Rescue media (13 artifacts)'))
+        self.stdout.write(self.style.SUCCESS('  Cave Rescue media (13 artifacts)'))
 
     def seed_industrial_inspection(self):
         """Seed Industrial Inspection media artifacts"""
@@ -1010,7 +1010,7 @@ class Command(BaseCommand):
             }
         )
         
-        self.stdout.write(self.style.SUCCESS('  ✓ Industrial Inspection media (7 artifacts)'))
+        self.stdout.write(self.style.SUCCESS('  Industrial Inspection media (7 artifacts)'))
 
     def seed_flooded_structure(self):
         """Seed Flooded Structure media artifacts"""
@@ -1019,7 +1019,7 @@ class Command(BaseCommand):
         # RGB Surface Views
         ScenarioMediaArtifact.objects.create(
             slug='flooded-rgb-surface-entry',
-            use_case_slug='flooded-structure-inspection',
+            use_case_slug='flooded-structure',
             sector_id='surface-entry',
             agent_role='surface-scout',
             agent_id='amphibious-drone-1',
@@ -1047,7 +1047,7 @@ class Command(BaseCommand):
         
         ScenarioMediaArtifact.objects.create(
             slug='flooded-rgb-surface-debris',
-            use_case_slug='flooded-structure-inspection',
+            use_case_slug='flooded-structure',
             sector_id='surface-zone',
             agent_role='surface-scout',
             agent_id='amphibious-drone-1',
@@ -1075,7 +1075,7 @@ class Command(BaseCommand):
         
         ScenarioMediaArtifact.objects.create(
             slug='flooded-rgb-surface-dock',
-            use_case_slug='flooded-structure-inspection',
+            use_case_slug='flooded-structure',
             sector_id='surface-structure',
             agent_role='surface-scout',
             agent_id='amphibious-drone-1',
@@ -1104,7 +1104,7 @@ class Command(BaseCommand):
         # Underwater Murky Views
         ScenarioMediaArtifact.objects.create(
             slug='flooded-underwater-murky-corridor',
-            use_case_slug='flooded-structure-inspection',
+            use_case_slug='flooded-structure',
             sector_id='underwater-corridor-1',
             agent_role='underwater-inspector',
             agent_id='underwater-rov-1',
@@ -1132,7 +1132,7 @@ class Command(BaseCommand):
         
         ScenarioMediaArtifact.objects.create(
             slug='flooded-underwater-obstruction',
-            use_case_slug='flooded-structure-inspection',
+            use_case_slug='flooded-structure',
             sector_id='underwater-corridor-2',
             agent_role='underwater-inspector',
             agent_id='underwater-rov-1',
@@ -1160,7 +1160,7 @@ class Command(BaseCommand):
         
         ScenarioMediaArtifact.objects.create(
             slug='flooded-underwater-debris-field',
-            use_case_slug='flooded-structure-inspection',
+            use_case_slug='flooded-structure',
             sector_id='underwater-zone-3',
             agent_role='underwater-inspector',
             agent_id='underwater-rov-1',
@@ -1187,4 +1187,4 @@ class Command(BaseCommand):
             }
         )
         
-        self.stdout.write(self.style.SUCCESS('  ✓ Flooded Structure media (6 artifacts)'))
+        self.stdout.write(self.style.SUCCESS('  Flooded Structure media (6 artifacts)'))

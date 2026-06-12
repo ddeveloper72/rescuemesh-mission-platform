@@ -19,9 +19,15 @@ const initialClockDisplay = formatMissionTime(clock.elapsed_seconds);
     <h2 class="text-2xl font-bold">Simulation Controls</h2>
     <div id="sim-status" class="text-sm text-slate-400">
       {clock.is_running ? (
-        <span class="px-3 py-1 bg-green-900 text-green-300 rounded-full">● Running</span>
+        <span class="inline-flex items-center gap-2 px-3 py-1 bg-green-900 text-green-300 rounded-full">
+          <span class="h-2 w-2 rounded-full bg-green-300" aria-hidden="true"></span>
+          Running
+        </span>
       ) : (
-        <span class="px-3 py-1 bg-slate-700 text-slate-300 rounded-full">⏸ Paused</span>
+        <span class="inline-flex items-center gap-2 px-3 py-1 bg-slate-700 text-slate-300 rounded-full">
+          <span class="h-2 w-2 rounded-full bg-slate-400" aria-hidden="true"></span>
+          Paused
+        </span>
       )}
     </div>
   </div>
@@ -43,27 +49,36 @@ const initialClockDisplay = formatMissionTime(clock.elapsed_seconds);
     <button
       data-action="start"
       data-mission-pk={missionPk}
-      class="px-4 py-2 bg-green-700 hover:bg-green-600 text-white rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed sim-control-btn"
+      class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-600 text-white rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed sim-control-btn"
       disabled={clock.is_running}
     >
-      ▶ Start
+      <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 5v14l11-7z"></path>
+      </svg>
+      <span>Start</span>
     </button>
     
     <button
       data-action="pause"
       data-mission-pk={missionPk}
-      class="px-4 py-2 bg-yellow-700 hover:bg-yellow-600 text-white rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed sim-control-btn"
+      class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-yellow-700 hover:bg-yellow-600 text-white rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed sim-control-btn"
       disabled={!clock.is_running}
     >
-      ⏸ Pause
+      <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 5h4v14H7zM13 5h4v14h-4z"></path>
+      </svg>
+      <span>Pause</span>
     </button>
     
     <button
       data-action="reset"
       data-mission-pk={missionPk}
-      class="px-4 py-2 bg-red-700 hover:bg-red-600 text-white rounded font-semibold transition-colors sim-control-btn"
+      class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-red-700 hover:bg-red-600 text-white rounded font-semibold transition-colors sim-control-btn"
     >
-      ↻ Reset
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M5.64 18.36A9 9 0 0018.36 5.64M18.36 5.64H12M18.36 5.64V12" />
+      </svg>
+      <span>Reset</span>
     </button>
   </div>
 

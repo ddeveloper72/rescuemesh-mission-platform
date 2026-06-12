@@ -244,7 +244,7 @@
       "sector_id": "chamber-1",
       "requires_user_action": false,
       "event_data": {
-        "chamber_volume": "approx 800m³",
+        "chamber_volume": "approx 800m3",
         "depth": "-15m"
       }
     },
@@ -507,7 +507,7 @@
       "sector_id": "survivor-location",
       "requires_user_action": true,
       "event_data": {
-        "temperature": "36.8°C",
+        "temperature": "36.8 deg C",
         "signature_type": "human_body",
         "confidence": 0.89,
         "size_estimate": "human_sized",

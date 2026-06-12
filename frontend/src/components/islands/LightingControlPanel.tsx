@@ -31,12 +31,12 @@ interface LightingControlPanelProps {
 
 function getModeIcon(mode: string): string {
   switch (mode) {
-    case 'low_light_rgb': return '🌙';
-    case 'ir_assisted': return '🔦';
-    case 'thermal': return '🔥';
-    case 'visible_spotlight': return '💡';
-    case 'ir_only': return '👁️';
-    default: return '📷';
+    case 'low_light_rgb': return 'LOW';
+    case 'ir_assisted': return 'IR';
+    case 'thermal': return 'THERM';
+    case 'visible_spotlight': return 'SPOT';
+    case 'ir_only': return 'IR';
+    default: return 'CAM';
   }
 }
 
@@ -100,7 +100,7 @@ export default function LightingControlPanel({ lightingStates: initialStates, ag
     return (
       <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
         <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-          <span className="text-gray-500">📷</span>
+          <span className="text-gray-500 text-xs font-semibold tracking-wide">CAM</span>
           Lighting & Visual Mode
         </h3>
         <p className="text-gray-400 text-sm">
@@ -117,7 +117,7 @@ export default function LightingControlPanel({ lightingStates: initialStates, ag
   return (
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
       <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-        <span className="text-yellow-400">📷</span>
+        <span className="text-yellow-400 text-xs font-semibold tracking-wide">CAM</span>
         Lighting & Visual Mode
       </h3>
 
@@ -180,7 +180,7 @@ export default function LightingControlPanel({ lightingStates: initialStates, ag
               <p className={`text-sm font-semibold ${
                 currentState.light_active ? 'text-yellow-400' : 'text-gray-400'
               }`}>
-                {currentState.light_active ? '● ON' : '○ OFF'}
+                {currentState.light_active ? 'ON' : 'OFF'}
               </p>
               {currentState.light_active && currentState.light_intensity_percent > 0 && (
                 <p className="text-xs text-gray-400 mt-1">
@@ -196,7 +196,7 @@ export default function LightingControlPanel({ lightingStates: initialStates, ag
               </p>
               {currentState.battery_cost_percent_per_second > 0.05 && (
                 <p className="text-xs text-orange-400 mt-1">
-                  ⚠ High drain
+                  High drain
                 </p>
               )}
             </div>
@@ -287,7 +287,7 @@ export default function LightingControlPanel({ lightingStates: initialStates, ag
           {/* Safety Note */}
           <div className="mt-3 bg-blue-900 bg-opacity-20 border border-blue-700 rounded p-2">
             <p className="text-xs text-blue-200">
-              💡 Simulation only. Lighting controls would require authorized operator command in real deployment.
+              Simulation only. Lighting controls would require authorized operator command in real deployment.
             </p>
           </div>
         </>

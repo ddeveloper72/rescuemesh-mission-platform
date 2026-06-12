@@ -16,7 +16,7 @@ const { profile } = Astro.props;
       </svg>
     </div>
     <div class="flex-1">
-      <h2 class="text-xl font-bold mb-1">AI Analyst</h2>
+      <h2 class="text-2xl font-bold mb-1">AI Analyst</h2>
       <p class="text-sm text-slate-400">{profile.aiAnalyst.role}</p>
     </div>
     {profile.aiAnalyst.humanReviewRequired && (
@@ -63,6 +63,6 @@ const { profile } = Astro.props;
   )}
 
   <div class="mt-4 text-xs text-slate-500 italic">
-    Data source: Django simulation (AI analysis integrated in mission state)
+    Static mission profile - live AI analysis is available in simulation mode
   </div>
 </div>

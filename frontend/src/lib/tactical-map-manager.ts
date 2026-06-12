@@ -299,7 +299,7 @@ export function getCollapsedBuildingMapConfig(): MapConfig {
  * 
  * Per claude_prompt09.md: All agents must start from entrance-chamber.
  * No agent should spawn directly in Narrow Passage or Deep Squeeze.
- * Routes show progression: Entrance → Main Tunnel → Narrow Passage → Junction → Deep Squeeze
+ * Routes show progression: Entrance -> Main Tunnel -> Narrow Passage -> Junction -> Deep Squeeze
  */
 export function getCaveRescueMapConfig(): MapConfig {
   const sectors: TacticalSector[] = [
@@ -705,7 +705,7 @@ function calculateLabelOffset(
  * const overlap = calculateRectangleOverlap(
  *   { x: 0, y: 0, width: 100, height: 50 },
  *   { x: 50, y: 25, width: 100, height: 50 }
- * ); // Returns 1250 (50px × 25px overlap area)
+ * ); // Returns 1250 (50px x 25px overlap area)
  */
 function calculateRectangleOverlap(
   rect1: { x: number; y: number; width: number; height: number },
@@ -1010,7 +1010,7 @@ export function updateAgents(agents: Agent[], config: MapConfig, currentTime: nu
 
     // Get depth/elevation label if navigation data available
     const depthElevationLabel = (agent as any).navigation?.depth_elevation_label;
-    const hasDepthElevation = depthElevationLabel && depthElevationLabel !== '±0 m';
+    const hasDepthElevation = depthElevationLabel && depthElevationLabel !== '+/-0 m';
 
     elements.push(`
       <g id="agent-${agent.agent_id}" class="agent-marker cursor-pointer hover:opacity-80 transition-opacity" data-agent-id="${agent.agent_id}">
@@ -1261,7 +1261,7 @@ export function renderNetworkConnections(agents: Agent[], config: MapConfig) {
       x, y,
       nearest.x, nearest.y,
       signal,
-      `${agent.name} → ${nearest.agent.name} (Signal: ${signal}%)`
+      `${agent.name} to ${nearest.agent.name} (Signal: ${signal}%)`
     );
   });
 
@@ -1294,7 +1294,7 @@ export function renderNetworkConnections(agents: Agent[], config: MapConfig) {
       relay.x, relay.y,
       nearest.x, nearest.y,
       signal,
-      `Relay: ${relay.agent.name} → ${nearest.agent.name} (Signal: ${signal}%)`
+      `Relay: ${relay.agent.name} to ${nearest.agent.name} (Signal: ${signal}%)`
     );
   });
 
@@ -1380,15 +1380,12 @@ export function renderSensorDetections(
             stroke="#ef4444"
             stroke-width="2"
           />
-          <text 
-            x="${svgX}" 
-            y="${svgY + 22}" 
-            text-anchor="middle" 
-            class="text-xs pointer-events-none"
+          <path
+            d="M ${svgX - 4} ${svgY + 5} L ${svgX} ${svgY - 7} L ${svgX + 4} ${svgY + 5} Z"
             fill="#ef4444"
-            style="font-size: 16px; font-weight: bold;"
-          >🔥</text>
-          <title>Thermal: ${detection.temperature_delta}°C @ ${detection.detected_at} by ${detection.agent_name}</title>
+            class="pointer-events-none"
+          />
+          <title>Thermal: ${detection.temperature_delta} deg C @ ${detection.detected_at} by ${detection.agent_name}</title>
         </g>
       `);
     });
@@ -1426,14 +1423,11 @@ export function renderSensorDetections(
             stroke="#8b5cf6"
             stroke-width="2"
           />
-          <text 
-            x="${svgX}" 
-            y="${svgY + 22}" 
-            text-anchor="middle" 
-            class="text-xs pointer-events-none"
+          <path
+            d="M ${svgX - 6} ${svgY - 3} H ${svgX - 2} L ${svgX + 4} ${svgY - 8} V ${svgY + 8} L ${svgX - 2} ${svgY + 3} H ${svgX - 6} Z"
             fill="#8b5cf6"
-            style="font-size: 16px; font-weight: bold;"
-          >🔊</text>
+            class="pointer-events-none"
+          />
           <title>Audio: ${detection.type} @ ${detection.detected_at} by ${detection.agent_name} (Confidence: ${Math.round(detection.confidence * 100)}%)</title>
         </g>
       `);
@@ -1611,7 +1605,7 @@ export async function initializeTacticalMapWithDigitalTwin(useCase: string): Pro
   const result = await loadDigitalTwinMap(useCase);
   
   if (result.success && result.viewModel) {
-    console.log(`[TacticalMap] ✓ Digital Twin terrain loaded successfully`);
+    console.log(`[TacticalMap] Digital Twin terrain loaded successfully`);
     const config = convertViewModelToMapConfig(result.viewModel);
     lastConfig = config;
     renderSectors(config, 0);
@@ -1619,8 +1613,8 @@ export async function initializeTacticalMapWithDigitalTwin(useCase: string): Pro
     renderTerrainSourceBadge(config);
     return config;
   } else {
-    console.warn(`[TacticalMap] ⚠ Digital Twin load failed: ${result.error}`);
-    console.log(`[TacticalMap] → Falling back to local terrain layout`);
+    console.warn(`[TacticalMap] Digital Twin load failed: ${result.error}`);
+    console.log(`[TacticalMap] Falling back to local terrain layout`);
     return initializeTacticalMap(useCase);
   }
 }

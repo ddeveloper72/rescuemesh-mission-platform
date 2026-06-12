@@ -1,42 +1,48 @@
 #!/bin/bash
-# RescueMesh Database Initialization Script
-# Run this inside the backend container to seed the database
+# RescueMesh Database Reseed Script
+# Run inside the backend container.
 
 set -e
 
 echo "======================================="
-echo "RescueMesh Database Initialization"
+echo "RescueMesh Database Reseed"
 echo "======================================="
 echo ""
 
-# Run migrations
-echo "📦 Running migrations..."
+echo "Running migrations..."
 python manage.py migrate
 
-# Seed use case templates
-echo "📥 Seeding use case templates..."
-python manage.py seed_usecases
+echo "Re-seeding use case templates..."
+python manage.py seed_usecases --clear
 
-# Create demo missions
-echo "🎯 Creating demo missions..."
+echo "Creating or updating fixed demo missions..."
 python manage.py seed_demo_missions
 
-# Optional: Seed digital twin data
 if [ -d /data/processed ]; then
-  echo "🗺️  Seeding digital twin terrain data..."
-  python manage.py seed_digital_twins || echo "⚠️  Digital twin seeding skipped"
+  echo "Re-seeding digital twin terrain data..."
+  python manage.py seed_digital_twins --clear
+else
+  echo "Skipping digital twin terrain data: /data/processed not mounted"
 fi
 
-# Optional: Create superuser
+echo "Re-seeding mission scenarios..."
+python manage.py seed_mission_scenarios --all --overwrite
+
+echo "Re-seeding media artifacts..."
+python manage.py seed_media_artifacts --clear
+
+echo "Resetting simulations..."
+python manage.py reset_stale_simulations --reset-all
+
 if [ -n "$1" ] && [ "$1" = "--superuser" ]; then
   echo ""
-  echo "👤 Creating Django superuser..."
+  echo "Creating Django superuser..."
   python manage.py createsuperuser
 fi
 
 echo ""
 echo "======================================="
-echo "✅ Database initialization complete!"
+echo "Database reseed complete"
 echo "======================================="
 echo ""
 echo "Available missions:"

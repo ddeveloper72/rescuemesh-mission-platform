@@ -28,7 +28,7 @@ function getBatteryColor(percent: number): string {
 ---
 
 <div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
-  <h2 class="text-xl font-bold mb-4">Agent Status</h2>
+  <h2 class="text-2xl font-bold mb-4">Agent Status</h2>
   
   <div class="grid md:grid-cols-2 gap-4">
     {profile.agents.map(agent => {
@@ -106,6 +106,6 @@ function getBatteryColor(percent: number): string {
   </div>
 
   <div class="mt-4 text-xs text-slate-500 italic">
-    Data source: Django simulation API endpoint /api/v1/missions/[id]/state/
+    Static mission profile - live agent telemetry is available in simulation mode
   </div>
 </div>

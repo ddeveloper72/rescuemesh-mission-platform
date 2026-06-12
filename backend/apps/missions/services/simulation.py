@@ -131,7 +131,7 @@ def calculate_terrain_reconstruction(
     7. `blocked`: Detected obstruction in sector (overrides other statuses)
     
     **Confidence Scoring:**
-    - Confidence increases with each scan: 20% → 45% → 70% → 80% → 90% → 95%
+    - Confidence increases with each scan: 20% -> 45% -> 70% -> 80% -> 90% -> 95%
     - Hazard/blocked detection adds +5-10% confidence bonus
     - Multiple agents scanning same sector accelerates confidence growth
     
@@ -280,12 +280,12 @@ def calculate_mission_state(
     
     **Routing Logic:**
     Based on use_case_slug, routes to the appropriate scenario-specific simulation:
-    - 'collapsed-building-search' → simulate_collapsed_building()
-    - 'cave-rescue' → simulate_cave_rescue()
-    - 'flooded-structure' → simulate_flooded_structure()
-    - 'industrial-inspection' → simulate_industrial_inspection()
-    - 'archaeological-exploration' → simulate_archaeological_exploration()
-    - Other → create_empty_state() (fallback)
+    - 'collapsed-building-search' -> simulate_collapsed_building()
+    - 'cave-rescue' -> simulate_cave_rescue()
+    - 'flooded-structure' -> simulate_flooded_structure()
+    - 'industrial-inspection' -> simulate_industrial_inspection()
+    - 'archaeological-exploration' -> simulate_archaeological_exploration()
+    - Other -> create_empty_state() (fallback)
     
     **Each scenario simulator returns consistent structure:**
     ```json
@@ -396,7 +396,7 @@ def simulate_collapsed_building(
     - Drone C mission priority streaming before battery exhaustion (550 seconds)
     
     **Map Coverage:**
-    - Entrance → Ground Floor → Stairwell → Basement
+    - Entrance -> Ground Floor -> Stairwell -> Basement
     - 10+ sectors with progressive reveal based on agent exploration timing
     - Confidence increases with multiple agent scans of same sector
     
@@ -931,14 +931,14 @@ def simulate_collapsed_building_legacy(
         elapsed_seconds
     )
     
-    # Environmental sensors - O₂ and CO₂ for survivor detection
-    # O₂ sensor appears at 60s when thermal/audio drone activates
+    # Environmental sensors - O2 and CO2 for survivor detection
+    # O2 sensor appears at 60s when thermal/audio drone activates
     if elapsed_seconds >= 60:
         o2_value = max(19.8, 20.9 - (elapsed_seconds / 800))  # Slowly decreasing in confined space
         o2_status = 'normal' if o2_value >= 19.5 else 'watch' if o2_value >= 19.0 else 'warning'
         sensors['environmental_readings'].append({
             'sensor_type': 'oxygen',
-            'display_name': 'O₂',
+            'display_name': 'O2',
             'value': round(o2_value, 1),
             'unit': '%',
             'status': o2_status,
@@ -948,14 +948,14 @@ def simulate_collapsed_building_legacy(
             'timestamp': format_time(elapsed_seconds)
         })
     
-    # CO₂ sensor appears at 90s
+    # CO2 sensor appears at 90s
     if elapsed_seconds >= 90:
-        # Higher CO₂ suggests human presence or confined space buildup
+        # Higher CO2 suggests human presence or confined space buildup
         co2_value = min(1500, 420 + (elapsed_seconds * 1.8))
         co2_status = 'normal' if co2_value <= 800 else 'watch' if co2_value <= 1000 else 'warning' if co2_value <= 1200 else 'critical'
         sensors['environmental_readings'].append({
             'sensor_type': 'carbon_dioxide',
-            'display_name': 'CO₂',
+            'display_name': 'CO2',
             'value': int(co2_value),
             'unit': 'ppm',
             'status': co2_status,
@@ -1826,7 +1826,7 @@ def simulate_cave_rescue_legacy(
     environmental_readings.append({
         'sensor_type': 'temperature',
         'value': max(12, base_temp),
-        'unit': '°C',
+        'unit': 'degC',
         'location': sensor_loc,
         'timestamp': format_time(elapsed_seconds)
     })
@@ -2035,14 +2035,14 @@ def simulate_cave_rescue_legacy(
         elapsed_seconds
     )
     
-    # Environmental sensors - O₂ and CO₂ for cave atmosphere monitoring
-    # O₂ sensor appears at 90s when micro mapper activates
+    # Environmental sensors - O2 and CO2 for cave atmosphere monitoring
+    # O2 sensor appears at 90s when micro mapper activates
     if elapsed_seconds >= 90:
         o2_value = max(19.5, 20.9 - (elapsed_seconds / 1200))  # Slowly decreasing in cave
         o2_status = 'normal' if o2_value >= 19.5 else 'watch' if o2_value >= 19.0 else 'warning'
         environmental_readings.append({
             'sensor_type': 'oxygen',
-            'display_name': 'O₂',
+            'display_name': 'O2',
             'value': round(o2_value, 1),
             'unit': '%',
             'status': o2_status,
@@ -2052,14 +2052,14 @@ def simulate_cave_rescue_legacy(
             'timestamp': format_time(elapsed_seconds)
         })
     
-    # CO₂ sensor appears at 120s
+    # CO2 sensor appears at 120s
     if elapsed_seconds >= 120:
-        # Cave CO₂ can build up but typically lower than collapsed building
+        # Cave CO2 can build up but typically lower than collapsed building
         co2_value = min(1200, 380 + (elapsed_seconds * 1.2))
         co2_status = 'normal' if co2_value <= 800 else 'watch' if co2_value <= 1000 else 'warning'
         environmental_readings.append({
             'sensor_type': 'carbon_dioxide',
-            'display_name': 'CO₂',
+            'display_name': 'CO2',
             'value': int(co2_value),
             'unit': 'ppm',
             'status': co2_status,
@@ -2317,7 +2317,7 @@ def simulate_flooded_structure(
             'mission': {
                 'mission_id': mission_id,
                 'name': mission_name,
-                'use_case': 'flooded-structure-inspection',
+                'use_case': 'flooded-structure',
                 'status': status
             },
             'simulation_clock': {
@@ -2542,7 +2542,7 @@ def simulate_flooded_structure_legacy(
     environmental_readings.append({
         'sensor_type': 'water_temperature',
         'value': round(water_temp, 1),
-        'unit': '°C',
+        'unit': 'degC',
         'location': amp_loc,
         'timestamp': format_time(elapsed_seconds)
     })
@@ -3201,7 +3201,7 @@ def simulate_industrial_inspection_legacy(
         
         environmental_readings.append({
             'sensor_type': 'oxygen',
-            'display_name': 'Oxygen (O₂)',
+            'display_name': 'Oxygen (O2)',
             'value': round(o2_value, 1),
             'unit': '%',
             'status': o2_status,
@@ -3223,7 +3223,7 @@ def simulate_industrial_inspection_legacy(
         
         environmental_readings.append({
             'sensor_type': 'carbon_dioxide',
-            'display_name': 'Carbon Dioxide (CO₂)',
+            'display_name': 'Carbon Dioxide (CO2)',
             'value': int(co2_value),
             'unit': 'ppm',
             'status': co2_status,
@@ -3241,7 +3241,7 @@ def simulate_industrial_inspection_legacy(
         
         environmental_readings.append({
             'sensor_type': 'hydrogen',
-            'display_name': 'Hydrogen (H₂)',
+            'display_name': 'Hydrogen (H2)',
             'value': int(h2_value),
             'unit': 'ppm',
             'status': h2_status,
@@ -3259,7 +3259,7 @@ def simulate_industrial_inspection_legacy(
         
         environmental_readings.append({
             'sensor_type': 'methane',
-            'display_name': 'Methane (CH₄)',
+            'display_name': 'Methane (CH4)',
             'value': int(ch4_value),
             'unit': 'ppm',
             'status': ch4_status,
@@ -3276,7 +3276,7 @@ def simulate_industrial_inspection_legacy(
             'sensor_type': 'temperature',
             'display_name': 'Temperature',
             'value': 28.5 + (elapsed_seconds / 60),
-            'unit': '°C',
+            'unit': 'degC',
             'status': 'normal' if elapsed_seconds < 300 else 'watch',
             'location_label': drone_a_loc,
             'confidence': 95,
@@ -3396,7 +3396,7 @@ def simulate_industrial_inspection_legacy(
             'type': 'defect-detected',
             'time': format_time(150),
             'title': 'Thermal hotspot: Pipe Joint A3',
-            'description': 'Elevated temperature (+22.5°C) detected, possible leak or friction',
+            'description': 'Elevated temperature (+22.5degC) detected, possible leak or friction',
             'agent': 'inspection-drone-a',
             'severity': 'moderate'
         })
@@ -3465,7 +3465,7 @@ def simulate_industrial_inspection_legacy(
             'type': 'defect-detected',
             'time': format_time(450),
             'title': 'Critical thermal hotspot: Control Cabinet C2',
-            'description': 'Abnormal heat (+38.2°C) in electrical cabinet, immediate review required',
+            'description': 'Abnormal heat (+38.2degC) in electrical cabinet, immediate review required',
             'agent': 'thermal-drone-b',
             'severity': 'critical'
         })
@@ -3479,7 +3479,7 @@ def simulate_industrial_inspection_legacy(
     elif elapsed_seconds < 300:
         ai_summary = 'Multiple defects detected: thermal hotspot at Pipe Joint A3, methane elevation, abnormal vibration. Pipe Gallery requires attention.'
         priority_findings = [
-            'Thermal hotspot: Pipe Joint A3 (+22.5°C)',
+            'Thermal hotspot: Pipe Joint A3 (+22.5degC)',
             'Methane detected in Pipe Gallery (120 ppm)',
             'Abnormal vibration signature'
         ]
@@ -3496,13 +3496,13 @@ def simulate_industrial_inspection_legacy(
         human_review = True
         ai_confidence = 0.74
     else:
-        ai_summary = 'Critical thermal hotspot detected in Control Cabinet C2 (+38.2°C). Immediate human review required. Multiple defects ranked by severity.'
+        ai_summary = 'Critical thermal hotspot detected in Control Cabinet C2 (+38.2degC). Immediate human review required. Multiple defects ranked by severity.'
         priority_findings = [
-            '🔴 CRITICAL: Control Cabinet C2 thermal hotspot (+38.2°C)',
-            '🟠 HIGH: Pressure leak in Duct Section',
-            '🟡 MODERATE: Pipe Joint A3 thermal anomaly (+22.5°C)',
-            '🟡 MODERATE: Methane elevation in Pipe Gallery',
-            '🟡 MODERATE: Abnormal vibration in Pipe Gallery'
+            'CRITICAL: CRITICAL: Control Cabinet C2 thermal hotspot (+38.2degC)',
+            'HIGH: HIGH: Pressure leak in Duct Section',
+            'MODERATE: MODERATE: Pipe Joint A3 thermal anomaly (+22.5degC)',
+            'MODERATE: MODERATE: Methane elevation in Pipe Gallery',
+            'MODERATE: MODERATE: Abnormal vibration in Pipe Gallery'
         ]
         human_review = True
         ai_confidence = 0.81
@@ -3611,13 +3611,13 @@ def simulate_industrial_inspection_legacy(
             # Pipe Joint A3 thermal anomaly detected at 165s
             if elapsed_seconds >= 165 and elapsed_seconds < 480:
                 frame_status = 'ai_flagged'
-                annotations = ['thermal anomaly', 'Pipe Joint A3', '+22.5°C above baseline']
+                annotations = ['thermal anomaly', 'Pipe Joint A3', '+22.5degC above baseline']
                 description = 'Thermal anomaly detected at Pipe Joint A3. Elevated temperature.'
                 conf = 79
             # Control Cabinet C2 critical hotspot at 480s
             elif elapsed_seconds >= 480:
                 frame_status = 'human_review_required'
-                annotations = ['CRITICAL thermal hotspot', 'Control Cabinet C2', '+38.2°C', 'immediate review']
+                annotations = ['CRITICAL thermal hotspot', 'Control Cabinet C2', '+38.2degC', 'immediate review']
                 description = 'CRITICAL: Severe thermal hotspot in Control Cabinet C2. Immediate action required.'
                 conf = 81
             else:
@@ -4131,7 +4131,7 @@ def simulate_archaeological_exploration_legacy(
         environmental_readings.append({
             'sensor_type': 'temperature',
             'value': round(14.2 + (elapsed_seconds / 500), 1),
-            'unit': '°C',
+            'unit': 'degC',
             'location': 'Entry Chamber',
             'status': 'normal'
         })

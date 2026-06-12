@@ -112,7 +112,7 @@
     {
       "trigger_at_seconds": 30,
       "event_type": "sensor_reading",
-      "title": "Oxygen (O₂)",
+      "title": "Oxygen (O2)",
       "description": "Normal oxygen concentration detected",
       "severity": "info",
       "agent_id": "drone-a",
@@ -120,7 +120,7 @@
       "requires_user_action": false,
       "event_data": {
         "sensor_type": "oxygen",
-        "display_name": "Oxygen (O₂)",
+        "display_name": "Oxygen (O2)",
         "value": 20.9,
         "unit": "%",
         "status": "normal",
@@ -130,7 +130,7 @@
     {
       "trigger_at_seconds": 60,
       "event_type": "sensor_reading",
-      "title": "Carbon Dioxide (CO₂)",
+      "title": "Carbon Dioxide (CO2)",
       "description": "CO2 levels within normal range",
       "severity": "info",
       "agent_id": "drone-a",
@@ -138,7 +138,7 @@
       "requires_user_action": false,
       "event_data": {
         "sensor_type": "carbon_dioxide",
-        "display_name": "Carbon Dioxide (CO₂)",
+        "display_name": "Carbon Dioxide (CO2)",
         "value": 520,
         "unit": "ppm",
         "status": "normal",
@@ -163,7 +163,7 @@
       "trigger_at_seconds": 150,
       "event_type": "detection",
       "title": "Elevated Temperature Detected",
-      "description": "Thermal signature in equipment room. Pump bearing temperature: 85°C.",
+      "description": "Thermal signature in equipment room. Pump bearing temperature: 85 deg C.",
       "severity": "warning",
       "agent_id": "drone-a",
       "sector_id": "equipment-room-a",
@@ -189,7 +189,7 @@
     {
       "trigger_at_seconds": 180,
       "event_type": "sensor_reading",
-      "title": "Methane (CH₄)",
+      "title": "Methane (CH4)",
       "description": "Low methane concentration detected",
       "severity": "info",
       "agent_id": "gas-sensor",
@@ -197,7 +197,7 @@
       "requires_user_action": false,
       "event_data": {
         "sensor_type": "methane",
-        "display_name": "Methane (CH₄)",
+        "display_name": "Methane (CH4)",
         "value": 85,
         "unit": "ppm",
         "status": "normal",
@@ -220,7 +220,7 @@
     {
       "trigger_at_seconds": 240,
       "event_type": "sensor_reading",
-      "title": "Hydrogen (H₂)",
+      "title": "Hydrogen (H2)",
       "description": "Trace hydrogen detected",
       "severity": "info",
       "agent_id": "gas-sensor",
@@ -228,7 +228,7 @@
       "requires_user_action": false,
       "event_data": {
         "sensor_type": "hydrogen",
-        "display_name": "Hydrogen (H₂)",
+        "display_name": "Hydrogen (H2)",
         "value": 45,
         "unit": "ppm",
         "status": "normal",

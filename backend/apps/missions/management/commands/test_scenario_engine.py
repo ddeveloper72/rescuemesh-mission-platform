@@ -46,7 +46,7 @@ class Command(BaseCommand):
             )
             
             # Display results
-            self.stdout.write(self.style.SUCCESS(f'✓ Scenario loaded successfully'))
+            self.stdout.write(self.style.SUCCESS('Scenario loaded successfully'))
             
             self.stdout.write(f'\nMission:')
             self.stdout.write(f'  - ID: {state["mission"]["mission_id"]}')
@@ -78,9 +78,9 @@ class Command(BaseCommand):
             
             self.stdout.write(f'\nMap Coverage: {state["map"]["coverage_percent"]:.1f}%')
             
-            self.stdout.write(self.style.SUCCESS(f'\n✓ Test completed successfully'))
+            self.stdout.write(self.style.SUCCESS('\nTest completed successfully'))
             
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'\n✗ Test failed: {e}'))
+            self.stdout.write(self.style.ERROR(f'\nTest failed: {e}'))
             import traceback
             traceback.print_exc()

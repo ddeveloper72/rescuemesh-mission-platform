@@ -178,6 +178,20 @@ export async function fetchWithFallback<T>(
 }
 
 /**
+ * Fetch with fallback while preserving which source was used.
+ */
+export async function fetchWithFallbackSource<T>(
+  url: string,
+  fallbackData: T
+): Promise<{ data: T; source: 'django' | 'fallback' }> {
+  const result = await fetchAPI<T>(url);
+  if (result.success && result.data) {
+    return { data: result.data, source: 'django' };
+  }
+  return { data: fallbackData, source: 'fallback' };
+}
+
+/**
  * Django API response types
  */
 export interface PaginatedResponse<T> {

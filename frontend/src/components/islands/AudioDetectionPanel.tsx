@@ -35,12 +35,12 @@ interface AudioDetectionPanelProps {
 
 function getTypeIcon(type: string): string {
   switch (type) {
-    case 'voice_like': return '🗣️';
-    case 'tapping': return '👆';
-    case 'knock': return '🚪';
-    case 'ambient': return '🌊';
-    case 'mechanical': return '⚙️';
-    default: return '🔊';
+    case 'voice_like': return 'VOICE';
+    case 'tapping': return 'TAP';
+    case 'knock': return 'KNOCK';
+    case 'ambient': return 'AMB';
+    case 'mechanical': return 'MECH';
+    default: return 'AUDIO';
   }
 }
 
@@ -144,7 +144,7 @@ export default function AudioDetectionPanel({ audioDetections: initialDetections
     return (
       <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
         <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-          <span className="text-gray-500">🔊</span>
+          <span className="text-gray-500 text-xs font-semibold tracking-wide">AUDIO</span>
           Audio Detections
         </h3>
         <p className="text-gray-400 text-sm">
@@ -166,7 +166,7 @@ export default function AudioDetectionPanel({ audioDetections: initialDetections
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <span>🔊</span>
+          <span className="text-xs font-semibold tracking-wide">AUDIO</span>
           Audio Detections
           <span className="text-sm text-gray-400">({audioDetections.length})</span>
         </h3>
@@ -240,15 +240,15 @@ export default function AudioDetectionPanel({ audioDetections: initialDetections
                     <span className={`font-medium ${getTypeColor(detection.type)}`}>
                       {getTypeName(detection.type)}
                     </span>
-                    <span className="text-xs text-gray-500">•</span>
+                    <span className="text-xs text-gray-500">/</span>
                     <span className="text-xs text-gray-400">{detection.detected_at}</span>
                   </div>
                   <div className="text-xs text-gray-400 mb-1">
-                    {detection.agent_name} • {detection.location}
+                    {detection.agent_name} / {detection.location}
                   </div>
                   {detection.human_review_required && (
                     <div className="text-xs text-orange-400 font-medium">
-                      ⚠ Human Review Required
+                      Human Review Required
                     </div>
                   )}
                 </div>
@@ -270,7 +270,7 @@ export default function AudioDetectionPanel({ audioDetections: initialDetections
                       : 'bg-blue-600 hover:bg-blue-500 text-white'
                   }`}
                 >
-                  {isPlaying === detection.id ? '▶ Playing...' : '▶ Play'}
+                  {isPlaying === detection.id ? 'Playing...' : 'Play'}
                 </button>
               </div>
             </div>
@@ -336,21 +336,21 @@ export default function AudioDetectionPanel({ audioDetections: initialDetections
                     : 'bg-blue-600 hover:bg-blue-500 text-white'
                 }`}
               >
-                {isPlaying === selectedDetection.id ? '▶ Playing...' : '▶ Play Audio'}
+                {isPlaying === selectedDetection.id ? 'Playing...' : 'Play Audio'}
               </button>
               
               <button
                 className="px-3 py-2 rounded bg-gray-700 hover:bg-gray-600 text-white"
                 title="Download audio file (simulated)"
               >
-                💾
+                Save
               </button>
               
               <button
                 className="px-3 py-2 rounded bg-gray-700 hover:bg-gray-600 text-white"
                 title="Export waveform"
               >
-                📊
+                Inspect
               </button>
             </div>
 
@@ -375,17 +375,17 @@ export default function AudioDetectionPanel({ audioDetections: initialDetections
           {selectedDetection.human_review_required && (
             <div className="flex gap-2">
               <button className="flex-1 py-2 rounded bg-green-600 hover:bg-green-500 text-white font-medium">
-                ✓ Confirm Detection
+                Confirm Detection
               </button>
               <button className="flex-1 py-2 rounded bg-gray-600 hover:bg-gray-500 text-white font-medium">
-                ✗ Mark False Positive
+                Mark False Positive
               </button>
             </div>
           )}
 
           {/* Simulation Notice */}
           <div className="text-xs text-gray-500 italic border-t border-gray-700 pt-2">
-            ⚠ Audio playback is simulated. In a real deployment, actual audio files would be streamed or downloaded from the agent.
+            Audio playback is simulated. In a real deployment, actual audio files would be streamed or downloaded from the agent.
           </div>
         </div>
       )}

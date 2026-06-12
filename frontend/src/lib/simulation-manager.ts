@@ -569,7 +569,7 @@ export class SimulationManager {
     
     const statusEl = getElementByIdSafe(SELECTORS.STATUS);
     if (statusEl) {
-      statusEl.textContent = clock.is_running ? '● Running' : '⏸ Paused';
+      statusEl.textContent = clock.is_running ? 'Running' : 'Paused';
       statusEl.className = clock.is_running
         ? 'px-3 py-1 bg-green-900 text-green-300 rounded-full'
         : 'px-3 py-1 bg-slate-700 text-slate-300 rounded-full';
@@ -658,7 +658,7 @@ export class SimulationManager {
 
   /**
    * Update network health indicator based on mesh health and packet loss metrics.
-   * Displays visual status (icon, label, background color) reflecting network quality.
+   * Displays visual status (indicator, label, background color) reflecting network quality.
    * @param meshHealth - Mesh network health percentage (0-100)
    * @param packetLoss - Packet loss percentage (0-100)
    * @private
@@ -671,9 +671,10 @@ export class SimulationManager {
     if (!indicatorEl || !iconEl || !labelEl) return;
 
     const healthStatus = this.determineNetworkHealthStatus(meshHealth, packetLoss);
-    const { icon, label, bgClass } = this.getNetworkHealthDisplayProps(healthStatus);
+    const { indicatorClass, label, bgClass } = this.getNetworkHealthDisplayProps(healthStatus);
 
-    iconEl.textContent = icon;
+    iconEl.className = `inline-block h-3 w-3 rounded-full ${indicatorClass}`;
+    iconEl.setAttribute('aria-hidden', 'true');
     labelEl.textContent = label;
     indicatorEl.className = `mb-4 p-3 rounded-lg ${bgClass}`;
   }
@@ -695,23 +696,23 @@ export class SimulationManager {
   }
 
   /**
-   * Get display properties (icon, label, CSS class) for network health status.
+   * Get display properties (indicator, label, CSS class) for network health status.
    * @private
    */
-  private getNetworkHealthDisplayProps(status: NetworkHealthStatus): { icon: string; label: string; bgClass: string } {
+  private getNetworkHealthDisplayProps(status: NetworkHealthStatus): { indicatorClass: string; label: string; bgClass: string } {
     const displayProps = {
       'healthy': {
-        icon: '🟢',
+        indicatorClass: 'bg-green-400',
         label: 'Network Healthy',
         bgClass: 'bg-green-900/30',
       },
       'degraded': {
-        icon: '🟡',
+        indicatorClass: 'bg-amber-400',
         label: 'Network Degraded',
         bgClass: 'bg-amber-900/30',
       },
       'critical': {
-        icon: '🔴',
+        indicatorClass: 'bg-red-400',
         label: 'Network Critical',
         bgClass: 'bg-red-900/30',
       },
@@ -741,11 +742,11 @@ export class SimulationManager {
       
       return `
         <div class="flex items-center gap-2">
-          <span class="text-slate-400">→</span>
+          <span class="text-slate-400">to</span>
           <span class="text-slate-100">${agentName}</span>
           ${isBaseRelay ? '<span class="text-xs text-slate-500">(Base)</span>' : ''}
         </div>
-        ${!isLast ? '<div class="text-slate-600 ml-3">↓</div>' : ''}
+        ${!isLast ? '<div class="text-slate-600 ml-3 border-l border-slate-600 h-3"></div>' : ''}
       `;
     }).join('');
 

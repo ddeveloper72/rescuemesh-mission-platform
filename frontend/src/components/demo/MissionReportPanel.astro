@@ -22,12 +22,10 @@ const reviewRequired = profile.expectedOutputs.filter(o => o.confidenceRequired)
 <div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
   <div class="flex items-start justify-between mb-4">
     <div>
-      <h2 class="text-xl font-bold mb-1">Mission Report</h2>
-      <p class="text-sm text-slate-400">Automated summary and recommendations</p>
+      <h2 class="text-2xl font-bold mb-1">Mission Report</h2>
+      <p class="text-sm text-slate-400">Profile summary and expected review points</p>
     </div>
-    <button class="px-4 py-2 bg-rescue-500 hover:bg-rescue-600 text-white rounded text-sm font-semibold transition-colors">
-      Export Report
-    </button>
+    <span class="px-3 py-1 rounded bg-slate-900 border border-slate-700 text-xs text-slate-300">Static</span>
   </div>
 
   <div class="grid md:grid-cols-2 gap-4 mb-6">
@@ -134,6 +132,6 @@ const reviewRequired = profile.expectedOutputs.filter(o => o.confidenceRequired)
   </div>
 
   <div class="text-xs text-slate-500 italic">
-    Note: Mission reports will be generated after completing a live simulation
+    Static mission profile - exportable reports belong to completed live simulations
   </div>
 </div>

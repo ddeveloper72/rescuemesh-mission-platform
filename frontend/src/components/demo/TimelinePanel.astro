@@ -20,7 +20,7 @@ const eventTypeConfig = {
 ---
 
 <div class="bg-slate-800 border border-slate-700 rounded-lg p-6">
-  <h2 class="text-xl font-bold mb-4">Mission Timeline</h2>
+  <h2 class="text-2xl font-bold mb-4">Mission Events</h2>
   
   <div class="relative">
     <!-- Timeline line -->
@@ -29,7 +29,7 @@ const eventTypeConfig = {
     <!-- Timeline events -->
     <div class="space-y-4">
       {profile.timeline.map((event, index) => {
-        const config = eventTypeConfig[event.type || 'mission-start'];
+        const config = eventTypeConfig[event.eventType || 'mission-start'];
         
         return (
           <div class="relative pl-14">
@@ -67,6 +67,6 @@ const eventTypeConfig = {
   </div>
 
   <div class="mt-4 text-xs text-slate-500 italic">
-    Data source: Django simulation (events included in mission state)
+    Static mission profile - live mission events are available in simulation mode
   </div>
 </div>

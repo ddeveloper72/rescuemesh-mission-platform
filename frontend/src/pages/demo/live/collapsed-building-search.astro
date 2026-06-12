@@ -29,11 +29,11 @@
  * 
  * **Mission Flow:**
  * 
- * 1. Page loads → Initial state fetch (status: 'not_started', elapsed: 0)
- * 2. User clicks "Start Simulation" → POST /start-sim/
- * 3. Polling loop begins → GET /state/ every 2 seconds
+ * 1. Page loads -> Initial state fetch (status: 'not_started', elapsed: 0)
+ * 2. User clicks "Start Simulation" -> POST /start-sim/
+ * 3. Polling loop begins -> GET /state/ every 2 seconds
  * 4. Each state update triggers all render functions
- * 5. Mission progresses: agents move → map reveals → detections appear → events accumulate
+ * 5. Mission progresses: agents move -> map reveals -> detections appear -> events accumulate
  * 6. User can pause/resume/reset or adjust speed multiplier
  * 
  * **Scenario: Collapsed Building Search**
@@ -48,9 +48,9 @@
  * - 120s: Drone B (relay) enters, begins exploring
  * - 180s: Stairwell discovered, descent begins
  * - 240s: Basement corridor entered
- * - 320s: **Thermal anomaly detected** (🔥 potential survivor)
- * - 350s: **Audio event detected** (🔊 possible voice-like signal)
- * - 420s: Drone B battery critical → lands and becomes relay node
+ * - 320s: **Thermal anomaly detected** (potential survivor)
+ * - 350s: **Audio event detected** (possible voice-like signal)
+ * - 420s: Drone B battery critical -> lands and becomes relay node
  * - 480s: Drone C (thermal specialist) enters
  * - 550s: Drone C enters priority streaming mode (one-way mission critical data)
  * - 600s+: Mission continues with network routing around landed Drone B
@@ -131,14 +131,14 @@ const initialClock = {
       <!-- Header -->
       <div class="mb-8">
         <a href="/demo" class="text-rescue-400 hover:text-rescue-300 text-sm mb-4 inline-block">
-          ← Back to Demo Overview
+          Back to Demo Overview
         </a>
         <div class="flex items-start justify-between flex-wrap gap-4">
           <div>
             <h1 class="text-4xl font-bold mb-2">Live Simulation: {TITLE}</h1>
             <p class="text-slate-400">GPS-denied collapsed building search and rescue</p>
             <a href="/demo/collapsed-building-search" class="text-xs text-slate-500 hover:text-slate-400 mt-1 inline-block">
-              View static profile →
+              View static profile
             </a>
           </div>
           <DataSourceBadge source="django" />
@@ -185,7 +185,7 @@ const initialClock = {
 
       <!-- Route Profile -->
       <div id="route-profile-container" class="mb-8">
-        <RouteProfile containerId="route-profile" title="Route Profile — Vertical View" />
+        <RouteProfile containerId="route-profile" title="Route Profile - Vertical View" />
       </div>
 
       <!-- Dashboard Grid -->
@@ -205,7 +205,7 @@ const initialClock = {
           <!-- Network Health Indicator -->
           <div class="mb-4 p-3 rounded-lg" id="network-health-indicator">
             <div class="flex items-center gap-2">
-              <span class="text-2xl" id="network-health-icon">🟢</span>
+              <span class="inline-block h-3 w-3 rounded-full bg-green-400" id="network-health-icon" aria-hidden="true"></span>
               <span class="font-semibold" id="network-health-label">Healthy</span>
             </div>
           </div>
@@ -301,11 +301,11 @@ const initialClock = {
           <p class="text-xs text-slate-400 mb-4">Confined space atmosphere monitoring for survivor detection</p>
           <div class="space-y-3">
             <div class="flex justify-between items-center">
-              <span class="text-slate-400">Oxygen (O₂):</span>
+              <span class="text-slate-400">Oxygen (O2):</span>
               <span id="o2-reading" class="font-semibold text-slate-500 text-sm italic">No sensor deployed</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-slate-400">Carbon Dioxide (CO₂):</span>
+              <span class="text-slate-400">Carbon Dioxide (CO2):</span>
               <span id="co2-reading" class="font-semibold text-slate-500 text-sm italic">No sensor deployed</span>
             </div>
           </div>
@@ -331,17 +331,29 @@ const initialClock = {
       <div class="mt-6">
         <h2 class="text-2xl font-bold mb-4">Capability Packs</h2>
         <div class="flex flex-wrap gap-2 mb-4" id="capability-pack-tabs">
-          <button data-pack="lighting" class="capability-pack-tab px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors">
-            🔦 Lighting
+          <button data-pack="lighting" class="capability-pack-tab inline-flex items-center gap-2 px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors">
+            <svg class="h-4 w-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />
+            </svg>
+            Lighting
           </button>
-          <button data-pack="seismic" class="capability-pack-tab px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors">
-            📊 Seismic
+          <button data-pack="seismic" class="capability-pack-tab inline-flex items-center gap-2 px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors">
+            <svg class="h-4 w-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 19V5m4 14v-7m4 7V8m4 11v-4m4 4V3" />
+            </svg>
+            Seismic
           </button>
-          <button data-pack="hydrophone" class="capability-pack-tab px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors opacity-40 cursor-not-allowed" disabled title="No hydrophone capability deployed">
-            🌊 Hydrophone
+          <button data-pack="hydrophone" class="capability-pack-tab inline-flex items-center gap-2 px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors opacity-40 cursor-not-allowed" disabled title="No hydrophone capability deployed">
+            <svg class="h-4 w-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0M4 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0" />
+            </svg>
+            Hydrophone
           </button>
-          <button data-pack="talkback" class="capability-pack-tab px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors">
-            📢 Talkback
+          <button data-pack="talkback" class="capability-pack-tab inline-flex items-center gap-2 px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 transition-colors">
+            <svg class="h-4 w-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5L6 9H3v6h3l5 4V5zM15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13" />
+            </svg>
+            Talkback
           </button>
         </div>
         

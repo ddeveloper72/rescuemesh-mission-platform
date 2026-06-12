@@ -196,11 +196,11 @@ export default function AudioDetectionsPanel({ missionId, audioDetections = [] }
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-white">{detection.agent_name}</span>
-                    <span className="text-xs text-gray-500">•</span>
+                    <span className="text-xs text-gray-500">/</span>
                     <span className="text-xs text-gray-400">{getAudioTypeLabel(detection.audio_type)}</span>
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5">
-                    {detection.location_label} • {detection.mission_time}
+                    {detection.location_label} / {detection.mission_time}
                   </div>
                 </div>
               </div>

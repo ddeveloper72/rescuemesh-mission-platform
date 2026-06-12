@@ -56,7 +56,7 @@ class Command(BaseCommand):
             
             self.stdout.write(
                 self.style.SUCCESS(
-                    f'✓ Created mission: {mission.mission_id} (PK: {mission.pk})'
+                    f'Created mission: {mission.mission_id} (PK: {mission.pk})'
                 )
             )
             self.stdout.write(

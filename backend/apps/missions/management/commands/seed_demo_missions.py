@@ -31,7 +31,7 @@ class Command(BaseCommand):
                 'id': '5f8c2a1b-3e7d-4a9c-8b6f-1e4d7a2c9b5e',
                 'name': 'Flooded Structure - Demo',
                 'mission_id': 'demo-flooded-structure-001',
-                'use_case_type': 'flooded-structure-inspection',
+                'use_case_type': 'flooded-structure',
                 'objective': 'Live demo mission for flooded structure inspection scenario',
             },
             {
@@ -65,8 +65,8 @@ class Command(BaseCommand):
             )
             
             if created:
-                self.stdout.write(self.style.SUCCESS(f'✓ Created mission: {mission.name} ({mission.id})'))
+                self.stdout.write(self.style.SUCCESS(f'Created mission: {mission.name} ({mission.id})'))
             else:
-                self.stdout.write(self.style.SUCCESS(f'✓ Updated mission: {mission.name} ({mission.id})'))
+                self.stdout.write(self.style.SUCCESS(f'Updated mission: {mission.name} ({mission.id})'))
 
-        self.stdout.write(self.style.SUCCESS(f'\n✓ {len(demo_missions)} demo missions ready'))
+        self.stdout.write(self.style.SUCCESS(f'\n{len(demo_missions)} demo missions ready'))

@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { API_ENDPOINTS, fetchAPI } from '../../lib/api';
 import type { UseCaseDemoProfile } from '../../types/demo';
 import type { PaginatedResponse, UseCaseListItem } from '../../lib/api';
+import { getDemoProfileFallback } from '../../data/demo-profile-fallbacks';
 
 // Fetch all demo profiles from the API
 let useCaseDemoProfiles: UseCaseDemoProfile[] = [];
@@ -24,6 +25,14 @@ if (useCasesResult.success && useCasesResult.data) {
   useCaseDemoProfiles = profileResults
     .filter(result => result.success && result.data)
     .map(result => result.data!);
+}
+
+const archaeologicalProfile = getDemoProfileFallback('archaeological-exploration');
+if (
+  archaeologicalProfile &&
+  !useCaseDemoProfiles.some(profile => profile.slug === archaeologicalProfile.slug)
+) {
+  useCaseDemoProfiles.push(archaeologicalProfile);
 }
 ---
 

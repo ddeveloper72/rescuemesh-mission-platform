@@ -99,7 +99,7 @@ export default function TalkbackPanel({ talkbackData: initialData }: TalkbackPan
     return (
       <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
         <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-          <span className="text-yellow-500">⚠</span>
+          <span className="text-yellow-500 text-xs font-semibold tracking-wide">WARN</span>
           Talkback Communication Unavailable
         </h3>
         <p className="text-gray-400 text-sm">
@@ -133,7 +133,7 @@ export default function TalkbackPanel({ talkbackData: initialData }: TalkbackPan
   return (
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
       <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-        <span className="text-blue-400">📢</span>
+        <span className="text-blue-400 text-xs font-semibold tracking-wide">COMMS</span>
         Talkback Communication
       </h3>
 
@@ -149,7 +149,7 @@ export default function TalkbackPanel({ talkbackData: initialData }: TalkbackPan
         >
           {talkbackData.capability.available_agents.map(agent => (
             <option key={agent.agent_id} value={agent.agent_id}>
-              {agent.name} {agent.has_speaker ? '🔊' : ''} {agent.has_microphone ? '🎤' : ''}
+              {agent.name} {agent.has_speaker ? 'SPK' : ''} {agent.has_microphone ? 'MIC' : ''}
             </option>
           ))}
         </select>
@@ -213,7 +213,7 @@ export default function TalkbackPanel({ talkbackData: initialData }: TalkbackPan
           disabled={!selectedAgentId || (!selectedAgent?.has_speaker)}
           className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded transition-colors"
         >
-          ● Push to Talk
+          Push to Talk
         </button>
         <button
           disabled={!selectedAgentId || (!selectedAgent?.has_microphone)}
@@ -251,7 +251,7 @@ export default function TalkbackPanel({ talkbackData: initialData }: TalkbackPan
               lastMessage.delivery_status === 'degraded' ? 'text-yellow-400' : 
               'text-red-400'
             }`}>
-              {lastMessage.delivery_status === 'delivered' && '✓ '}
+              {lastMessage.delivery_status === 'delivered' && 'Delivered: '}
               {lastMessage.delivery_status.charAt(0).toUpperCase() + lastMessage.delivery_status.slice(1)}
             </span>
           </p>
@@ -262,7 +262,7 @@ export default function TalkbackPanel({ talkbackData: initialData }: TalkbackPan
       {recentResponses.length > 0 && (
         <div className="bg-green-900 bg-opacity-30 border border-green-700 rounded p-3 mb-3">
           <h4 className="text-sm font-semibold text-green-400 mb-2">
-            ✓ Response Detected
+            Response Detected
           </h4>
           {recentResponses.map(response => (
             <div key={response.id} className="text-sm mb-2">
@@ -281,7 +281,7 @@ export default function TalkbackPanel({ talkbackData: initialData }: TalkbackPan
               </p>
               {response.requires_human_review && (
                 <p className="text-yellow-400 mt-1 text-xs font-medium">
-                  ⚠ Human review required
+                  Human review required
                 </p>
               )}
             </div>
@@ -292,7 +292,7 @@ export default function TalkbackPanel({ talkbackData: initialData }: TalkbackPan
       {/* Safety Warning */}
       <div className="bg-yellow-900 bg-opacity-20 border border-yellow-700 rounded p-3">
         <p className="text-xs text-yellow-200">
-          ⚠ <strong>Simulation only.</strong> Not real survivor contact. 
+          <strong>Simulation only.</strong> Not real survivor contact. 
           All detections require human review and authorized rescue communications protocols.
         </p>
       </div>

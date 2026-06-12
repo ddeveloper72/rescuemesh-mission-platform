@@ -34,9 +34,13 @@ If containers are already running:
 # Run the initialization script
 .\init-db.ps1
 
-# Or manually run commands:
-docker-compose exec backend python manage.py seed_usecases
+# Or manually run the same seed families:
+docker-compose exec backend python manage.py seed_usecases --clear
 docker-compose exec backend python manage.py seed_demo_missions
+docker-compose exec backend python manage.py seed_digital_twins --clear
+docker-compose exec backend python manage.py seed_mission_scenarios --all --overwrite
+docker-compose exec backend python manage.py seed_media_artifacts --clear
+docker-compose exec backend python manage.py reset_stale_simulations --reset-all
 ```
 
 ---
@@ -68,6 +72,9 @@ curl http://localhost:8000/api/v1/missions/c5d0ffd4-2fc8-4b45-841d-88ec93f27e8e/
 2. **Updated `docker-entrypoint.sh`** to automatically run:
    - `python manage.py seed_usecases` - Creates use case templates
    - `python manage.py seed_demo_missions` - Creates 5 demo missions with fixed UUIDs
+   - `python manage.py seed_digital_twins` - Loads terrain/digital twin data
+   - `python manage.py seed_mission_scenarios --all` - Loads deterministic mission scenarios
+   - `python manage.py seed_media_artifacts` - Loads generated media metadata
 
 3. **Created helper scripts**:
    - `init-db.ps1` (Windows)

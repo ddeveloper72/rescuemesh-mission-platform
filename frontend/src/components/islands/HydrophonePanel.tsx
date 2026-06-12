@@ -60,13 +60,13 @@ function getStateColor(state: string): string {
 
 function getDetectionIcon(detectionType: string): string {
   switch (detectionType) {
-    case 'underground_river': return '🌊';
-    case 'mechanical_pump': return '⚙️';
-    case 'underwater_knock': return '👆';
-    case 'underwater_tapping': return '👆';
-    case 'leak': return '💧';
-    case 'cavitation': return '🫧';
-    default: return '🔊';
+    case 'underground_river': return 'FLOW';
+    case 'mechanical_pump': return 'PUMP';
+    case 'underwater_knock': return 'KNOCK';
+    case 'underwater_tapping': return 'TAP';
+    case 'leak': return 'LEAK';
+    case 'cavitation': return 'CAV';
+    default: return 'AUDIO';
   }
 }
 
@@ -103,7 +103,7 @@ export default function HydrophonePanel({ hydrophoneData: initialData }: Hydroph
     return (
       <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
         <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-          <span className="text-gray-500">🌊</span>
+          <span className="text-gray-500 text-xs font-semibold tracking-wide">HYDRO</span>
           Water / Hydrophone Acoustic Monitoring
         </h3>
         <p className="text-gray-400 text-sm">
@@ -128,7 +128,7 @@ export default function HydrophonePanel({ hydrophoneData: initialData }: Hydroph
   return (
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
       <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-        <span className="text-cyan-400">🌊</span>
+        <span className="text-cyan-400 text-xs font-semibold tracking-wide">HYDRO</span>
         Water / Hydrophone Acoustic Monitoring
       </h3>
 
@@ -140,7 +140,7 @@ export default function HydrophonePanel({ hydrophoneData: initialData }: Hydroph
         </p>
         {survivorCueDetections.length > 0 && (
           <p className="text-orange-400 font-medium mt-1">
-            ⚠ {survivorCueDetections.length} possible underwater signal{survivorCueDetections.length !== 1 ? 's' : ''} detected
+            {survivorCueDetections.length} possible underwater signal{survivorCueDetections.length !== 1 ? 's' : ''} detected
           </p>
         )}
       </div>
@@ -166,7 +166,7 @@ export default function HydrophonePanel({ hydrophoneData: initialData }: Hydroph
             >
               <div className="flex-1">
                 <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <span className={getStateColor(hydrophone.state)}>●</span>
+                  <span className={`inline-block h-2 w-2 rounded-full ${getStateColor(hydrophone.state).replace('text-', 'bg-')}`} aria-hidden="true"></span>
                   {hydrophone.sensor_id}
                 </h4>
                 <p className="text-xs text-gray-300 mt-1">
@@ -180,7 +180,7 @@ export default function HydrophonePanel({ hydrophoneData: initialData }: Hydroph
                 </p>
               </div>
               <button className="text-gray-400 hover:text-white">
-                {expandedHydrophoneId === hydrophone.sensor_id ? '▼' : '▶'}
+                {expandedHydrophoneId === hydrophone.sensor_id ? 'Hide' : 'Show'}
               </button>
             </div>
 
@@ -231,7 +231,7 @@ export default function HydrophonePanel({ hydrophoneData: initialData }: Hydroph
                           </p>
                           <div className="mt-1 space-y-1">
                             <p className="text-xs text-gray-400">
-                              {detection.timestamp} • Confidence: {Math.round(detection.confidence * 100)}%
+                              {detection.timestamp} / Confidence: {Math.round(detection.confidence * 100)}%
                             </p>
                             <p className="text-xs text-gray-400">
                               Frequency: {detection.frequency_range}
@@ -247,7 +247,7 @@ export default function HydrophonePanel({ hydrophoneData: initialData }: Hydroph
                           </div>
                           {(detection.detection_type.includes('knock') || detection.detection_type.includes('tapping')) && (
                             <p className="text-xs text-orange-400 font-medium mt-1">
-                              ⚠ Possible survivor signal - Human review required
+                              Possible survivor signal - Human review required
                             </p>
                           )}
                           <button className="text-xs text-cyan-400 hover:text-cyan-300 mt-1">
@@ -272,7 +272,7 @@ export default function HydrophonePanel({ hydrophoneData: initialData }: Hydroph
       {hydrophoneData.hydrophones.some(h => h.detections.length > 0) && (
         <div className="mt-4 bg-cyan-900 bg-opacity-20 border border-cyan-700 rounded p-3">
           <p className="text-xs text-cyan-200">
-            💡 <strong>Recommendation:</strong> Continue monitoring for underwater tapping or knocking patterns.
+            <strong>Recommendation:</strong> Continue monitoring for underwater tapping or knocking patterns.
           </p>
         </div>
       )}
@@ -296,7 +296,7 @@ export default function HydrophonePanel({ hydrophoneData: initialData }: Hydroph
       {/* Safety Note */}
       <div className="mt-3 bg-yellow-900 bg-opacity-20 border border-yellow-700 rounded p-2">
         <p className="text-xs text-yellow-200">
-          ⚠ Simulation only. All underwater signal detections require operator verification and dive team coordination.
+          Simulation only. All underwater signal detections require operator verification and dive team coordination.
         </p>
       </div>
     </div>

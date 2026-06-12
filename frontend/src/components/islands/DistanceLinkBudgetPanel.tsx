@@ -110,7 +110,7 @@ export default function DistanceLinkBudgetPanel() {
         <h2 className="text-lg font-semibold text-white">Distance & Link Budget</h2>
         {navigationModel && (
           <div className="text-xs text-slate-400">
-            {navigationModel.north_reference} · {navigationModel.bearing_reference}
+            {navigationModel.north_reference} / {navigationModel.bearing_reference}
           </div>
         )}
       </div>
@@ -179,7 +179,7 @@ export default function DistanceLinkBudgetPanel() {
                       <div>
                         <div className="text-xs text-slate-400">Bearing</div>
                         <div className="text-white font-mono">
-                          {nav.bearing_from_origin_deg?.toFixed(0)}° {nav.bearing_from_origin_cardinal}
+                          {nav.bearing_from_origin_deg?.toFixed(0)} deg {nav.bearing_from_origin_cardinal}
                         </div>
                       </div>
                     )}
@@ -188,7 +188,7 @@ export default function DistanceLinkBudgetPanel() {
                 <div>
                   <div className="text-xs text-slate-400">Depth/Elevation</div>
                   <div className="text-white font-mono">
-                    {nav.depth_elevation_label || '±0 m'}
+                    {nav.depth_elevation_label || '+/-0 m'}
                   </div>
                 </div>
 
@@ -197,7 +197,7 @@ export default function DistanceLinkBudgetPanel() {
                   <div>
                     <div className="text-xs text-slate-400">Heading</div>
                     <div className="text-white font-mono">
-                      {nav.heading_deg.toFixed(0)}°
+                      {nav.heading_deg.toFixed(0)} deg
                     </div>
                   </div>
                 )}
@@ -228,8 +228,8 @@ export default function DistanceLinkBudgetPanel() {
                   <div className="col-span-2">
                     <div className="text-xs text-slate-400">Nearest Relay</div>
                     <div className="text-white text-sm">
-                      {nav.nearest_relay.relay_name} · {nav.nearest_relay.distance_m.toFixed(1)} m ·{' '}
-                      {nav.nearest_relay.bearing_deg.toFixed(0)}° {nav.nearest_relay.bearing_cardinal}
+                      {nav.nearest_relay.relay_name} / {nav.nearest_relay.distance_m.toFixed(1)} m /{' '}
+                      {nav.nearest_relay.bearing_deg.toFixed(0)} deg {nav.nearest_relay.bearing_cardinal}
                     </div>
                   </div>
                 )}
@@ -308,7 +308,7 @@ export default function DistanceLinkBudgetPanel() {
                     <div>
                       <div className="text-xs text-orange-400/70">Bearing</div>
                       <div className="text-orange-100 font-mono">
-                        {nav.bearing_from_origin_deg?.toFixed(0)}° {nav.bearing_from_origin_cardinal}
+                        {nav.bearing_from_origin_deg?.toFixed(0)} deg {nav.bearing_from_origin_cardinal}
                       </div>
                     </div>
                   )}
@@ -317,7 +317,7 @@ export default function DistanceLinkBudgetPanel() {
                   <div>
                     <div className="text-xs text-orange-400/70">Depth/Elevation</div>
                     <div className="text-orange-100 font-mono">
-                      {nav.depth_elevation_label || '±0 m'}
+                      {nav.depth_elevation_label || '+/-0 m'}
                     </div>
                   </div>
 
@@ -364,7 +364,7 @@ export default function DistanceLinkBudgetPanel() {
 
       {/* Info Footer */}
       <div className="text-xs text-slate-500 pt-2 border-t border-slate-700">
-        GPS-denied navigation · Local 3D mission coordinates
+        GPS-denied navigation / Local 3D mission coordinates
       </div>
     </div>
   );

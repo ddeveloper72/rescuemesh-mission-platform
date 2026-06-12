@@ -197,7 +197,7 @@
       "requires_user_action": false,
       "event_data": {
         "location": "Crew Quarters B",
-        "approximate_volume": "15m³",
+        "approximate_volume": "15m3",
         "gas_analysis_pending": true
       }
     },
