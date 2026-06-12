@@ -1,4 +1,4 @@
-# 🚨 Quick Fix: Live Missions Not Starting
+# Quick Fix: Live Missions Not Starting
 
 ## Problem
 Astro frontend loads, but live mission pages show "Loading..." or fail to start.
@@ -22,7 +22,7 @@ docker-compose up -d --build backend
 # 3. Watch initialization logs
 docker-compose logs -f backend
 
-# Wait for: "✅ Initial data loading completed"
+# Wait for: "Initial data loading completed"
 # Then access: http://localhost:4321/demo/live/collapsed-building-search
 ```
 
