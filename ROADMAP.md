@@ -4,7 +4,7 @@ This roadmap outlines the development path for the RescueMesh Mission Platform, 
 
 ---
 
-## ✅ Currently Implemented
+## Currently Implemented
 
 ### Core Platform Architecture
 - [x] **Astro frontend** with islands architecture for optimal performance
@@ -144,7 +144,7 @@ This roadmap outlines the development path for the RescueMesh Mission Platform, 
 
 ---
 
-## 🚧 Next: Simulation Improvements
+## Next: Simulation Improvements
 
 ### Enhanced Visualization (Q3 2026)
 - [ ] **3D terrain visualization** using Three.js or CesiumJS
@@ -186,7 +186,7 @@ This roadmap outlines the development path for the RescueMesh Mission Platform, 
 
 ---
 
-## 🔮 Future: Real-Time & Robotics Extensions
+## Future: Real-Time & Robotics Extensions
 
 ### Real-Time Infrastructure (2027-2028)
 - [ ] **Django Channels** integration for WebSocket support
