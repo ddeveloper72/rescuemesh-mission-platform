@@ -16,6 +16,12 @@ RescueMesh is a simulation-first mission platform that demonstrates how autonomo
 
 **This is a demonstration and training platform**, not a real-time drone control system. No physical drone hardware is required for the MVP.
 
+## Authorship and AI Collaboration
+
+RescueMesh is a collaborative project between **Duncan Falconer** and AI coding assistants. The platform concept, domain framing, architecture, safety posture, and product direction are led and architected by Duncan Falconer.
+
+AI assistance has been used throughout the project to support design exploration, documentation, implementation, refactoring, and code generation. All AI-assisted work is reviewed, directed, and integrated as part of the human-led development process.
+
 ## Safety and Purpose
 
 RescueMesh is safety-focused and non-weaponised. It models autonomous mapping, sensing, communications and operator decision support for rescue, inspection, environmental and heritage exploration scenarios.
@@ -940,6 +946,7 @@ MIT License - See [LICENSE](LICENSE) file for details
 
 - Inspired by real-world search and rescue operations
 - Built with open-source technologies
+- Architected and directed by Duncan Falconer with AI-assisted design, coding, and documentation support
 - Designed for safety-first mission planning
 
 ## Contact
