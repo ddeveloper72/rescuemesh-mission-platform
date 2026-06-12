@@ -29,6 +29,12 @@ const activeAgents = profile.agents.filter(a =>
 const failedAgents = profile.agents.filter(a => 
   a.state === 'failed' || a.state === 'abandoned' || a.state === 'nfc_readable'
 );
+
+const agentSummary = profile.agents.map(agent => ({
+  id: agent.id,
+  name: agent.name,
+  state: agent.state
+}));
 ---
 
 <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
@@ -47,26 +53,44 @@ const failedAgents = profile.agents.filter(a =>
     <span class="inline-block">Open live simulation for progressive reveal</span>
   </p>
 
-  <div class="relative bg-slate-900 rounded-lg overflow-hidden aspect-video">
+  <div
+    class="relative bg-slate-900 rounded-lg overflow-hidden aspect-video"
+    data-static-demo-map
+    data-use-case={profile.slug}
+  >
+    <script type="application/json" data-static-map-agents-data set:html={JSON.stringify(agentSummary)} />
+
     <!-- Background pattern -->
     <div class="absolute inset-0 opacity-10">
       <div class="absolute inset-0" style="background-image: radial-gradient(circle at 2px 2px, rgb(148, 163, 184) 1px, transparent 0); background-size: 20px 20px;"></div>
     </div>
 
-    <!-- Map content -->
-    <div class="relative z-10 text-center p-8">
-      <div class="text-slate-500 mb-4">
-        <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-        </svg>
-      </div>
-      <div class="font-mono text-rescue-400 text-lg mb-2">
-        {mapTypeLabels[profile.simulation.mapType]}
-      </div>
-      <div class="text-sm text-slate-400 max-w-md">
-        {mapDescriptions[profile.simulation.mapType]}
-      </div>
-    </div>
+    <svg
+      class="relative z-10 w-full h-full"
+      viewBox="0 0 800 450"
+      role="img"
+      aria-label={`${mapTypeLabels[profile.simulation.mapType]} seeded tactical map`}
+      data-static-map-svg
+    >
+      <defs>
+        <pattern id={`static-grid-${profile.slug}`} width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(148, 163, 184, 0.08)" stroke-width="1" />
+        </pattern>
+      </defs>
+      <rect width="800" height="450" fill={`url(#static-grid-${profile.slug})`} />
+      <g data-static-map-paths></g>
+      <g data-static-map-sectors></g>
+      <g data-static-map-waypoints></g>
+      <g data-static-map-agents></g>
+      <g data-static-map-fallback>
+        <text x="400" y="205" fill="#38bdf8" text-anchor="middle" font-size="16" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">
+          {mapTypeLabels[profile.simulation.mapType]}
+        </text>
+        <text x="400" y="232" fill="#94a3b8" text-anchor="middle" font-size="12">
+          {mapDescriptions[profile.simulation.mapType]}
+        </text>
+      </g>
+    </svg>
 
     <!-- Static controls mirroring the live map -->
     <div class="absolute top-2 right-2 flex flex-col gap-1">
@@ -83,7 +107,7 @@ const failedAgents = profile.agents.filter(a =>
     </div>
 
     <div class="absolute top-2 left-2 bg-slate-800 bg-opacity-90 rounded px-2 py-1 text-xs text-slate-300">
-      Profile snapshot
+      <span data-static-map-status>Profile snapshot</span>
     </div>
 
     <!-- Asset markers overlay -->
@@ -108,9 +132,13 @@ const failedAgents = profile.agents.filter(a =>
     <!-- Coverage indicator -->
     <div class="absolute bottom-4 right-4 bg-slate-800 bg-opacity-90 px-4 py-2 rounded border border-slate-700">
       <div class="text-xs text-slate-400 mb-1">Map Coverage</div>
-      <div class="text-sm font-semibold text-rescue-400">
+      <div class="text-sm font-semibold text-rescue-400" data-static-map-coverage>
         {Math.round(profile.simulation.defaultConfidence * 100)}%
       </div>
+    </div>
+
+    <div class="absolute top-2 left-36 max-w-sm bg-slate-800 bg-opacity-90 rounded px-2 py-1 text-xs text-slate-400 truncate border border-slate-700">
+      Source: <span class="text-slate-200" data-static-map-source>Demo profile</span>
     </div>
 
     <!-- Environment tags -->
@@ -123,3 +151,9 @@ const failedAgents = profile.agents.filter(a =>
     </div>
   </div>
 </div>
+
+<script>
+  import { initialiseStaticDemoMaps } from '../../lib/static-demo-tactical-map';
+
+  initialiseStaticDemoMaps();
+</script>
